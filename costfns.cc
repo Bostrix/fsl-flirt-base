@@ -6,9 +6,11 @@
 #include <values.h>
 #include "costfns.h"
 #include "miscmaths.h"
+#include "miscimfns.h"
 #include "interpolation.h"
 
 #ifndef NO_NAMESPACE
+ using namespace MISCIMFNS;
  using namespace MISCMATHS;
  using namespace INTERPOLATION;
 
@@ -173,7 +175,7 @@
       unsigned int xb1=vref.columns()-1, yb1=vref.rows()-1, zb1=vref.slices()-1;
       float  xb2 = ((float) vtest.columns())-1.0001,
 	yb2=((float) vtest.rows())-1.0001, zb2=((float) vtest.slices())-1.0001;
-      int io1, io2, io3;
+      //int io1, io2, io3;
 
       float *sumy, *sumy2;
       sumy = new float[no_bins+1];
@@ -191,39 +193,126 @@
 	a31=iaff(3,1), a32=iaff(3,2), a33=iaff(3,3), a34=iaffbig(3,4);
       float val,o1,o2,o3;
 
-      float v000, v001, v010, v011, v100, v101, v110, v111;
       //float v1, v2, v3, v4, v5, v6;
 	      
 
       // The matrix algebra below has been hand-optimized from
       //  [o1 o2 o3] = a * [x y z]  at each iteration
 
-      int *bptr = bindex;
+      float x1, x2, xmin, xmax, xmin0, xmax0;
+      unsigned int xmin1, xmax1;
+      int *bptr;
+
       for (unsigned int z=0; z<=zb1; z++) { 
 	for (unsigned int y=0; y<=yb1; y++) { 
+
 	  o1= y*a12 + z*a13 + a14;  // x=0
 	  o2= y*a22 + z*a23 + a24;  // x=0
 	  o3= y*a32 + z*a33 + a34;  // x=0
-	  for (unsigned int x=0; x<=xb1; x++) {
-	    if (quick_in_bounds(o1,o2,o3,xb2,yb2,zb2,vtest)) {
-	      io1=(int) o1;
-	      io2=(int) o2;
-	      io3=(int) o3;
-	      vtest.getneighbours(io1,io2,io3,
-				  v000,v001,v010,v011,v100,v101,v110,v111);
-	      float dx=o1-io1, dy=o2-io2, dz=o3-io3;
-	      float dx1=1.0-dx, dy1=1.0-dy;
-	      val =  ( dx * ( dy * ( (v111-v110)*dz  + v110 ) +
-			      dy1 * ( (v101-v100)*dz + v100 ) ) + 
-		       dx1 * ( dy * ( (v011-v010)*dz + v010 )  +
-			       dy1 * ( (v001-v000)*dz  + v000 ) ) );
-		
-	      // do the cost function record keeping...
-	      b=*bptr;
-	      numy[b]++;
-	      sumy[b]+=val;
-	      sumy2[b]+=val*val;
+	  
+	  xmin0 = 0;
+	  xmax0 = xb1;
+	  
+	  if (fabs(a11)<1.0e-8) {
+	    if ((0.0<=o1) && (o1<=xb2)) {
+	      x1 = -1.0e8; x2 = 1.0e8;
+	    } else {
+	      x1 = -1.0e8; x2 = -1.0e8;
 	    }
+	  } else {
+	    x1 = -o1/a11;
+	    x2 = (xb2-o1)/a11;
+	  }
+	  xmin = Min(x1,x2);
+	  xmax = Max(x1,x2);
+	  // intersect ranges
+	  xmin0 = Max(xmin0,xmin);
+	  xmax0 = Min(xmax0,xmax);
+	  
+	  if (fabs(a21)<1.0e-8) {
+	    if ((0.0<=o2) && (o2<=yb2)) {
+	      x1 = -1.0e8; x2 = 1.0e8;
+	    } else {
+	      x1 = -1.0e8; x2 = -1.0e8;
+	    }
+	  } else {
+	    x1 = -o2/a21;
+	    x2 = (yb2-o2)/a21;
+	  }
+	  xmin = Min(x1,x2);
+	  xmax = Max(x1,x2);
+	  // intersect ranges
+	  xmin0 = Max(xmin0,xmin);
+	  xmax0 = Min(xmax0,xmax);
+
+	  if (fabs(a31)<1.0e-8) {
+	    if ((0.0<=o3) && (o3<=zb2)) {
+	      x1 = -1.0e8; x2 = 1.0e8;
+	    } else {
+	      x1 = -1.0e8; x2 = -1.0e8;
+	    }
+	  } else {
+	    x1 = -o3/a31;
+	    x2 = (zb2-o3)/a31;
+	  }
+	  xmin = Min(x1,x2);
+	  xmax = Max(x1,x2);
+	  // intersect ranges
+	  xmin0 = Max(xmin0,xmin);
+	  xmax0 = Min(xmax0,xmax);
+    
+	  //assert(xmin0>=0.0);
+	  //assert(xmax0<=xb1);
+
+	  if (xmax0<xmin0) {
+	    xmax1=0;
+	    xmin1=1;
+	  } else {
+	    xmin1 = (unsigned int) ceil(xmin0);
+	    xmax1 = (unsigned int) floor(xmax0);
+	  }
+
+	  o1 += xmin1 * a11;
+	  o2 += xmin1 * a21;
+	  o3 += xmin1 * a31;
+
+	  bptr = get_bindexptr(xmin1,y,z,vref,bindex);
+
+	  for (unsigned int x=xmin1; x<=xmax1; x++) {
+	    //if (quick_in_bounds(o1,o2,o3,xb2,yb2,zb2,vtest)) {
+//  	    int io1, io2, io3;
+//  	    io1=(int) o1;
+//  	    io2=(int) o2;
+//  	    io3=(int) o3;
+
+//  	    {
+//  	      float v000, v001, v010, v011, v100, v101, v110, v111;
+//  	      vtest.getneighbours(io1,io2,io3,
+//  				  v000,v001,v010,v011,v100,v101,v110,v111);
+//  	      float dx=o1-io1, dy=o2-io2, dz=o3-io3;
+	      
+//  	      {
+//  		float temp1, temp2, temp3, temp4, temp5, temp6;
+//  		temp1 = (v100 - v000)*dx + v000;
+//  		temp2 = (v101 - v001)*dx + v001;
+//  		temp3 = (v110 - v010)*dx + v010;
+//  		temp4 = (v111 - v011)*dx + v011;
+//  		// second order terms
+//  		temp5 = (temp3 - temp1)*dy + temp1;
+//  		temp6 = (temp4 - temp2)*dy + temp2;
+//  		// final third order term
+//  		val = (temp6 - temp5)*dz + temp5;
+//  	      }
+//  	    }
+
+  	    val = q_tri_interpolation(vtest,o1,o2,o3);
+	    
+	    // do the cost function record keeping...
+	    b=*bptr;
+	    numy[b]++;
+	    sumy[b]+=val;
+	    sumy2[b]+=val*val;
+	    // }  // if (quick_in_bounds...)
 	    bptr++;
 	    o1 += a11;
 	    o2 += a21;
