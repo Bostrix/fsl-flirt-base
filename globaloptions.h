@@ -52,6 +52,7 @@ class globaloptions {
   costfns currentcostfn;
   anglereps anglerep;
   float min_sampling;
+  float smoothsize;
 
   ColumnVector searchrx;
   ColumnVector searchry;
@@ -136,6 +137,7 @@ inline globaloptions::globaloptions()
   currentcostfn = CorrRatio;
   anglerep = Euler;
   min_sampling = 1.0;
+  smoothsize = 1.0;
 
   searchrx.ReSize(2);
   searchry.ReSize(2);
