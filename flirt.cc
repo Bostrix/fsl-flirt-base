@@ -10,7 +10,7 @@
 
 // Put current version number here:
 #include <string>
-const string version = "4.0";
+const string version = "4.1";
 
 #include <iostream>
 #include <fstream>
