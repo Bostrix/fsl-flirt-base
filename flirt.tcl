@@ -14,7 +14,7 @@ source [ file dirname [ info script ] ]/fslstart.tcl
 
 set VARS(history) {}
 
-catch { exec ${FSLDIR}/bin/flirt | grep "FLIRT version" | awk {{ print $3 }} - } VERSION
+catch { exec sh -c "${FSLDIR}/bin/flirt 2>&1 | grep -i 'flirt version' | awk '{ print \$3 }' -" } VERSION
 
 #}}}
 #{{{ flirt
