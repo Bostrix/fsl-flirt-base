@@ -185,8 +185,13 @@ int main(int argc,char *argv[])
       affmat = affmat.i();
     }
     if (globalopts.outputmatmedx.size() >= 1) {
-      write_medx_matrix(affmat,globalopts.outputmatmedx,testvol,refvol,
-			globalopts.xfm_type,globalopts.reffname);
+      if (globalopts.inverse) {
+	write_medx_matrix(affmat,globalopts.outputmatmedx,refvol,testvol,
+			  globalopts.xfm_type,globalopts.testfname);
+      } else {
+	write_medx_matrix(affmat,globalopts.outputmatmedx,testvol,refvol,
+			  globalopts.xfm_type,globalopts.reffname);
+      }
     }
     if (globalopts.outputmatascii.size() >= 1) {
       write_ascii_matrix(affmat,globalopts.outputmatascii);
