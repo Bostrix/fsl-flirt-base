@@ -15,17 +15,13 @@
 
 #include "newmatap.h"
 #include "newmatio.h"
-#include "mjimage.h"
+#include "newimageall.h"
 #include "miscmaths.h"
-#include "miscimfns.h"
-#include "generalio.h"
 
 #ifndef NO_NAMESPACE
  using namespace MISCMATHS;
- using namespace MISCIMFNS;
- using namespace MJIMAGE;
  using namespace NEWMAT;
- using namespace GENERALIO;
+ using namespace NEWIMAGE;
 #endif
 
 
@@ -34,7 +30,6 @@
 int main(int argc,char *argv[])
 {
 
-
   try {
 
     if (argc<3) { 
@@ -42,7 +37,7 @@ int main(int argc,char *argv[])
       return -1; 
     }
 
-    volume testvol;
+    volume<float> testvol;
     if (read_volume_hdr_only(testvol,argv[2])<0)  return -1;
     Matrix affmat(4,4);
     ColumnVector params(12);

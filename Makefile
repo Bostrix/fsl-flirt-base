@@ -6,14 +6,12 @@ DBGFLAGS = -g
 
 PROJNAME = flirt
 
-USRINCFLAGS =  -I${INCDIR}/newmat -I${INCDIR}/avwio -I${INCDIR}/mjimage_dev \
+USRINCFLAGS =  -I${INCDIR}/newmat -I${INCDIR}/avwio \
 		-I${INCDIR}/miscmaths -I${INCDIR}/newimage_dev
-LIBS = -lmjimage_dev -lmiscmaths -lavwio -lnewmat -lm 
-XLIBS = -lnewimage_dev -lmiscmaths -lavwio -lnewmat -lm 
+LIBS = -lnewimage_dev -lmiscmaths -lavwio -lnewmat -lm 
 INHERITVARS = "USRLDFLAGS=${USRLDFLAGS}" "USRINCFLAGS=${USRINCFLAGS}"
 
-FL_OBJS = globaloptions.o costfns.o flirt.o 
-T_OBJS = globaloptions.o costfns.o testcode.o
+FL_OBJS = globaloptions.o flirt.o 
 C_OBJS = convert_xfm.o
 A_OBJS = avscale.o
 R_OBJS = rmsdiff.o
@@ -22,14 +20,15 @@ EPI_OBJS = img2talcoord.o
 IMG_OBJS = img2imgcoord.o
 X_OBJS = applyxfm4D.o
 
-RUNTCLS = Flirt InvertXFM
+#RUNTCLS = Flirt InvertXFM
 XFILES = flirt convert_xfm avscale rmsdiff tal2imgcoord img2talcoord \
 	img2imgcoord applyxfm4D
-TESTXFILES = testcode
+TESTXFILES = 
 HFILES =
 SCRIPTS = extracttxt pairreg fixxfm
 
-all:	${XFILES} schedule
+#all:	${XFILES} schedule
+all:	${XFILES}
 
 schedule:
 	/bin/cp -rf flirtsch ${FSLDIR}/etc
@@ -37,9 +36,6 @@ schedule:
 flirt:    	${FL_OBJS}
 	        $(CXX)  ${CXXFLAGS} ${LDFLAGS} -o $@ ${FL_OBJS} ${LIBS}
 
-
-testcode:	${T_OBJS}
-		$(CXX)  ${CXXFLAGS} ${LDFLAGS} -o $@ ${T_OBJS} ${LIBS}
 
 convert_xfm:    ${C_OBJS}
 		${CXX}  ${CXXFLAGS} ${LDFLAGS} -o $@  ${C_OBJS} ${LIBS}
@@ -60,7 +56,7 @@ img2imgcoord:	${IMG_OBJS}
 		${CXX}  ${CXXFLAGS} ${LDFLAGS} -o $@  ${IMG_OBJS} ${LIBS}
 
 applyxfm4D:	${X_OBJS}
-		${CXX}  ${CXXFLAGS} ${LDFLAGS} -o $@  ${X_OBJS} ${XLIBS}
+		${CXX}  ${CXXFLAGS} ${LDFLAGS} -o $@  ${X_OBJS} ${LIBS}
 
 
 

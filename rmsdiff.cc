@@ -15,12 +15,12 @@
 #include "newmatap.h"
 #include "newmatio.h"
 #include "miscmaths.h"
-#include "generalio.h"
+#include "newimageall.h"
 
 #ifndef NO_NAMESPACE
  using namespace MISCMATHS;
  using namespace NEWMAT;
- using namespace GENERALIO;
+ using namespace NEWIMAGE;
 #endif
 
 
@@ -61,12 +61,12 @@ int main(int argc,char *argv[])
   ColumnVector centre(3);
   centre = 0;
 
-  volume refvol;
+  volume<float> refvol;
   read_volume_hdr_only(refvol,argv[3]);
   // compute the centre of volume (in world coordinates)
-  centre(1) = 0.5*(refvol.xsize() - 1.0)*refvol.getx();
-  centre(2) = 0.5*(refvol.ysize() - 1.0)*refvol.gety();
-  centre(3) = 0.5*(refvol.zsize() - 1.0)*refvol.getz();
+  centre(1) = 0.5*(refvol.xsize() - 1.0)*refvol.xdim();
+  centre(2) = 0.5*(refvol.ysize() - 1.0)*refvol.ydim();
+  centre(3) = 0.5*(refvol.zsize() - 1.0)*refvol.zdim();
 
   float rms = rms_deviation(affmat1,affmat2,centre,rmax);
 

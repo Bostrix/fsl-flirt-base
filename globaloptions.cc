@@ -360,7 +360,7 @@ void globaloptions::print_usage(int argc, char *argv[])
        << "        -noresample                        (do not change input sampling)\n"
        << "        -forcescaling                      (force rescaling even for low-res images)\n"
        << "        -minsampling <vox_dim>             (set minimum voxel dimension for sampling (in mm))\n"
-       << "        -applyxfm                          (applies transform (no optimisation) - requires -init\n"
+       << "        -applyxfm                          (applies transform (no optimisation) - requires -init)\n"
        << "        -applyisoxfm <scale>               (as applyxfm but forces isotropic resampling)\n"
        << "        -searchrx <min_angle> <max_angle>  (angles in degrees: default is -90 90)\n" 
        << "        -searchry <min_angle> <max_angle>  (angles in degrees: default is -90 90)\n" 

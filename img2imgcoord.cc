@@ -15,17 +15,13 @@
 
 #include "newmatap.h"
 #include "newmatio.h"
-#include "mjimage.h"
 #include "miscmaths.h"
-#include "miscimfns.h"
-#include "generalio.h"
+#include "newimageall.h"
 
 #ifndef NO_NAMESPACE
  using namespace MISCMATHS;
- using namespace MISCIMFNS;
- using namespace MJIMAGE;
  using namespace NEWMAT;
- using namespace GENERALIO;
+ using namespace NEWIMAGE;
 #endif
 
 ////////////////////////////////////////////////////////////////////////////
@@ -157,11 +153,11 @@ void parse_command_line(int argc, char* argv[])
 
 ////////////////////////////////////////////////////////////////////////////
 
-void print_info(const volume& vol, const string& name) {
+void print_info(const volume<float>& vol, const string& name) {
   cout << name << ":: SIZE = " << vol.xsize() << " x " << vol.ysize() 
        << " x " << vol.zsize() << endl;
-  cout << name << ":: DIMS = " << vol.getx() << " x " << vol.gety() 
-       << " x " << vol.getz() << " mm" << endl << endl;
+  cout << name << ":: DIMS = " << vol.xdim() << " x " << vol.ydim() 
+       << " x " << vol.zdim() << " mm" << endl << endl;
 }  
 
 ////////////////////////////////////////////////////////////////////////////
@@ -171,7 +167,7 @@ int main(int argc,char *argv[])
   parse_command_line(argc,argv);
 
 
-  volume srcvol, destvol;
+  volume<float> srcvol, destvol;
     // read volumes
   if (read_volume_hdr_only(srcvol,globalopts.srcfname)<0) {
     cerr << "Cannot read Source volume" << endl;
@@ -184,9 +180,9 @@ int main(int argc,char *argv[])
     
   if (globalopts.verbose>3) {
     print_info(destvol,"Destination Volume");
-    cout << " origin = " << destvol.avw_origin.t() << endl << endl;
+    cout << " origin = " << destvol.getorigin().t() << endl << endl;
     print_info(srcvol,"Source Volume");
-    cout << " origin = " << srcvol.avw_origin.t() << endl;
+    cout << " origin = " << srcvol.getorigin().t() << endl;
   }
 
   // read matrices
@@ -206,13 +202,13 @@ int main(int argc,char *argv[])
   //  notate variables as (v=vox, w=world, f=flirt, m=medx, t=dest)
   Matrix vf2w2(4,4), vf1w1(4,4);
   Identity(vf2w2);
-  vf2w2(1,1) = srcvol.getx();
-  vf2w2(2,2) = srcvol.gety();
-  vf2w2(3,3) = srcvol.getz();
+  vf2w2(1,1) = srcvol.xdim();
+  vf2w2(2,2) = srcvol.ydim();
+  vf2w2(3,3) = srcvol.zdim();
   Identity(vf1w1);
-  vf1w1(1,1) = destvol.getx();
-  vf1w1(2,2) = destvol.gety();
-  vf1w1(3,3) = destvol.getz();
+  vf1w1(1,1) = destvol.xdim();
+  vf1w1(2,2) = destvol.ydim();
+  vf1w1(3,3) = destvol.zdim();
 
   // the swap matrices convert flirt voxels to medx voxels
   Matrix swapy1(4,4), swapy2(4,4);

@@ -15,17 +15,13 @@
 
 #include "newmatap.h"
 #include "newmatio.h"
-#include "mjimage.h"
 #include "miscmaths.h"
-#include "miscimfns.h"
-#include "generalio.h"
+#include "newimageall.h"
 
 #ifndef NO_NAMESPACE
  using namespace MISCMATHS;
- using namespace MISCIMFNS;
- using namespace MJIMAGE;
  using namespace NEWMAT;
- using namespace GENERALIO;
+ using namespace NEWIMAGE;
 #endif
 
 ////////////////////////////////////////////////////////////////////////////
@@ -157,11 +153,11 @@ void parse_command_line(int argc, char* argv[])
 
 ////////////////////////////////////////////////////////////////////////////
 
-void print_info(const volume& vol, const string& name) {
+void print_info(const volume<float>& vol, const string& name) {
   cout << name << ":: SIZE = " << vol.xsize() << " x " << vol.ysize() 
        << " x " << vol.zsize() << endl;
-  cout << name << ":: DIMS = " << vol.getx() << " x " << vol.gety() 
-       << " x " << vol.getz() << " mm" << endl << endl;
+  cout << name << ":: DIMS = " << vol.xdim() << " x " << vol.ydim() 
+       << " x " << vol.zdim() << " mm" << endl << endl;
 }  
 
 ////////////////////////////////////////////////////////////////////////////
@@ -171,7 +167,7 @@ int main(int argc,char *argv[])
   parse_command_line(argc,argv);
 
 
-  volume imgvol, talvol;
+  volume<float> imgvol, talvol;
     // read volumes
   if (read_volume_hdr_only(imgvol,globalopts.imgfname)<0) {
     cerr << "Cannot read IMG volume" << endl;
@@ -184,9 +180,9 @@ int main(int argc,char *argv[])
     
   if (globalopts.verbose>3) {
     print_info(talvol,"Talairach Volume");
-    cout << " origin = " << talvol.avw_origin.t() << endl << endl;
+    cout << " origin = " << talvol.getorigin().t() << endl << endl;
     print_info(imgvol,"IMG Volume");
-    cout << " origin = " << imgvol.avw_origin.t() << endl;
+    cout << " origin = " << imgvol.getorigin().t() << endl;
   }
 
   // read matrices
@@ -213,13 +209,13 @@ int main(int argc,char *argv[])
   //  notate variables as (v=vox, w=world, f=flirt, m=medx, t=tal)
   Matrix vf2w2(4,4), vf1w1(4,4), vt1vm1(4,4);
   Identity(vf2w2);
-  vf2w2(1,1) = imgvol.getx();
-  vf2w2(2,2) = imgvol.gety();
-  vf2w2(3,3) = imgvol.getz();
+  vf2w2(1,1) = imgvol.xdim();
+  vf2w2(2,2) = imgvol.ydim();
+  vf2w2(3,3) = imgvol.zdim();
   Identity(vf1w1);
-  vf1w1(1,1) = talvol.getx();
-  vf1w1(2,2) = talvol.gety();
-  vf1w1(3,3) = talvol.getz();
+  vf1w1(1,1) = talvol.xdim();
+  vf1w1(2,2) = talvol.ydim();
+  vf1w1(3,3) = talvol.zdim();
   get_outputusermat(globalopts.talfname,vt1vm1);
   vt1vm1 = vt1vm1.i();
 

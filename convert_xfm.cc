@@ -15,17 +15,13 @@
 
 #include "newmatap.h"
 #include "newmatio.h"
-#include "mjimage.h"
+#include "newimageall.h"
 #include "miscmaths.h"
-#include "miscimfns.h"
-#include "generalio.h"
 
 #ifndef NO_NAMESPACE
  using namespace MISCMATHS;
- using namespace MISCIMFNS;
- using namespace MJIMAGE;
  using namespace NEWMAT;
- using namespace GENERALIO;
+ using namespace NEWIMAGE;
 #endif
 
 ////////////////////////////////////////////////////////////////////////////
@@ -232,7 +228,7 @@ int main(int argc,char *argv[])
   parse_command_line(argc,argv);
 
 
-  volume testvol, refvol, intervol;
+  volume<float> testvol, refvol, intervol;
   if (! globalopts.matonly) {
     // read volumes
     if (read_volume_hdr_only(testvol,globalopts.testfname)<0) {
@@ -254,9 +250,9 @@ int main(int argc,char *argv[])
     
     if (globalopts.verbose>3) {
       print_volume_info(refvol,"Reference Volume");
-      cout << " origin = " << refvol.avw_origin.t() << endl << endl;
+      cout << " origin = " << refvol.getorigin().t() << endl << endl;
       print_volume_info(testvol,"Input Volume");
-      cout << " origin = " << testvol.avw_origin.t() << endl;
+      cout << " origin = " << testvol.getorigin().t() << endl;
     }
   }
 
