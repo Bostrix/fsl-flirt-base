@@ -66,6 +66,7 @@ public:
   Matrix parammask;
   int no_params;
   int dof;
+  int searchdof;
   int no_bins;
   costfns maincostfn;
   costfns searchcostfn;
@@ -121,6 +122,7 @@ globaloptions::globaloptions()
   identity(parammask);
   no_params = 12;
   dof = 12;
+  searchdof = 12;
   no_bins = 256;
   maincostfn = CorrRatio;
   searchcostfn = CorrRatio;
@@ -1092,24 +1094,34 @@ void search_cost(Matrix& paramlist, volume& costs, volume& tx,
 		 volume& ty, volume& tz, volume& scale) {
   Tracer tr("search_cost");
   int storedverbose = globalopts.verbose;
+  int storeddof = globalopts.dof;
   anglereps useranglerep = globalopts.anglerep;
   globalopts.verbose -= 2;
   globalopts.anglerep = Euler;  // a workaround hack
   globalopts.currentcostfn = globalopts.searchcostfn;
+  globalopts.dof = globalopts.searchdof;
 
   ColumnVector coarserx, coarsery, coarserz, finerx, finery, finerz;
   set_rot_samplings(coarserx,coarsery,coarserz,finerx,finery,finerz);
 
   // set up the type of parameter subset (via the global mask)
   // here 3 translations and 1 (common) scaling are used
-  globalopts.parammask.ReSize(12,4);  // was 3
-  globalopts.parammask = 0.0;
-  globalopts.parammask(7,1) = 1.0;  // didn't used to exist
-  globalopts.parammask(8,1) = 1.0;  // didn't used to exist
-  globalopts.parammask(9,1) = 1.0;  // didn't used to exist
-  globalopts.parammask(4,2) = 1.0;
-  globalopts.parammask(5,3) = 1.0;
-  globalopts.parammask(6,4) = 1.0;
+  if (globalopts.dof>6) {
+    globalopts.parammask.ReSize(12,4);  // was 3
+    globalopts.parammask = 0.0;
+    globalopts.parammask(7,1) = 1.0;  // didn't used to exist
+    globalopts.parammask(8,1) = 1.0;  // didn't used to exist
+    globalopts.parammask(9,1) = 1.0;  // didn't used to exist
+    globalopts.parammask(4,2) = 1.0;
+    globalopts.parammask(5,3) = 1.0;
+    globalopts.parammask(6,4) = 1.0;
+  } else {
+    globalopts.parammask.ReSize(12,3);
+    globalopts.parammask = 0.0;
+    globalopts.parammask(4,1) = 1.0;
+    globalopts.parammask(5,2) = 1.0;
+    globalopts.parammask(6,3) = 1.0;
+  }
 	
   ColumnVector param_tol, param_tol0(12), param_tol1(12), params_8(12);
   globalopts.no_params = 12; // necessary for any subset_costfn call
@@ -1162,6 +1174,7 @@ void search_cost(Matrix& paramlist, volume& costs, volume& tx,
 	ty(ix,iy,iz) = params_8(5);
 	tz(ix,iy,iz) = params_8(6);
 	scale(ix,iy,iz) = params_8(7);
+	
 	if (globalopts.verbose>=4) {
 	  cout << " dearranged: " << params_8.t();
 	}
@@ -1406,6 +1419,7 @@ void search_cost(Matrix& paramlist, volume& costs, volume& tx,
 
   globalopts.anglerep = useranglerep;
   globalopts.verbose = storedverbose;
+  globalopts.dof = storeddof;
 }
 
 
@@ -2125,11 +2139,12 @@ void usrsort(MatVecPtr usrsrcmat)
 }
 
 
-void usrsearch(MatVecPtr searchoptmat, MatVecPtr preoptsearchmat) 
+void usrsearch(MatVecPtr searchoptmat, MatVecPtr preoptsearchmat, int sdof=12) 
 {
   Tracer tr("usrsearch");
   // SEARCH
   Matrix opt_matrixlist;
+  globalopts.searchdof = sdof;
   optimise_strategy3(opt_matrixlist);
   MatVec optmatsorted(0);
   RowVector tmprow;
@@ -2446,7 +2461,15 @@ void interpretcommand(const string& comline, bool& skip,
     usrsort(src);
   } else if (words[0]=="search") {
     // SEARCH
-    usrsearch(&globalsearchoptmat,&globalpreoptsearchmat);
+    int usrdof=12;
+    if (words.size()>2) {
+      cerr << "Wrong number of args to SEARCH" << endl;
+      exit(-1);
+    }
+    if (words.size()==2) {
+      setscalarvariable(words[1],usrdof);
+    }
+    usrsearch(&globalsearchoptmat,&globalpreoptsearchmat,usrdof);
   } else if (words[0]=="optimise") {
     // OPTIMISE
     if (words.size()<5) {
