@@ -27,6 +27,9 @@ int fmrib_main(int argc, char* argv[])
     volume<T> refvol, dummy;
     volumeinfo vinfo;
     read_volume4D(invol,iname,vinfo);
+    for (int t=0; t<invol.tsize(); t++) {
+      invol[t].setpadvalue(invol[t].backgroundval());
+    }
     invol.setextrapolationmethod(extraslice);
     invol.setinterpolationmethod(sinc);
     invol.definesincinterpolation("b",7);
