@@ -37,8 +37,7 @@ int main(int argc,char *argv[])
 
   if (argc==4) {
     volume refvol;
-    short dtype;
-    read_volume(refvol,argv[3],dtype,false);
+    read_volume_hdr_only(refvol,argv[3]);
     centre(1) = (refvol.xsize() - 1.0)/2.0;
     centre(2) = (refvol.ysize() - 1.0)/2.0;
     centre(3) = (refvol.zsize() - 1.0)/2.0;
