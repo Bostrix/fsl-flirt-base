@@ -13,7 +13,7 @@
 robust and accurate tool for linear (affine) intra- and inter-modal
 brain image registration.
 
-<P><FONT COLOR=BLUE>NEW FEATURES:</FONT>
+<P><FONT COLOR="#a00000">NEW FEATURES:</FONT>
 <BR>The latest version of FLIRT (v3.1) incorporates the following new
 features:
 <UL>
@@ -30,110 +30,10 @@ journal reference listed there.
 
 <p>The different FLIRT programs are:
 <UL>
-<LI><a href="#gui">Flirt</a> - FLIRT GUI<br>
-<LI><a href="#overview">flirt</a> - command-line FLIRT program<br>
-<LI><a href="#utilities">flirt utilities</a> - associated command-line programs<br>
+<LI><a href="gui.html">Flirt</a> - FLIRT GUI<br>
+<LI><a href="overview.html">flirt</a> - command-line FLIRT program<br>
+<LI><a href="overview.html">misc flirt utilities</a> - associated command-line programs<br>
 </UL>
-
-<A NAME="gui"></A><hr><a href="gui.html"><H2>Flirt GUI</H2></a>
-
-<H3>MAIN OPTIONS</H3>
- 
-<P>The simplest use of FLIRT is to register two single volumes together.
-This is done by choosing the <b>Input image -> Reference image</b> mode
-in the top box, then filling in the <b>Reference image</b> and 
-<b>Input image</b> boxes with the appropriate images.  The result is a
-registered image which will be saved to the location specified in the
-<b>Output image</b> box.  All other options/boxes can be left at
-their default values.
-
-<P>The second mode of operation is a two stage registration which
-takes an input <b>Low res image</b> and two target images.  It
-initially registers the low res image to a <b>High res image</b> and
-then registers this high res image to the final <b>Reference
-image</b>.  The two resulting transformations are concatenated and
-then applied to the original low res image to create an <b>Output
-image</b> that is a version of the low res image transformed
-(resliced) to the reference image space.
-
-<H4>Secondary Images</H4>
-
-Apply the estimated transform to other (secondary) images, which were
-originally aligned with the input/low-res image, in order to align them
-with the reference image.
-
-<H4>Model/DOF</H4>
-
-Restrict the transformation type.  For 3D to 3D mode the DOF can be
-set to 12 (affine), 9 (traditional), 7 (global rescale) or 6 (rigid
-body).  In 2D to 2D mode only 3 DOF (rigid body) transformations are
-allowed.
-
-<H3>ADVANCED OPTIONS</H3>
- 
-The four categories of options are:
-<UL>
-<LI> <B>Search</B> - select the angular range over which the initial
-optimisation search stage is performed.
-<LI> <B>Cost Functions</B> - select the desired cost function from a
-range of inter- and intra-modal functions.
-<LI> <B>Interpolation</B> - select the interpolation method to be used
-in the final (reslice) transformation (it is not used for the estimation
-stage).
-<LI> <B>Weighting Volumes</B> - impose a voxel-wise weighting to
-either or both images (in two volume mode only) which affects the cost
-function.  This can be used for unbiassed masking of pathologies prior
-to registration (unlike masking the images which is biassed) or to
-improve the registration in local regions (e.g. the ventricles).
-</UL>
-
-
-
-<A NAME="overview"></A><HR><a href="overview.html"><H2>flirt COMMAND-LINE PROGRAM and UTILITIES</H2></a>
-
-<DL>
-<DT> <b>flirt</b> </DT> <DD> The main program which performs intra-
- and inter-modal affine registration.  In addition, it can be used to
- apply transforms to images (reslice).  It is highly configurable with
- many options for cost functions, weighting images, final (reslice)
- interpolation, and initial search.
-<p>Type <b>flirt</b> to get usage.
- </DD>
-</DL>
-
-<A NAME="utilities"></A>
-Other utilities that are available are:
-<DL>
-<DT> <b>convert_xfm</b> </DT>
- <DD> Used for inverting the transformation or changing the type 
-       (MEDx <-> ascii).
- </DD>
-<DT> <b>img2imgcoord</b> </DT>
- <DD> Used for finding corresponding coordinates (prior to reslicing) in 
- registered images.
- </DD>
-<DT> <b>img2talcoord</b> </DT>
- <DD> Used for finding the corresponding Talairach coordinate given an image
- that has been registered to a Talairach template.
- </DD>
-<DT> <b>tal2imgcoord</b> </DT>
- <DD> Used for finding the corresponding image coordinate given a Talairach 
- coordinate and the Talairach transformation (opposite of <b>img2talcoord</b>).
- </DD>
-<DT> <b>applyxfm4D</b> </DT>
- <DD> Used for applying a transform (reslicing) to a whole time series with
- either a single transformation or a directory of transformations.
- </DD>
-<DT> <b>rmsdiff</b> </DT>
- <DD> Calculates the difference (in mm) between two transformations.
- </DD>
-<DT> <b>avscale</b> </DT>
- <DD> Decomposes the elements of an affine matrix.
- </DD>
-</DL>
-
- <!-- J-Back -->
-
 
 <A NAME="section4"></A><HR><H2>GENERAL ADVICE</H2>
  
@@ -144,8 +44,8 @@ as the Reference image, otherwise poor registrations may occur (the inverse
 transformation can be found afterwards using <b>convert_xfm</b>).
 <LI>Do use the default settings (especially in the GUI advanced
 options) as they have been carefully chosen.  
-<LI>Do use it for Talairaching with the MNI average305 as it has been
-extensively tested with this image.
+<LI>Do use it for Talairaching with the MNI standard brains as it has been
+extensively tested with these images.
 <LI>For images showing pathology, consider using binary cost function weighting
 images - a zero for areas of a pathological nature and one elsewhere.
 <LI>Consider using the Group facility (GUI only)

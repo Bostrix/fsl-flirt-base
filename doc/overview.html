@@ -1,11 +1,11 @@
 <!DOCTYPE HTMLPUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN""http://www.w3.org/TR/REC-html40/losse.dtd">
 <HTML><HEAD>
-  <TITLE>FSL User Guide - Overview of the FLIRT project</TITLE>
+  <TITLE>flirt Command-line Program and Utilities</TITLE>
 </HEAD>
  <BODY BACKGROUND="../images/flirt-bg" BGCOLOR="white">
-  <TABLE BORDER=0 WIDTH="100%"><TR>
+<hr>  <TABLE BORDER=0 WIDTH="100%"><TR>
   <TD ALIGN=LEFT>  <a href="../index.html"><IMG BORDER=0 SRC="../images/fsl-logo"></a>
-   <TD ALIGN=CENTER><H1>FSL User Guide - Overview of the FLIRT project</H1>
+   <TD ALIGN=CENTER><H1>flirt Command-line Program and Utilities</H1>
   <TD ALIGN=RIGHT> <a href="http://www.fmrib.ox.ac.uk/"><IMG BORDER=0 SRC="../images/fmrib_crest_86.gif"></a>
    </TR></TABLE>
   <!-- No Table of Contents -->
@@ -24,7 +24,7 @@ program with no options.
 
  <!-- J-Back -->
 
-<A NAME="section2"></A><HR><H2>FLIRT</H2>
+<A NAME="section2"></A><HR><H2>flirt</H2>
  
 <B>flirt</B> is the main program that performs affine registration.  It takes
 an input (<FONT COLOR=PURPLE>-in</FONT>) and a reference
@@ -32,7 +32,9 @@ an input (<FONT COLOR=PURPLE>-in</FONT>) and a reference
 transformation that registers the input to the reference.  The
 transformation can be saved as a 4x4 affine matrix
 (<FONT COLOR=PURPLE>-omat</FONT>) or as a MEDx transform
-(<FONT COLOR=PURPLE>-omedx</FONT>).
+(<FONT COLOR=PURPLE>-omedx</FONT>). The transform can be applied to
+the input volume to create an output (<FONT COLOR=PURPLE>-out</FONT>)
+which will be in alignment with the reference volume.
 
 <P>
 In addition, FLIRT can also be used to apply a saved transformation to
@@ -42,7 +44,7 @@ the voxel and image dimensions of the resulting volume.
 <br>
 
 <P>
-<FONT COLOR=BLUE>New Features:</FONT><br>
+<FONT COLOR="#c00000">New Features:</FONT><br>
 <DL>
 <DT> <I>Cost Function Weighting</I></DT>
 <DD> Weighting volumes can be specified
@@ -70,7 +72,7 @@ registrations.</DD>
 
  <!-- J-Back -->
 
-<A NAME="section3"></A><HR><H2>CONVERT_XFM</H2>
+<A NAME="section3"></A><HR><H2>convert_xfm</H2>
  
 <B>convert_xfm</B> is a utility that is used to convert between different
 transformation file formats.  It can read and write ascii 4x4 matrices
@@ -89,7 +91,7 @@ need to be specified.
 
  <!-- J-Back -->
 
-<A NAME="section7"></A><HR><H2>IMG2IMGCOORD</H2>
+<A NAME="section7"></A><HR><H2>img2imgcoord</h2>
  
 <B>img2imgcoord</B> is a utility that calculates the corresponding
 coordinate positions (in voxels or mm) within a destination volume
@@ -101,7 +103,7 @@ separated.
 
  <!-- J-Back -->
 
-<A NAME="section8"></A><HR><H2>IMG2TALCOORD</H2>
+<A NAME="section8"></A><HR><H2>img2talcoord</H2>
  
 <B>img2talcoord</B> is a similar utility to <B>img2imgcoord</B>
 except that the destination volume coordinates are treated as Talairach
@@ -113,7 +115,7 @@ images, as the origin is not a standard analyse header field)
 
  <!-- J-Back -->
 
-<A NAME="section9"></A><HR><H2>TAL2IMGCOORD</H2>
+<A NAME="section9"></A><HR><H2>tal2imgcoord</H2>
  
 <B>tal2imgcoord</B> is the complementary utility to <B>img2talcoord</B>.
 It works the same way but transfers coordinates from Talairach space to
@@ -121,7 +123,7 @@ the other image (IMG) space.
 
  <!-- J-Back -->
 
-<A NAME="section6"></A><HR><H2>APPLYXFM4D</H2>
+<A NAME="section6"></A><HR><H2>applyxfm4d</H2>
  
 <B>applyxfm4D</B> is a utility that transforms a 4D time series by
 applying known affine transformations to them.  It can be used with a
@@ -135,7 +137,7 @@ order to determine the matrix size and FOV for the final volume.
 
  <!-- J-Back -->
 
-<A NAME="section4"></A><HR><H2>RMSDIFF</H2>
+<A NAME="section4"></A><HR><H2>rmsdiff</H2>
  
 <B>rmsdiff</B> is a utility that calculates the Root Mean Square deviation
 (in millimetres) between two transformations.  That is, it compares
@@ -146,7 +148,7 @@ transformations.
 
  <!-- J-Back -->
 
-<A NAME="section5"></A><HR><H2>AVSCALE</H2>
+<A NAME="section5"></A><HR><H2>avscale</H2>
  
 <B>avscale</B> is a utility that displays the decomposed elements of an
 affine matrix.  It displays the rotation/translation matrix, the
