@@ -50,35 +50,7 @@ FSLFileEntry $w.f.xfm \
 		-filterhist VARS(history)
 
 #}}}
-    #{{{ A image
-
-set entries($w,2) ""
-
-FSLFileEntry $w.f.ref \
-	-variable entries($w,2) \
-	-pattern "*.hdr" \
-	-directory $PWD \
-	-label "Volume A   " \
-	-labelwidth 29 \
-	-title "Select" \
-	-width 40 \
-	-filterhist VARS(history)
-
-#}}}
-    #{{{ B image
-
-FSLFileEntry $w.f.test \
-	-variable entries($w,3) \
-	-pattern "*.hdr" \
-	-directory $PWD \
-	-label "Volume B   " \
-	-labelwidth 29 \
-	-title "Select" \
-	-width 40 \
-	-filterhist VARS(history)
-
-#}}}
-    pack $w.f.xfm $w.f.ref $w.f.test -in $lfinput -side top -anchor w -pady 3 -padx 5
+    pack $w.f.xfm -in $lfinput -side top -anchor w -pady 3 -padx 5
 
     tixLabelFrame $w.f.output -label "Output"
     set lfoutput [ $w.f.output subwidget frame ]
@@ -97,30 +69,7 @@ FSLFileEntry $w.f.oxfm \
 		-filterhist VARS(history)
 
 #}}}
-    #{{{ Type of transformation to save
-
-set entries($w,5) n
-    
-frame $w.f.type
-label $w.f.typebanner -text "Type of transform to save"
-
-radiobutton $w.f.a -text "MEDx AlignLinearReslice" -variable entries($w,5) -value a -anchor w
-radiobutton $w.f.u -text "MEDx UserTransformation" -variable entries($w,5) -value u -anchor w
-radiobutton $w.f.t -text "MEDx IntoTalairachSpace" -variable entries($w,5) -value t -anchor w
-radiobutton $w.f.n -text "FLIRT matrix"            -variable entries($w,5) -value n -anchor w
-
-pack $w.f.typebanner -in $w.f.type -side top -anchor w
-
-frame $w.f.type.a
-frame $w.f.type.b
-
-pack $w.f.u $w.f.a -in $w.f.type.a -side left
-pack $w.f.t $w.f.n -in $w.f.type.b -side left
-
-pack $w.f.type.a $w.f.type.b -in $w.f.type -side top -anchor w
-
-#}}}
-    pack $w.f.oxfm $w.f.type -in $lfoutput -side top -anchor w -pady 3 -padx 5
+    pack $w.f.oxfm -in $lfoutput -side top -anchor w -pady 3 -padx 5
 
     pack $w.f.input $w.f.output -in $w.f -side top -anchor w -pady 0 -padx 5
 
@@ -165,7 +114,7 @@ proc InvertXFM:go { w } {
 proc InvertXFM:apply { w } {
     global entries
 
-    catch { invertxfm:proc $entries($w,1) $entries($w,2) $entries($w,3) $entries($w,4) $entries($w,5) }
+    catch { invertxfm:proc $entries($w,1) $entries($w,4) }
 
     update idletasks
     puts "Done"
@@ -174,17 +123,11 @@ proc InvertXFM:apply { w } {
 #}}}
 #{{{ invertxfm:proc
 
-proc invertxfm:proc { transAB volA volB invxfmfilename xfmtype } {
+proc invertxfm:proc { transAB invxfmfilename } {
 
     global FSLDIR
 
-    if { $xfmtype == "n" } {
-	set savemedx "-omat $invxfmfilename"
-    } else {
-	set savemedx "-omedx $invxfmfilename -xfmtype $xfmtype"
-    }
-    
-    set thecommand "${FSLDIR}/bin/convert_xfm -ref $volB -in $volA $savemedx -inverse $transAB"
+    set thecommand "${FSLDIR}/bin/convert_xfm -matonly -omat $invxfmfilename -inverse $transAB"
     puts $thecommand
     catch { exec sh -c $thecommand } errmsg
     puts $errmsg
