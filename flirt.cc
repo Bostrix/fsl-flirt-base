@@ -32,7 +32,6 @@ const string version = "4.0";
 
 #ifndef NO_NAMESPACE
  using namespace MISCMATHS;
- using namespace COSTFNS;
  using namespace NEWMAT;
  using namespace NEWIMAGE;
 #endif
