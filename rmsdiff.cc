@@ -23,8 +23,8 @@ int main(int argc,char *argv[])
 
   float rmax=80.0;
 
-  if ((argc<3) || (argc>4)) { 
-    cerr << "Usage: " << argv[0] << " matrixfile1 matrixfile2 [refvol]\n"; 
+  if (argc!=4) { 
+    cerr << "Usage: " << argv[0] << " matrixfile1 matrixfile2 refvol\n"; 
     return -1; 
   }
   
@@ -35,14 +35,12 @@ int main(int argc,char *argv[])
   ColumnVector centre(3);
   centre = 0;
 
-  if (argc==4) {
-    volume refvol;
-    read_volume_hdr_only(refvol,argv[3]);
-    // compute the centre of volume (in world coordinates)
-    centre(1) = 0.5*(refvol.xsize() - 1.0)*refvol.getx();
-    centre(2) = 0.5*(refvol.ysize() - 1.0)*refvol.gety();
-    centre(3) = 0.5*(refvol.zsize() - 1.0)*refvol.getz();
-  }
+  volume refvol;
+  read_volume_hdr_only(refvol,argv[3]);
+  // compute the centre of volume (in world coordinates)
+  centre(1) = 0.5*(refvol.xsize() - 1.0)*refvol.getx();
+  centre(2) = 0.5*(refvol.ysize() - 1.0)*refvol.gety();
+  centre(3) = 0.5*(refvol.zsize() - 1.0)*refvol.getz();
 
   float rms = rms_deviation(affmat1,affmat2,centre,rmax);
 
