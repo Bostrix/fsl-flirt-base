@@ -78,6 +78,7 @@
 	      val = q_tri_interpolation(vtest,o1,o2,o3,io1,io2,io3);
 	      // do the cost function record keeping...
 	      b=(int) (vref(x,y,z)*a1 + a0);
+	      if (b>=no_bins) b=no_bins-1;
 	      numx[b]++;
 	      numy[b]++;
 	      sumy[b]+=val;
@@ -94,9 +95,9 @@
 
       // now calculate the individual variances for each iso-set
       //  weighting them by the number of pixels from Image x that contribute
-      for (b=0; b<no_bins; b++) {
-	numtotx += numx[b];
+      for (b=0; b<=no_bins; b++) {
 	if (numy[b]>2) {
+	  numtotx += numx[b];
 	  numtoty += numy[b];
 	  totsumy += sumy[b];
 	  totsumy2 += sumy2[b];
@@ -189,6 +190,7 @@
 	      val = q_tri_interpolation(vtest,o1,o2,o3,io1,io2,io3);
 	      // do the cost function record keeping...
 	      b=(int) (vref(x,y,z)*a1 + a0);
+	      if (b>=no_bins) b=no_bins-1;
 	      num[b]++;
 	      sum[b]+=val;  // val = vtest(x',y',z')
 	      sum2[b]+=val*val;
@@ -374,6 +376,8 @@
 	      // do the cost function record keeping...
 	      a=(long int) (vref(x,y,z)*a1 + a0) + 1;
 	      b=(long int) (val*b1 + b0) + 1;  // val = vtest(x',y',z')
+	      if (a>=no_bins) a=no_bins-1;
+	      if (b>=no_bins) b=no_bins-1;
 	      (jointhist[(a-1)*(no_bins+1) + b-1])++;
 	      (marghist1[a-1])++;
 	      (marghist2[b-1])++;
