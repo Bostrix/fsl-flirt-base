@@ -103,7 +103,7 @@ globaloptions::globaloptions()
   outputmatascii = "";
   outputmatmedx = "";
   initmatfname = "";
-  initmat = identity(4);
+  initmat = Identity(4);
 
   schedulefname = "";
   
@@ -112,7 +112,7 @@ globaloptions::globaloptions()
   refparams << 0.0 << 0.0 << 0.0 << 0.0 << 0.0 << 0.0 << 1.0 << 1.0 << 1.0
 	    << 0.0 << 0.0 << 0.0;
   parammask.ReSize(12,12);
-  identity(parammask);
+  Identity(parammask);
   no_params = 12;
   dof = 12;
   searchdof = 12;
@@ -2337,7 +2337,7 @@ int main(int argc,char *argv[])
     float costval=0.0;
 
     if (globalopts.measure_cost) {
-      identity(matresult);
+      Identity(matresult);
       costval = costfn(matresult);
       cout << "\n\nCost = " << costval << "\n\n";
       return 1;
