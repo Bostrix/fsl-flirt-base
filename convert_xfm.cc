@@ -69,6 +69,7 @@ void print_usage(int argc, char *argv[])
        << "        -test <testvol>                      (no default)\n"
        << "        -omat <matrix-filename>            (4x4 ascii format)\n"
        << "        -omedx <matrix-filename>           (MEDx format)\n"
+    //       << "        -ominc <matrix-filename>           (MINC format)\n"
        << "        -xfmtype {u,a,m,g,s}              (Specify MEDx xfm format)\n"
        << "                      u   = UserTransformation (default)\n"
        << "                      a,m = AlignLinearReslice\n"
@@ -180,7 +181,8 @@ int main(int argc,char *argv[])
     if (read_volume(refvol,globalopts.reffname)<0)  return -1;
     Matrix affmat(4,4);
     ColumnVector params(12);
-    if (read_matrix(affmat,globalopts.initmatfname,testvol)<0)   return -2;
+    if (read_matrix(affmat,globalopts.initmatfname,testvol,refvol)<0) 
+      return -2;
     if (globalopts.inverse) {
       affmat = affmat.i();
     }
