@@ -248,7 +248,7 @@ int main(int argc,char *argv[])
     
     while (!matfile.eof()) {
       for (int j=1; j<=3; j++) {
-	matfile >> destcoord(j);
+	matfile >> srccoord(j);
       }
       if (globalopts.mm) {  // in mm
 	destcoord = vf1w1 * destvox2world.i() * affmat * srcvox2world * vf2w2.i() * srccoord;
