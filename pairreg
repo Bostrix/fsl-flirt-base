@@ -1,6 +1,20 @@
 #!/usr/local/bin/bash
 
-flirt -in $1 -ref $2 -schedule pairregrc1 -omat prgmat1
-flirt -in $3 -ref $4 -init prgmat1 -schedule pairregrc2 -omat prgmat2
+if [ $# -lt 5 ] ; then
+ echo "Usage: $0 brain1 brain2 skull1 skull2 outputmatrix [extra flirt args]"
+ echo
+ echo "  NB: brain2 and skull2 are used as -ref arguments internally"
+fi
+
+bin=$1; export bin
+bref=$2; export bref
+sin=$3; export sin
+sref=$4; export sref
+matf=$5; export matf
+shift 5
+args=$$ ; export args
+
+flirt -in $bin -ref $bref -schedule pairregrc1 -omat prgmat1 $args
+flirt -in $sin -ref $sref -init prgmat1 -schedule pairregrc2 -omat prgmat2 $args
 convert_xfm -matonly -fixscaleskew prgmat2 prgmat1 -omat prgmat3
-flirt -in $1 -ref $2 -init prgmat3 -schedule pairregrc3 -omat $5
+flirt -in $bin -ref $bref -init prgmat3 -schedule pairregrc3 -omat $matf $args
