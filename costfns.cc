@@ -36,6 +36,9 @@
       //  value there.
       // Also, the sampling transformations must be accounted for:
       //     T_vox1->vox2 = (T_samp2)^-1 * T_world * T_samp1
+
+      /*
+	// old stuff (prior to pre_corratio)
       Matrix iaffbig = vtest.sampling_matrix().i() * aff.i() *
 	                     vref.sampling_matrix();  
       Matrix iaff=iaffbig.SubMatrix(1,3,1,3);
@@ -44,24 +47,43 @@
 	yb2=((float) vtest.rows())-1.0001, zb2=((float) vtest.slices())-1.0001;
       int io1, io2, io3;
 
-      float a11=iaff(1,1), a12=iaff(1,2), a13=iaff(1,3), a14=iaffbig(1,4),
-	a21=iaff(2,1), a22=iaff(2,2), a23=iaff(2,3), a24=iaffbig(2,4),
-	a31=iaff(3,1), a32=iaff(3,2), a33=iaff(3,3), a34=iaffbig(3,4), o1,o2,o3;
-
       float corr_ratio=0.0, var=0.0, totsumy=0.0, totsumy2=0.0;
       float *sumy, *sumy2;
       sumy = new float[no_bins+1];
       sumy2 = new float[no_bins+1];
-      int *numy, *numx;
-      numx = new int[no_bins+1];
+      int *numy;
       numy = new int[no_bins+1];
-      int b=0, numtotx=0, numtoty=0;
-      float a1=no_bins/(max-min), a0=-min*no_bins/(max-min), val;
-
+      int b=0, numtoty=0;
+       float a1=no_bins/(max-min), a0=-min*no_bins/(max-min), val;
+ 
       for (int i=0; i<=no_bins; i++) {
-	numx[i]=0; numy[i]=0; sumy[i]=0.0;  sumy2[i]=0.0;
+	numy[i]=0; sumy[i]=0.0;  sumy2[i]=0.0;
       }
-  
+      */
+
+      // pre_corratio stuff
+      Matrix iaff, iaffbig;
+      unsigned int xb1, yb1, zb1;
+      float  xb2, yb2, zb2;
+      int io1, io2, io3;
+
+      float *sumy, *sumy2;
+      int *numy;
+      int b=0;
+      float a1, a0, val;
+
+      pre_corratio(vref, vtest, aff, min, max, no_bins, iaff, iaffbig,
+	 	   xb2, yb2, zb2, xb1, yb1, zb1, a1, a0, sumy, sumy2, numy);
+
+      float a11=iaff(1,1), a12=iaff(1,2), a13=iaff(1,3), a14=iaffbig(1,4),
+	a21=iaff(2,1), a22=iaff(2,2), a23=iaff(2,3), a24=iaffbig(2,4),
+	a31=iaff(3,1), a32=iaff(3,2), a33=iaff(3,3), a34=iaffbig(3,4), o1,o2,o3;
+
+      // end of pre_corratio stuff
+
+      float v000, v001, v010, v011, v100, v101, v110, v111;
+      //float v1, v2, v3, v4, v5, v6;
+	      
   // cerr << "Bounds are " << xb << " " << yb << " " << zb << endl;
   // The matrix algebra below has been hand-optimized from
   //  [o1 o2 o3] = a * [x y z]  at each iteration
@@ -75,11 +97,50 @@
 	      io1=(int) o1;
 	      io2=(int) o2;
 	      io3=(int) o3;
-	      val = q_tri_interpolation(vtest,o1,o2,o3,io1,io2,io3);
+	      //val = qq_tri_interpolation(vtest,o1,o2,o3,io1,io2,io3);
+	      float dx=o1-io1, dy=o2-io2, dz=o3-io3;
+	      float dx1=1.0-dx, dy1=1.0-dy;//, dz1=1.0-dz;
+	      get_neighbours(vtest,io1,io2,io3,
+				  v000,v001,v010,v011,v100,v101,v110,v111);
+	      
+	      val = quick_tli(dx,dy,dz,dx1,dy1,
+			      v000,v001,v010,v011,v100,v101,v110,v111);
+	      
+		/*
+		// Previous versions
+
+		v1 = (v111-v110)*dz + v110;
+		v2 = (v101-v100)*dz + v100;
+		v3 = (v011-v010)*dz + v010;
+		v4 = (v001-v000)*dz + v000;
+		v5 = (v1 - v2)*dy + v2;
+		v6 = (v3 - v4)*dy + v4;
+		val = (v5 - v6)*dx + v6;
+
+		val =  ( dx * ( dy * ( (v111-v110)*dz  + v110 ) +
+		dy1 * ( (v101-v100)*dz + v100 ) ) + 
+		dx1 * ( dy * ( (v011-v010)*dz + v010 )  +
+		dy1 * ( (v001-v000)*dz  + v000 ) ) );
+		
+		val =  ( dx * ( dy * ( v111*dz  + v110*dz1 ) +
+		dy1 * ( v101*dz + v100*dz1 ) ) + 
+		dx1 * ( dy * ( v011*dz + v010*dz1 )  +
+		dy1 * ( v001*dz  + v000*dz1 ) ) );
+
+
+		val =  ( dx * ( dy * ( vtest(io1+1,io2+1,io3+1)*dz  + 
+		vtest(io1+1,io2+1,io3)*dz1 ) +
+		dy1 * ( vtest(io1+1,io2,io3+1)*dz + 
+		vtest(io1+1,io2,io3)*dz1 ) ) + 
+		dx1 * ( dy * ( vtest(io1,io2+1,io3+1)*dz +
+		vtest(io1,io2+1,io3)*dz1 )  +
+		dy1 * ( vtest(io1,io2,io3+1)*dz  + 
+		vtest(io1,io2,io3)*dz1 ) ) );
+	      */
+
 	      // do the cost function record keeping...
 	      b=(int) (vref(x,y,z)*a1 + a0);
 	      if (b>=no_bins) b=no_bins-1;
-	      numx[b]++;
 	      numy[b]++;
 	      sumy[b]+=val;
 	      sumy2[b]+=val*val;
@@ -93,26 +154,30 @@
       }
 
 
+      /*
+	// old stuff (prior to post_corratio)
+      float corr_ratio=0.0, var=0.0, totsumy=0.0, totsumy2=0.0;
+      int numtoty=0;
+
       // now calculate the individual variances for each iso-set
       //  weighting them by the number of pixels from Image x that contribute
       for (b=0; b<=no_bins; b++) {
 	if (numy[b]>2) {
-	  numtotx += numx[b];
 	  numtoty += numy[b];
 	  totsumy += sumy[b];
 	  totsumy2 += sumy2[b];
 	  // the following should be the variance of the bth iso-subset
 	  var = (sumy2[b] - sumy[b]*sumy[b]/((float) numy[b]) ) /
 	    ((float) (numy[b]-1));
-	  // cerr << "Set #" << b << " has " << numx[b] << " elements and " 
+	  // cerr << "Set #" << b << " has " << numy[b] << " elements and " 
 	  //   << var << " variance" << endl;
-	  corr_ratio += var * ((float) numx[b]);
+	  corr_ratio += var * ((float) numy[b]);
 	}
       }
-      delete [] numx; delete [] numy; delete [] sumy; delete [] sumy2;
+      delete [] numy; delete [] sumy; delete [] sumy2;
 
-      // normalise the weighting of numx[]
-      if (numtotx>0)  corr_ratio/=((float) numtotx);
+      // normalise the weighting of numy[]
+      if (numtoty>0)  corr_ratio/=((float) numtoty);
       // calculate the total variance of Image y and then normalise by this
       if (numtoty>1)
 	var = ( totsumy2 - totsumy*totsumy/((float) numtoty) ) /
@@ -123,7 +188,7 @@
       //   << " valid elements" << endl;
       if (var>0.0)  corr_ratio/=var;
       // the above is actually 1 - correlation ratio, so correct this now
-      if ( (numtotx<=0) || (numtoty<=1) || (var<=0.0) )
+      if ( (numtoty<=1) || (var<=0.0) )
 	return 0.0;   // the totally uncorrelated condition
       else
 	return (1.0 - corr_ratio);
@@ -132,6 +197,15 @@
       //  which may be better at rewarding gains near the best solution
 
       return 0;
+      
+      */
+
+      float cr;
+      cr = post_corratio(vref, vtest, aff, min, max, no_bins, 
+			 sumy, sumy2, numy);
+      delete [] numy; delete [] sumy; delete [] sumy2;
+
+      return cr;
 
     }
 
