@@ -128,12 +128,14 @@ proc flirt_proc { regmode refname testname testname2 nstats statslist output dof
 
     # temporary stuff for refweight and inweight (need to do sanity checking...)
 
-    if { "X${refweight}X" != "XX" } {
-	set flirtoptions "$flirtoptions -refweight $refweight"
-    }
-
-    if { "X${inweight}X" != "XX" } {
-	set flirtoptions "$flirtoptions -inweight $inweight"
+    if { $regmode == 1 } {
+	if { "X${refweight}X" != "XX" } {
+	    set flirtoptions "$flirtoptions -refweight $refweight"
+	}
+	
+	if { "X${inweight}X" != "XX" } {
+	    set flirtoptions "$flirtoptions -inweight $inweight"
+	}
     }
 
 #}}}
