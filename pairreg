@@ -17,9 +17,9 @@ args=$* ; export args
 
 flirt=${FSLDIR}/bin/flirt ; export flirt
 
-$flirt -in $bin -ref $bref -schedule ${FSLDIR}/bin/pairregrc1 -omat $matf.1.$$ $args
-$flirt -in $sin -ref $sref -init $matf.1.$$ -schedule ${FSLDIR}/bin/pairregrc2 -omat $matf.2.$$ $args
+$flirt -in $bin -ref $bref -schedule ${FSLDIR}/etc/flirtsch/pairreg1.sch -omat $matf.1.$$ $args
+$flirt -in $sin -ref $sref -init $matf.1.$$ -schedule ${FSLDIR}/etc/flirtsch/pairreg2.sch -omat $matf.2.$$ $args
 ${FSLDIR}/bin/convert_xfm -matonly -fixscaleskew $matf.2.$$ $matf.1.$$ -omat $matf.3.$$
-$flirt -in $bin -ref $bref -init $matf.3.$$ -schedule ${FSLDIR}/bin/pairregrc3 -omat $matf $args
+$flirt -in $bin -ref $bref -init $matf.3.$$ -schedule ${FSLDIR}/etc/flirtsch/pairreg3.sch -omat $matf $args
 # tidy up the temporary matrices
 rm -f $matf.1.$$ $matf.2.$$ $matf.3.$$

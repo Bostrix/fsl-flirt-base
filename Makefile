@@ -27,10 +27,12 @@ XFILES = flirt convert_xfm avscale rmsdiff tal2imgcoord img2talcoord \
 	img2imgcoord applyxfm4D
 TESTXFILES = testcode
 HFILES =
-SCRIPTS = extracttxt pairreg pairregrc1 pairregrc2 pairregrc3 fixxfm
+SCRIPTS = extracttxt pairreg fixxfm
 
-all:	${XFILES}
+all:	${XFILES} schedule
 
+schedule:
+	/bin/cp -rf flirtsch ${FSLDIR}/etc
 
 flirt:    	${FL_OBJS}
 	        $(CXX)  ${CXXFLAGS} ${LDFLAGS} -o $@ ${FL_OBJS} ${LIBS}
