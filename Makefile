@@ -17,9 +17,11 @@ C_OBJS = convert_xfm.o
 A_OBJS = avscale.o
 R_OBJS = rmsdiff.o
 TAL_OBJS = tal2epicoord.o
+EPI_OBJS = epi2talcoord.o
+IMG_OBJS = img2imgcoord.o
 
 RUNTCLS = Flirt
-XFILES = flirt convert_xfm avscale rmsdiff tal2epicoord
+XFILES = flirt convert_xfm avscale rmsdiff tal2epicoord epi2talcoord img2imgcoord
 TESTXFILES = testcode
 HFILES =
 SCRIPTS = extract pairreg pairregrc1 pairregrc2 pairregrc3
@@ -45,6 +47,12 @@ rmsdiff:        ${R_OBJS}
 
 tal2epicoord:	${TAL_OBJS}
 		${CXX}  ${CXXFLAGS} ${LDFLAGS} -o $@  ${TAL_OBJS} ${LIBS}
+
+epi2talcoord:	${EPI_OBJS}
+		${CXX}  ${CXXFLAGS} ${LDFLAGS} -o $@  ${EPI_OBJS} ${LIBS}
+
+img2imgcoord:	${IMG_OBJS}
+		${CXX}  ${CXXFLAGS} ${LDFLAGS} -o $@  ${IMG_OBJS} ${LIBS}
 
 
 
