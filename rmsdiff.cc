@@ -38,9 +38,10 @@ int main(int argc,char *argv[])
   if (argc==4) {
     volume refvol;
     read_volume_hdr_only(refvol,argv[3]);
-    centre(1) = (refvol.xsize() - 1.0)/2.0;
-    centre(2) = (refvol.ysize() - 1.0)/2.0;
-    centre(3) = (refvol.zsize() - 1.0)/2.0;
+    // compute the centre of volume (in world coordinates)
+    centre(1) = 0.5*(refvol.xsize() - 1.0)*refvol.getx();
+    centre(2) = 0.5*(refvol.ysize() - 1.0)*refvol.gety();
+    centre(3) = 0.5*(refvol.zsize() - 1.0)*refvol.getz();
   }
 
   float rms = rms_deviation(affmat1,affmat2,centre,rmax);
