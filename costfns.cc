@@ -95,7 +95,7 @@
 
    float corr_ratio_smoothed(const volume& vref, const volume& vtest,
 		    int *bindex, const Matrix& aff,
-		    const int no_bins)
+		    const int no_bins, const float smoothsize)
     {
       // Do everything in practice via the inverse transformation
       // That is, for every point in vref, calculate the pre-image in
@@ -127,6 +127,11 @@
 	a31=iaff(3,1), a32=iaff(3,2), a33=iaff(3,3), a34=iaffbig(3,4);
       float val,o1,o2,o3,weight;
 
+      float smoothx, smoothy, smoothz;
+      smoothx = smoothsize / vref.getx();
+      smoothy = smoothsize / vref.gety();
+      smoothz = smoothsize / vref.getz();
+
       // The matrix algebra below has been hand-optimized from
       //  [o1 o2 o3] = a * [x y z]  at each iteration
 
@@ -156,12 +161,12 @@
 	    // do the cost function record keeping...
 	    b=*bptr;
 	    weight=1.0;
-	    if (o1<1.0)  weight*=o1;
-	    else if ((xb2-o1)<1.0) weight*=(xb2-o1);
-	    if (o2<1.0)  weight*=o2;
-	    else if ((yb2-o2)<1.0) weight*=(yb2-o2);
-	    if (o3<1.0)  weight*=o3;
-	    else if ((zb2-o3)<1.0) weight*=(zb2-o3);
+	    if (o1<smoothx)  weight*=o1/smoothx;
+	    else if ((xb2-o1)<smoothx) weight*=(xb2-o1)/smoothx;
+	    if (o2<smoothy)  weight*=o2/smoothy;
+	    else if ((yb2-o2)<smoothy) weight*=(yb2-o2)/smoothy;
+	    if (o3<smoothz)  weight*=o3/smoothz;
+	    else if ((zb2-o3)<smoothz) weight*=(zb2-o3)/smoothz;
 	    if (weight<0.0)  weight=0.0;
 	    numy[b]+=weight;
 	    sumy[b]+=weight*val;
@@ -757,7 +762,7 @@
   float corr_ratio_smoothed(const imagepair* ims, const Matrix& aff) 
     {
       return corr_ratio_smoothed(ims->refvol,ims->testvol,ims->bindex,aff,
-			ims->no_bins);
+			ims->no_bins, ims->smoothsize);
     }
   
 
