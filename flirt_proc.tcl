@@ -136,7 +136,7 @@ if { $dof == "2D" } {
     set dofoptions "-2D -dof 12"
 } else {
   if { $dof == "TRANS" } {
-      set dofoptions "-dof 6 -schedule ${FSLDIR}/etc/flirtsch/xyztrans.sch"
+      set dofoptions "-dof 6 -schedule ${FSLDIR}/etc/flirtsch/sch3Dtrans_3dof"
   } else {
     set dofoptions "-dof $dof"
   }
@@ -146,7 +146,7 @@ if { $doftwo == "2D" } {
     set doftwooptions "-2D -dof 12"
 } else {
   if { $doftwo == "TRANS" } {
-      set doftwooptions "-dof 6 -schedule ${FSLDIR}/etc/flirtsch/xyztrans.sch"
+      set doftwooptions "-dof 6 -schedule ${FSLDIR}/etc/flirtsch/sch3Dtrans_3dof"
   } else {
     set doftwooptions "-dof $doftwo"
   }
