@@ -29,7 +29,7 @@ SCRIPTS = extracttxt pairreg fixxfm
 all:	${XFILES} schedule
 
 schedule:
-	/bin/cp -rf flirtsch ${FSLDIR}/etc
+	/bin/cp -rf flirtsch ${FSLDEVDIR}/etc
 
 flirt:    	${FL_OBJS}
 	        $(CXX)  ${CXXFLAGS} ${LDFLAGS} -o $@ ${FL_OBJS} ${LIBS}
