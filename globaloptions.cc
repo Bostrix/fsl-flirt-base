@@ -46,11 +46,6 @@ void globaloptions::parse_command_line(int argc,char** argv,
     } else if ( arg == "-version") {
       print_version();
       exit(0);
-    } else if ( arg == "-applyisoxfm" ) {
-      do_optimise = false;
-      nosave = false;
-      n++;
-      continue;
     } else if ( arg == "-applyxfm" || arg == "-applynonisoxfm" ) {
       do_optimise = false;
       iso = false;
@@ -123,8 +118,13 @@ void globaloptions::parse_command_line(int argc,char** argv,
       dof = atoi(argv[n+1]);
       n+=2;
       continue;
+    } else if ( arg == "-applyisoxfm" ) {
+      isoscale = atof(argv[n+1]);
+      do_optimise = false;
+      nosave = false;
+      n++;
+      continue;
     } else if ( arg == "-minsampling") {
-      //min_sampling = (float) ceil(atof(argv[n+1]));
       min_sampling = atof(argv[n+1]);
       n+=2;
       continue;
@@ -260,7 +260,7 @@ void globaloptions::print_usage(int argc, char *argv[])
        << "        -minsampling <vox_dim>             (set minimum voxel dimension for sampling (in mm))\n"
        << "        -applyxfm                          (applies init - "
                                         << "no optimisation)\n"
-       << "        -applyisoxfm                       (as applyxfm but forces isotropic resampling)\n"
+       << "        -applyisoxfm <scale>               (as applyxfm but forces isotropic resampling)\n"
        << "        -searchrx <min_angle> <max_angle>  (angles in degrees: default is -90 90)\n" 
        << "        -searchry <min_angle> <max_angle>  (angles in degrees: default is -90 90)\n" 
        << "        -searchrz <min_angle> <max_angle>  (angles in degrees: default is -180 180)\n" 
