@@ -459,6 +459,7 @@ menubutton $w.utils -text "Utils" -menu $w.utils.menu -relief raised
 
 menu $w.utils.menu
 
+$w.utils.menu add command -label "Apply FLIRT transform" -command { exec ${FSLDIR}/bin/ApplyXFM$gui_ext & }
 $w.utils.menu add command -label "Invert FLIRT transform" -command { exec ${FSLDIR}/bin/InvertXFM$gui_ext & }
 
 #}}}
