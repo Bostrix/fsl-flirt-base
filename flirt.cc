@@ -76,6 +76,8 @@ public:
   ColumnVector searchrx;
   ColumnVector searchry;
   ColumnVector searchrz;
+  float coarsedelta;
+  float finedelta;
 
   string planereffname;
   string planetestfname;
@@ -132,6 +134,8 @@ globaloptions::globaloptions()
   searchrx << -M_PI/2.0 << M_PI/2.0;
   searchry << -M_PI/2.0 << M_PI/2.0;
   searchrz << -M_PI << M_PI;
+  coarsedelta = 60.0*M_PI/180.0;
+  finedelta = 18.0*M_PI/180.0;
 
   planereffname = "";
   planetestfname = "";
@@ -191,6 +195,8 @@ void print_usage(int argc, char *argv[])
        << "        -searchrx <min_angle> <max_angle>  (angles in degrees: default is -90 90)\n" 
        << "        -searchry <min_angle> <max_angle>  (angles in degrees: default is -90 90)\n" 
        << "        -searchrz <min_angle> <max_angle>  (angles in degrees: default is -180 180)\n" 
+       << "        -coarsesearch <delta_angle>        (angle in degrees: default is 60)\n" 
+       << "        -finesearch <delta_angle>          (angle in degrees: default is 18)\n" 
        << "        -schedule <schedule-file>          (replaces default schedule)\n"
        << "        -findplanes                        (default is xy bounding planes)\n"
        << "        -planeref <filename>               (default is none)\n"
@@ -303,6 +309,14 @@ void parse_command_line(int argc, char* argv[])
     } else if ( arg == "-dof") {
       globalopts.no_params = atoi(argv[n+1]);
       globalopts.dof = atoi(argv[n+1]);
+      n+=2;
+      continue;
+    } else if ( arg == "-coarsesearch") {
+      globalopts.coarsedelta = atof(argv[n+1])*M_PI/180.0;
+      n+=2;
+      continue;
+    } else if ( arg == "-finesearch") {
+      globalopts.finedelta = atof(argv[n+1])*M_PI/180.0;
       n+=2;
       continue;
     } else if ( arg == "-verbose") {
@@ -1039,22 +1053,19 @@ void set_rot_samplings(ColumnVector& rxcoarse, ColumnVector& rycoarse,
 		       ColumnVector& ryfine, ColumnVector& rzfine) {
   Tracer tr("set_rot_samplings");
   //int coarsesize = 4, finesize = 11;
-  float deg2rad = M_PI/180.0;
-  float coarsedelta = 60.0*deg2rad;
-  float finedelta = 18.0*deg2rad;
   // sets the number of rows (angle samples) for each axis
   rxcoarse.ReSize(round((globalopts.searchrx(2) - globalopts.searchrx(1))
-			/coarsedelta)+1);
+			/globalopts.coarsedelta)+1);
   rycoarse.ReSize(round((globalopts.searchry(2) - globalopts.searchry(1))
-			/coarsedelta)+1);
+			/globalopts.coarsedelta)+1);
   rzcoarse.ReSize(round((globalopts.searchrz(2) - globalopts.searchrz(1))
-			/coarsedelta)+1);
+			/globalopts.coarsedelta)+1);
   rxfine.ReSize(round((globalopts.searchrx(2) - globalopts.searchrx(1))
-			/finedelta)+1);
+			/globalopts.finedelta)+1);
   ryfine.ReSize(round((globalopts.searchry(2) - globalopts.searchry(1))
-			/finedelta)+1);
+			/globalopts.finedelta)+1);
   rzfine.ReSize(round((globalopts.searchrz(2) - globalopts.searchrz(1))
-			/finedelta)+1);
+			/globalopts.finedelta)+1);
   // now get the appropriate angle sample values
   set_rot_sampling(rxcoarse,globalopts.searchrx(1),globalopts.searchrx(2));
   set_rot_sampling(rycoarse,globalopts.searchry(1),globalopts.searchry(2));
