@@ -1029,7 +1029,8 @@ void find_cost_minima(Matrix& bestpts, const volume& cost) {
 	    bestpts(idx,2) = (float) y; 
 	    bestpts(idx,3) = (float) z;
 	    idx++;
-	    cerr << "COST minima at : " << x << "," << y << "," << z << endl;
+	    if (globalopts.verbose>=3)
+	      cerr << "COST minima at : " << x << "," << y << "," << z << endl;
 	  }
 	}
       }
