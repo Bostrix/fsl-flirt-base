@@ -1217,18 +1217,19 @@ void fix_output_volume(volume<float>& vol)
 void no_optimise()
 {
   Tracer tr("no_optimise");
-  volume<float> refvol, testvol;
+  volume<float> refvol;
+  volume4D<float> testvol;
   // set up image pair and global pointer
   
   read_volume(refvol,globaloptions::get().reffname);
-  read_volume(testvol,globaloptions::get().inputfname,
+  read_volume4D(testvol,globaloptions::get().inputfname,
 	      globaloptions::get().vinfo);
   short dtype;
   dtype = NEWIMAGE::dtype(globaloptions::get().inputfname);
   if (!globaloptions::get().forcedatatype)
     globaloptions::get().datatype = dtype;
   read_matrix(globaloptions::get().initmat,
-	      globaloptions::get().initmatfname,testvol);
+	      globaloptions::get().initmatfname,testvol[0]);
 
   if (globaloptions::get().verbose>=2) {
     cerr << "Init Matrix = \n" << globaloptions::get().initmat << endl;
@@ -1241,20 +1242,22 @@ void no_optimise()
     resample_refvol(refvol,globaloptions::get().isoscale);
   }
 
-  testvol = blur(testvol,min_sampling_ref);
-
-  if (globaloptions::get().verbose>=2) { 
-    print_volume_info(refvol,"refvol"); 
-    print_volume_info(testvol,"inputvol"); 
+  for (int t0=testvol.mint(); t0<=testvol.maxt(); t0++) {
+    testvol[t0] = blur(testvol[t0],min_sampling_ref);
+    
+    if (globaloptions::get().verbose>=2) { 
+      print_volume_info(refvol,"refvol"); 
+      print_volume_info(testvol,"inputvol"); 
+    }
+    
+    volume<float> outputvol = refvol;
+    final_transform(testvol[t0],outputvol,globaloptions::get().initmat);
+    if (globaloptions::get().iso) { fix_output_volume(outputvol); }
+    save_volume_dtype(outputvol,globaloptions::get().outputfname.c_str(),
+		      globaloptions::get().datatype,globaloptions::get().vinfo);
   }
-
-  volume<float> outputvol = refvol;
-  final_transform(testvol,outputvol,globaloptions::get().initmat);
-  if (globaloptions::get().iso) { fix_output_volume(outputvol); }
-  save_volume_dtype(outputvol,globaloptions::get().outputfname.c_str(),
-		    globaloptions::get().datatype,globaloptions::get().vinfo);
   if (globaloptions::get().verbose>=2) {
-    save_matrix_data(globaloptions::get().initmat, testvol, outputvol);
+    save_matrix_data(globaloptions::get().initmat, testvol[0], outputvol);
     print_volume_info(outputvol,"Resampled volume");
   }
   exit(0);
