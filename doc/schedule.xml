@@ -1,4 +1,4 @@
-<refguide name="FLIRT schedule language reference" section="l" rootdir="/usr/local/fsl/doc/" author="Mark Jenkinson" 
+<usrguide name="FLIRT schedule language reference" section="l" rootdir="../" author="Mark Jenkinson" 
 year="2000">
 
 <p>
@@ -16,10 +16,10 @@ file: <em>scalar</em> and <em>matrix</em> data.
 Any constant can be used as a scalar value in the schedule file.  In addition
 token names can be used, and the following token names are currently defined:
 <itemize>
-<item><function type="">MAXDOF</function>
+<item><param-out>MAXDOF</param-out>
 <break></break>the user-defined maximum degrees of freedom (via the 
 <attrib>-dof</attrib> option).</item>
-<item><function type="">MINSAMPLING</function>
+<item><param-out>MINSAMPLING</param-out>
 <break></break>the minimum sampling that is sensible, as calculated from the
 input volumes - defined as Max(Min(refvol voxel dims),Min(testvol voxel dims)).
 </item>
@@ -35,138 +35,139 @@ and the remaining 16 a reshaped version of the 4 by 4 affine matrix that
 corresponds to that cost function measurement.
 
 <paragraph>
-The matrices that can be accessed are: <em>S P U UA UB ... UZ</em>.
+The matrices that can be accessed are: <param-out>S P U UA UB ... UZ</param-out>.
 <break></break>
-Note that <em>S P</em> and <em>U</em> have special functions
-while <em>UA UB ... UZ</em> are provided for user manipulation.
+Note that <param-out>S P</param-out> and <param-out>U</param-out> have special functions
+while <param-out>UA UB ... UZ</param-out> are provided for user manipulation.
 </paragraph>
 
 <paragraph>
 In addition, a subset of rows of a given matrix can be used in place
 of any matrix. 
 <break></break>
-The form of this reference is: <em>mat:r1-r2</em> 
+The form of this reference is: <param-out>mat:r1-r2</param-out> 
 <break></break>
-where <em>mat</em> is the matrix name (e.g. <em>UB</em>), <em>r1</em>
-is the first row, and <em>r2</em> the last row to be used.  Note that
-some parts of this may be omitted so that <em>mat:r1- </em> specifies
-the matrix from row <em>r1</em> to the end, and <em>mat:r1</em> just 
-specifies a single row (<em>r1</em>).
+where <param-out>mat</param-out> is the matrix name (e.g. <param-out>UB</param-out>), <param-out>r1</param-out>
+is the first row, and <param-out>r2</param-out> the last row to be used.  Note that
+some parts of this may be omitted so that <param-out>mat:r1- </param-out> specifies
+the matrix from row <param-out>r1</param-out> to the end, and <param-out>mat:r1</param-out> just 
+specifies a single row (<param-out>r1</param-out>).
 <break></break>NB: The first row of any matrix has an index of 1.
 </paragraph>
 
 <paragraph>
-Matrix <em>U</em> is special as it is used to store the results
+Matrix <param-out>U</param-out> is special as it is used to store the results
 of the current optimisation.
 </paragraph>
 <paragraph>
-Matrices <em>S</em> and <em>P</em> are used to store the (corresponding)
+Matrices <param-out>S</param-out> and <param-out>P</param-out> are used to store the (corresponding)
 results of the 8mm search algorithm.
 </paragraph>
 
 </subsection>
+</section>
 
 <section title="Commands">
 
 <itemize>
-<item><function type="">#</function>
+<item><function>#</function>
 <break></break>Comment line</item>
 
-<item><function type="">clear</function><param-in type="">mat</param-in>
-<break></break>Clears the matrix <em>mat</em>.</item>
+<item><function>clear</function><param-out>mat</param-out>
+<break></break>Clears the matrix <param-out>mat</param-out>.</item>
 
-<item><function type="">copy</function><param-in type="">mat1</param-in> <param-in type="">mat2</param-in>
-<break></break>Copies the contents of matrix <em>mat1</em> into matrix <em>mat2</em>.  
-It does not affect the contents of matrix <em>mat1</em>.</item>
+<item><function>copy</function><param-out>mat1</param-out> <param-out>mat2</param-out>
+<break></break>Copies the contents of matrix <param-out>mat1</param-out> into matrix <param-out>mat2</param-out>.  
+It does not affect the contents of matrix <param-out>mat1</param-out>.</item>
 
-<item><function type="">print</function><param-in type="">mat</param-in>
-<break></break>Prints the contents of matrix <em>mat</em> to the screen.</item>
+<item><function>print</function><param-out>mat</param-out>
+<break></break>Prints the contents of matrix <param-out>mat</param-out> to the screen.</item>
 
-<item><function type="">save</function><param-in type="">mat</param-in> <param-in type="">filename</param-in>
-<break></break>Saves an ascii copy of the contents of matrix <em>mat</em> to the file
-named by <em>filename</em>.</item>
+<item><function>save</function><param-out>mat</param-out> <param-out>filename</param-out>
+<break></break>Saves an ascii copy of the contents of matrix <param-out>mat</param-out> to the file
+named by <param-out>filename</param-out>.</item>
 
-<item><function type="">read</function> <param-in type="">mat</param-in> <param-in type="">filename</param-in>
-<break></break>Reads an ascii file (<em>filename</em>) and stores 
-the contents in matrix <em>mat</em>.</item>
+<item><function>read</function> <param-out>mat</param-out> <param-out>filename</param-out>
+<break></break>Reads an ascii file (<param-out>filename</param-out>) and stores 
+the contents in matrix <param-out>mat</param-out>.</item>
 
-<item><function type="">printparams</function> <param-in type="">mat</param-in>
-<break></break>Prints the contents of matrix <em>mat</em> to the screen as parameter 
+<item><function>printparams</function> <param-out>mat</param-out>
+<break></break>Prints the contents of matrix <param-out>mat</param-out> to the screen as parameter 
 values (rather than reshaped 4 by 4 affine matrices).</item>
 
-<item><function type="">saveparams</function> <param-in type="">mat</param-in>
-<param-in type="">filename</param-in>
-<break></break>Saves an ascii copy of the contents of matrix <em>mat</em>, as parameter 
-values, to the file named by <em>filename</em>.</item>
+<item><function>saveparams</function> <param-out>mat</param-out>
+<param-out>filename</param-out>
+<break></break>Saves an ascii copy of the contents of matrix <param-out>mat</param-out>, as parameter 
+values, to the file named by <param-out>filename</param-out>.</item>
 
-<item><function type="">readparams</function> <param-in type="">mat</param-in> <param-in type="">filename</param-in>
-<break></break>Reads an ascii file (<em>filename</em>) where each line represents 
+<item><function>readparams</function> <param-out>mat</param-out> <param-out>filename</param-out>
+<break></break>Reads an ascii file (<param-out>filename</param-out>) where each line represents 
 1 cost value followed by 12 parameter values.  It then converts these parameters
-to reshaped affine matrices and stores the contents in matrix <em>mat</em>.</item>
+to reshaped affine matrices and stores the contents in matrix <param-out>mat</param-out>.</item>
 
-<item><function type="">setrow</function> <param-in type="">mat</param-in> <param-in type="">v1 v2 ... v16</param-in>
-<break></break>Adds a row to the end of matrix <em>mat</em> with the value given by the 
-reshaped matrix: <em>v1 v2 ... v16</em>.  Note that only the 16 matrix values 
+<item><function>setrow</function> <param-out>mat</param-out> <param-out>v1 v2 ... v16</param-out>
+<break></break>Adds a row to the end of matrix <param-out>mat</param-out> with the value given by the 
+reshaped matrix: <param-out>v1 v2 ... v16</param-out>.  Note that only the 16 matrix values 
 are used, not the cost value (which is initialised to 0).</item>
 
-<item><function type="">setoption</function> <param-in type="">option</param-in> <param-in type="">v1 v2 ...</param-in>
+<item><function>setoption</function> <param-out>option</param-out> <param-out>v1 v2 ...</param-out>
 <break></break>Sets the value of certain defined options.  The name of the option is
 specified as the first parameter, then all remaining parameters are treated
 as a vector of scalars.  Note that no matrix arguments can be used here.
-At present the available options are <em>smoothing</em>, <em>tolerance</em>
+At present the available options are <em>smoothing, tolerance</em>
 and <em>boundguess</em>.</item>
 
-<item><function type="">sort</function> <param-in type="">mat</param-in>
-<break></break>Sorts the rows of matrix <em>mat</em> into <em>ascending</em> order
+<item><function>sort</function> <param-out>mat</param-out>
+<break></break>Sorts the rows of matrix <param-out>mat</param-out> into <param-out>ascending</param-out> order
 based on the first column entries of each row (the cost function values).</item>
 
-<item><function type="">dualsort</function> <param-in type="">mat1 mat2</param-in>
-<break></break>Sorts the rows of matrix <em>mat1</em> and <em>mat2</em> into 
-<em>ascending</em> order based on the first column entries <em>mat1</em> only 
+<item><function>dualsort</function> <param-out>mat1 mat2</param-out>
+<break></break>Sorts the rows of matrix <param-out>mat1</param-out> and <param-out>mat2</param-out> into 
+<em>ascending</em> order based on the first column entries <param-out>mat1</param-out> only 
 (the cost function values).</item>
 
-<item><function type="">search</function> [<param-in type="">dof</param-in>]
+<item><function>search</function> [ <param-out>dof</param-out> ]
 <break></break>Performs the 8mm search algorithm on the currently defined image pair.
-The result is returned in matrices <em>S</em> and <em>P</em> where
-<em>S</em> contains the optimised values (which are sorted), 
-and <em>P</em> the pre-optimised values from the search grid.  
+The result is returned in matrices <param-out>S</param-out> and <param-out>P</param-out> where
+<param-out>S</param-out> contains the optimised values (which are sorted), 
+and <param-out>P</param-out> the pre-optimised values from the search grid.  
 The rows of the two matrices correspond to each other.  The optional argument
-<em>dof</em> specifies the number of degrees of freedom for the search (only 6 
+<param-out>dof</param-out> specifies the number of degrees of freedom for the search (only 6 
 or 7 are currently sensible).</item>
 
-<item><function type="">optimise</function> <param-in type="">dof</param-in> <param-in type="">mat</param-in> [<param-in type="">perturbation_vector</param-in> <param-in type="">rel/abs</param-in> <param-in type="">max_iterations</param-in>]
-<break></break>Performs a single optimisation (of Powell) on the currently defined
-image pair.  Number of degrees of freedom are specified by <em>dof</em>
-and initial parameter values are taken from <em>mat</em>.  In addition
+<item><function>optimise</function> <param-out>dof</param-out> <param-out>mat</param-out> [ <param-out>perturbation_vector</param-out> <param-out>rel/abs</param-out> <param-out>max_iterations</param-out> ]
+<break></break>Performs a single optimisation on the currently defined
+image pair.  Number of degrees of freedom are specified by <param-out>dof</param-out>
+and initial parameter values are taken from <param-out>mat</param-out>.  In addition
 a perturbation vector can be applied to the parameters, using either
-relative <em>rel</em> or absolute <em>abs</em> addition (relative is in terms
+relative <param-out>rel</param-out> or absolute <param-out>abs</param-out> addition (relative is in terms
 of specially chosen parameter perturbations so that a 1 unit relative change
 should be a small but measurable change).  The perturbation vector may be of
-any length, terminated by either <em>rel</em> or <em>abs</em> - if the vector
+any length, terminated by either <param-out>rel</param-out> or <param-out>abs</param-out> - if the vector
 is longer than the number of parameters, extra values are ignored.
-The final parameter (which must follow either <em>rel</em> or <em>abs</em>)
+The final parameter (which must follow either <param-out>rel</param-out> or <param-out>abs</param-out>)
 is the maximum number of iterations that the optimisation is allowed.
 <break></break>
-Note that the minimum of <em>dof</em> and the user-defined maximum degrees
-of freedom (<em>MAXDOF</em>) will always be used.
+Note that the minimum of <param-out>dof</param-out> and the user-defined maximum degrees
+of freedom (<param-out>MAXDOF</param-out>) will always be used.
 </item>
 
-<item><function type="">measurecost</function> <param-in type="">dof</param-in> <param-in type="">mat</param-in> [<param-in type="">perturbation_vector</param-in> <param-in type="">rel/abs</param-in>]
+<item><function>measurecost</function> <param-out>dof</param-out> <param-out>mat</param-out> [ <param-out>perturbation_vector</param-out> <param-out>rel/abs</param-out> ]
 <break></break>Measures (or re-measures) the cost function specified by the
-transformations stored in the matrix <em>mat</em>.  It stores the
-results in <em>U</em>.  Other syntax is
-the same as for <em>optimise</em>.
+transformations stored in the matrix <param-out>mat</param-out>.  It stores the
+results in <param-out>U</param-out>.  Other syntax is
+the same as for <param-out>optimise</param-out>.
 </item>
 
-<item><function type="">setscale</function> <param-in type="">scale</param-in>
+<item><function>setscale</function> <param-out>scale</param-out>
 <break></break>Sets the scaling (subsampling) of the current image pair.  Permissable
-values of <em>scale</em> are: 8, 4, 2 and 1.</item>
+values of <param-out>scale</param-out> are: 8, 4, 2 and 1.</item>
 
-<item><function type="">if</function> <param-in type="">val1</param-in> <param-in type="">op</param-in> <param-in type="">val2</param-in>
+<item><function>if</function> <param-out>val1</param-out> <param-out>op</param-out> <param-out>val2</param-out>
 <break></break>Determines whether the <em>next line only</em> is executed.  The test
-condition compares two scalars: <em>val1</em> and <em>val2</em> using
-the boolean operation <em>op</em>.  There are 6 permissable values for 
-<em>op</em>, which are: <em> <lt></lt> <gt></gt> == != <lt></lt>= <gt></gt>= </em>
+condition compares two scalars: <param-out>val1</param-out> and <param-out>val2</param-out> using
+the boolean operation <param-out>op</param-out>.  There are 6 permissable values for 
+<param-out>op</param-out>, which are: <em> <lt></lt> , <gt></gt> , == , != , <lt></lt>= , <gt></gt>= </em>
 </item>
 </itemize>
 
@@ -259,19 +260,4 @@ sort U
 </pre>
 </section>
 
-This page written by <link url="http://www.fmrib.ox.ac.uk/~mark/">Mark
-Jenkinson</link>
-
-
-</refguide>
-
-
-
-
-
-
-
-
-
-
-
+</usrguide>
