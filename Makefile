@@ -27,7 +27,7 @@ XFILES = flirt convert_xfm avscale rmsdiff tal2imgcoord img2talcoord \
 	img2imgcoord applyxfm4D
 TESTXFILES = testcode
 HFILES =
-SCRIPTS = extract pairreg pairregrc1 pairregrc2 pairregrc3 fixxfm
+SCRIPTS = extracttxt pairreg pairregrc1 pairregrc2 pairregrc3 fixxfm
 
 all:	${XFILES}
 
