@@ -1398,7 +1398,7 @@ void search_cost(Matrix& paramlist, volume& costs, volume& tx,
 
 ////////////////////////////////////////////////////////////////////////////
 
-float measure_cost(int input_dof)
+float measure_cost(Matrix& affmat, int input_dof)
 {
   Tracer tr("measure_cost");
   // the most basic strategy - just do a single optimisation run at the
@@ -1413,11 +1413,7 @@ float measure_cost(int input_dof)
     dof=12;
   }
 
-  Matrix matresult(4,4);
-  ColumnVector params(12);
-  globalopts.no_params = dof;
-  affmat2vector(matresult,dof,params);
-  return costfn(params);
+  return costfn(affmat);
 }  
 
 ////////////////////////////////////////////////////////////////////////////
@@ -2228,7 +2224,7 @@ void usrmeasurecost(MatVecPtr stdresultmat,
       vector2affine(params,12,matresult);
       
       float costval=0.0;
-      costval = measure_cost(dof);
+      costval = measure_cost(matresult,dof);
       reshape(reshaped,matresult,1,16);
       rowresult(1) = costval;
       rowresult.SubMatrix(1,1,2,17) = reshaped;
