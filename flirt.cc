@@ -1927,7 +1927,7 @@ int setscalarvariable(const string& name, float& namedscalar)
   if (name == "MAXDOF") {
     namedscalar = (float) globalopts.dof;
     return 0;
-  if (name == "MINSAMPLING") {
+  } else if (name == "MINSAMPLING") {
     namedscalar = (float) globalopts.min_sampling;
     return 0;
   } else if (isalpha(name[0])) {
@@ -2039,6 +2039,32 @@ int usrsave(string filename, MatVecPtr usrsrcmat,
     fptr << (*usrsrcmat)[r-1];
   }
   fptr << endl;
+  fptr.close();
+  return 0;
+}
+
+
+int usrread(string filename, MatVecPtr usrsrcmat)
+{
+  Tracer tr("usrread");
+  // READ src
+
+  ifstream fptr(filename.c_str());
+  if (!fptr) { 
+    cerr << "Could not open file " << filename << " for reading" << endl;
+    return -1;
+  }
+  usrsrcmat->clear();
+  RowVector currow(17);
+  while (!fptr.eof()) {
+    currow = 0.0;
+    for (unsigned int c=1; c<=17; c++) {
+      fptr >> currow(c);
+    }
+    if (!fptr.eof()) {
+      usrsrcmat->push_back(currow);
+    }
+  }
   fptr.close();
   return 0;
 }
@@ -2206,6 +2232,16 @@ void interpretcommand(const string& comline, bool& skip,
     int d1, d2;
     parsematname(words[1],src,d1,d2);
     usrsave(words[2],src,d1,d2);
+  } else if (words[0]=="read") {
+    // READ
+    if (words.size()<3) {
+      cerr << "Wrong number of arguments to READ" << endl;
+      exit(-1);
+    }
+    MatVecPtr src;
+    int d1, d2;
+    parsematname(words[1],src,d1,d2);
+    usrread(words[2],src);
   } else if (words[0]=="sort") {
     // SORT
     if (words.size()<2) {
