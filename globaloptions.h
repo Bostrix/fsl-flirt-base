@@ -87,7 +87,6 @@ class globaloptions {
   bool iso;
   bool resample;
   bool useweights;
-  bool endsliceoffset;
 
   int single_param;
 
@@ -191,7 +190,6 @@ inline globaloptions::globaloptions()
   iso = true;
   resample = true;
   useweights = false;
-  endsliceoffset = false;
 
   single_param = -1;
 }
