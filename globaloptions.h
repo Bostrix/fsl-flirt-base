@@ -64,6 +64,7 @@ class globaloptions {
   anglereps anglerep;
   float isoscale;
   float min_sampling;
+  int lastsampling;
   float requestedscale;
   bool force_scaling;
   float smoothsize;
@@ -160,6 +161,7 @@ inline globaloptions::globaloptions()
   anglerep = Euler;
   isoscale = 1.0;
   min_sampling = 1.0;
+  lastsampling = 8;
   requestedscale = 1.0;
   force_scaling = false;
   smoothsize = 1.0;
