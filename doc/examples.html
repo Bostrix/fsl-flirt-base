@@ -1,0 +1,41 @@
+<!DOCTYPE HTMLPUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN""http://www.w3.org/TR/REC-html40/losse.dtd">
+<HTML><HEAD>
+  <TITLE>Common Command-line Program Example Usage</TITLE>
+</HEAD>
+ <BODY BACKGROUND="../images/flirt-bg.jpg" BGCOLOR="white">
+<hr>  <TABLE BORDER=0 WIDTH="100%"><TR>
+   <TD ALIGN=CENTER><H1>Common example usage for Command-line Programs</H1>
+  <TD ALIGN=RIGHT>  <a href="../index.html"><IMG BORDER=0 SRC="../images/fsl-logo.jpg"></a>
+   </TR></TABLE>
+  <!-- No Table of Contents -->
+
+<A NAME="section1"></A><HR><H2>FLIRT</H2>
+
+<ol>
+<li>
+The simplest usage of flirt is to register two images together as:
+<br>
+<code>
+flirt -in invol -ref refvol -out outvol -omat invol2refvol.mat -dof 6
+</code>
+where <code>invol, refvol, outvol</code> are the input, reference and
+output volumes respectively, <code>invol2refvol.mat</code> is the
+filename for the saved ascii transformation matrix.
+
+<p> Note that <code>-dof</code> was used as the default would otherwise
+be 12.  The default cost function is Correlation Ratio, which normally
+works well for all images.
+
+<li>
+To apply a saved transformation to another image use:
+<br>
+<code>
+flirt -in newvol -ref refvol -out outvol -init invol2refvol.mat -applyxfm
+</code>
+<p>
+Note that the previous transformation matrix is used with the <code>-init</code> command and that the size of the otput volume is determined by <code>refvol</code> although its contents are <b>not</b> used.
+
+ 
+  <!-- No Footnotes -->
+  <H4>Mark Jenkinson  <BR><BR>Copyright &copy; 2000-2003, University of Oxford</H4><BR>
+</BODY></HTML>
