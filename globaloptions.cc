@@ -77,7 +77,7 @@ void globaloptions::parse_command_line(int argc,char** argv,
     if (n+1>=argc) 
       { 
 	cerr << "Lacking argument to option " << arg << endl;
-	break; 
+	exit(-1);
       }
 
     // put options with 1 argument here
