@@ -9,10 +9,12 @@
 #include "newmatio.h"
 #include "mjimage.h"
 #include "miscmaths.h"
+#include "miscimfns.h"
 #include "generalio.h"
 
 #ifndef NO_NAMESPACE
  using namespace MISCMATHS;
+ using namespace MISCIMFNS;
  using namespace MJIMAGE;
  using namespace NEWMAT;
  using namespace GENERALIO;
@@ -175,6 +177,14 @@ int main(int argc,char *argv[])
     volume testvol, refvol;
     if (read_volume_hdr_only(testvol,globalopts.testfname)<0)  return -1;
     if (read_volume_hdr_only(refvol,globalopts.reffname)<0)  return -1;
+
+    if (globalopts.verbose>3) {
+      print_volume_info(refvol,"Reference Volume");
+      cout << " origin = " << refvol.avw_origin.t() << endl << endl;
+      print_volume_info(testvol,"Input Volume");
+      cout << " origin = " << testvol.avw_origin.t() << endl;
+    }
+
     Matrix affmat(4,4);
     ColumnVector params(12);
     if (read_matrix(affmat,globalopts.initmatfname,testvol,refvol)<0) 
@@ -193,6 +203,10 @@ int main(int argc,char *argv[])
     }
     if (globalopts.outputmatascii.size() >= 1) {
       write_ascii_matrix(affmat,globalopts.outputmatascii);
+    }
+
+    if (globalopts.verbose>0) {
+      cout << affmat << endl;
     }
 
     return 0;
