@@ -1,13 +1,11 @@
 # Makefile for the MEDx version of FLIRT: by Mark Jenkinson, 21/9/99
 
-include ${FSLDIR}/etc/default.mk
+include ${FSLCONFDIR}/default.mk
 
 DBGFLAGS = -g
 
 PROJNAME = flirt
 
-USRINCFLAGS =  -I${INCDIR}/newmat -I${INCDIR}/avwio \
-		-I${INCDIR}/miscmaths -I${INCDIR}/newimage -I${INCDIR}/utils
 LIBS = -lnewimage -lmiscmaths -lavwio -lnewmat -lutils -lm 
 INHERITVARS = "USRLDFLAGS=${USRLDFLAGS}" "USRINCFLAGS=${USRINCFLAGS}"
 
