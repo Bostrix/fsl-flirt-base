@@ -28,9 +28,17 @@
 
   float normcorr_smoothed(const imagepair* ims, const Matrix& aff);
 
+  float normcorr_fully_weighted(const imagepair* ims, const Matrix& aff,
+				const volume& refweight, 
+				const volume& testweight);
+ 
   float leastsquares(const imagepair* ims, const Matrix& aff);
  
   float leastsquares_smoothed(const imagepair* ims, const Matrix& aff);
+
+  float leastsquares_fully_weighted(const imagepair* ims, const Matrix& aff, 
+				    const volume& refweight, 
+				    const volume& testweight);
 
   float woods_fn(const imagepair* ims, const Matrix& aff); 
 
@@ -48,9 +56,17 @@
 
   float mutual_info_smoothed(imagepair* ims, const Matrix& aff);
 
+  float mutual_info_fully_weighted(imagepair* ims, const Matrix& aff,
+				   const volume& refweight, 
+				   const volume& testweight);
+
   float normalised_mutual_info(imagepair* ims, const Matrix& aff);
 
   float normalised_mutual_info_smoothed(imagepair* ims, const Matrix& aff);
+
+  float normalised_mutual_info_fully_weighted(imagepair* ims, const Matrix& aff,
+					      const volume& refweight, 
+					      const volume& testweight);
 
 #ifndef NO_NAMESPACE
  }
