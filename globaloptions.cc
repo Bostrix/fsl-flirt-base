@@ -335,7 +335,9 @@ void globaloptions::print_usage(int argc, char *argv[])
 {
   print_version();
   cout << endl;
-  cout << "Usage: " << argv[0] << " [options] -in <inputvol> -ref <refvol>\n\n"
+  cout << "Usage: " << argv[0] << " [options] -in <inputvol> -ref <refvol> -out <outputvol>\n"
+       << "       " << argv[0] << " [options] -in <inputvol> -ref <refvol> -omat <outputmatrix>\n"
+       << "       " << argv[0] << " [options] -in <inputvol> -ref <refvol> -applyxfm -init <matrix> -out <outputvol>\n\n"
        << "  Available options are:\n"
        << "        -in  <inputvol>                    (no default)\n"
        << "        -ref <refvol>                      (no default)\n"
@@ -349,7 +351,7 @@ void globaloptions::print_usage(int argc, char *argv[])
        << "        -searchcost {mutualinfo,corratio,normcorr,normmi,leastsq}  (default is corratio)\n"
        << "        -anglerep {quaternion,euler}       (default is euler)\n"
        << "        -interp {trilinear,nearestneighbour,sinc}  (final interpolation: def - trilinear)\n"
-       << "        -sincwidth <full-width in pixels>  (default is 7)\n"
+       << "        -sincwidth <full-width in voxels>  (default is 7)\n"
        << "        -sincwindow {rectangular,hanning,blackman}\n"
        << "        -bins <number of histogram bins>   (default is "
                                         << no_bins << ")\n"
