@@ -102,7 +102,7 @@ proc ConcatedTalairachMedxTransform { xfmfname } {
 #}}}
 #{{{ flirt:proc
 
-proc flirt:proc { regmode refname testname testname2 nstats statslist output dof bins searchrxmin searchrxmax searchrymin searchrymax searchrzmin searchrzmax disablesearch_yn cost interp sincwidth sincwindow refweight inweight inweight2 popups } {
+proc flirt:proc { regmode refname testname testname2 nstats statslist output dof doftwo bins searchrxmin searchrxmax searchrymin searchrymax searchrzmin searchrzmax disablesearch_yn cost interp sincwidth sincwindow refweight inweight inweight2 popups } {
 
     global PXHOME FSLDIR USER MEDXV HOME INMEDX CLUSTERRSH
 
@@ -128,15 +128,30 @@ if { $INMEDX } {
 #}}}
 
 set flirtoptions "-bins $bins -cost $cost"
+set dofoptions ""
+set doftwooptions ""
+
 if { $dof == "2D" } {
-    set flirtoptions "$flirtoptions -2D -dof 12"
+    set dofoptions "-2D -dof 12"
 } else {
   if { $dof == "TRANS" } {
-      set flirtoptions "$flirtoptions -dof 6 -schedule ${FSLDIR}/etc/flirtsch/xyztrans.sch"
+      set dofoptions "-dof 6 -schedule ${FSLDIR}/etc/flirtsch/xyztrans.sch"
   } else {
-    set flirtoptions "$flirtoptions -dof $dof"
+    set dofoptions "-dof $dof"
   }
 }
+
+if { $doftwo == "2D" } {
+    set doftwooptions "-2D -dof 12"
+} else {
+  if { $doftwo == "TRANS" } {
+      set doftwooptions "-dof 6 -schedule ${FSLDIR}/etc/flirtsch/xyztrans.sch"
+  } else {
+    set doftwooptions "-dof $doftwo"
+  }
+}
+
+
 if { $disablesearch_yn } {
     set flirtoptions "$flirtoptions -searchrx 0 0 -searchry 0 0 -searchrz 0 0"
 } else {
@@ -322,7 +337,7 @@ if { $interp == "sinc" } {
     set i 0
     set NewList ""
     foreach testpage $testpages {
-	set returnval [ flirt:medxrun $refptr $testpage $flirtoptions $flirtweights1 $flirtinterp ${TempFileBase}_${i} ]
+	set returnval [ flirt:medxrun $refptr $testpage $flirtoptions $dofoptions $flirtweights1 $flirtinterp ${TempFileBase}_${i} ]
 	MxGetCurrentPage output
 	lappend NewList $output
 	incr i 1
@@ -342,7 +357,7 @@ if { $interp == "sinc" } {
 	foreach testpage2 $testpages2 {
 
 	    set refptr2 [ lindex $testpages $i ]
-	    set returnval [ flirt:medxrun $refptr2 $testpage2 $flirtoptions $flirtweights2 $flirtinterp ${TempFileBase}_level2_${i} ]
+	    set returnval [ flirt:medxrun $refptr2 $testpage2 $flirtoptions $doftwooptions $flirtweights2 $flirtinterp ${TempFileBase}_level2_${i} ]
 	    MxGetCurrentPage output
 	    lappend NewList $output
 	    MxConcatTransforms ${TempFileBase}_level2_${i}_result.xfm AIR ${TempFileBase}_${i}_result.xfm AIR ${TempFileBase}_combined_${i}_result.xfm
@@ -416,17 +431,17 @@ if { $interp == "sinc" } {
 set outroot [ file rootname $output ]
 
 if { $regmode == 1 } {
-    set thecommand "$CLUSTERRSH ${FSLDIR}/bin/flirt -in $testname -ref $refname -out $output -omat ${outroot}.mat $flirtoptions $flirtweights1 $flirtinterp"
+    set thecommand "$CLUSTERRSH ${FSLDIR}/bin/flirt -in $testname -ref $refname -out $output -omat ${outroot}.mat $flirtoptions $dofoptions $flirtweights1 $flirtinterp"
     puts $thecommand
     catch { exec sh -c $thecommand } errmsg
     puts $errmsg
 } else {
-    set thecommand "$CLUSTERRSH ${FSLDIR}/bin/flirt -in $testname -ref $refname -omat ${outroot}1.mat $flirtoptions $flirtweights1"
+    set thecommand "$CLUSTERRSH ${FSLDIR}/bin/flirt -in $testname -ref $refname -omat ${outroot}1.mat $flirtoptions $dofoptions $flirtweights1"
     puts $thecommand
     catch { exec sh -c $thecommand } errmsg
     puts $errmsg
 
-    set thecommand "$CLUSTERRSH ${FSLDIR}/bin/flirt -in $testname2 -ref $testname -omat ${outroot}2.mat $flirtoptions $flirtweights2"
+    set thecommand "$CLUSTERRSH ${FSLDIR}/bin/flirt -in $testname2 -ref $testname -omat ${outroot}2.mat $flirtoptions $doftwooptions $flirtweights2"
     puts $thecommand
     catch { exec sh -c $thecommand } errmsg
     puts $errmsg
@@ -466,7 +481,7 @@ set returnval 0
 #}}}
 #{{{ flirt:medxrun
 
-proc flirt:medxrun { reffile infile flirtoptions flirtweights flirtinterp TempFileBase } {
+proc flirt:medxrun { reffile infile flirtoptions dofoptions flirtweights flirtinterp TempFileBase } {
 
     # setup vars
     global FSLDIR MEDXV CLUSTERRSH INMEDX
@@ -484,7 +499,7 @@ proc flirt:medxrun { reffile infile flirtoptions flirtweights flirtinterp TempFi
     catch { exec sh -c "/bin/chmod 755 ${reffile}* ${infile}*" } junk
     
     # set up the command to be executed
-    set fullcommand "$CLUSTERRSH ${FSLDIR}/bin/flirt -ref $reffile -in $infile -omedx $xfmfilename $flirtoptions $flirtweights $flirtinterp"
+    set fullcommand "$CLUSTERRSH ${FSLDIR}/bin/flirt -ref $reffile -in $infile -omedx $xfmfilename $flirtoptions $dofoptions $flirtweights $flirtinterp"
 
     # run command
     ScriptUpdate "$fullcommand"
