@@ -69,7 +69,7 @@ void globaloptions::parse_command_line(int argc,char** argv,
       n++;
       continue;
    } else if ( arg == "-v" ) {
-      verbose = 5;
+      verbose = 1;
       n++;
       continue;
     }
@@ -275,7 +275,7 @@ void globaloptions::print_usage(int argc, char *argv[])
        << "        -finesearch <delta_angle>          (angle in degrees: default is 18)\n" 
        << "        -schedule <schedule-file>          (replaces default schedule)\n"
        << "        -verbose <num>                     (0 is least and default)\n"
-       << "        -v                                 (same as -verbose 5)\n"
+       << "        -v                                 (same as -verbose 1)\n"
        << "        -i                                 (pauses at each stage: default is off)\n"
        << "        -nosave                            (do not save intermediate volumes - default)\n"
        << "        -debugsave                         (save any intermediate volumes)\n"
