@@ -3,7 +3,7 @@
 
 // Put current version number here:
 #include <string>
-const string version = "2.1.1";
+const string version = "2.1.2";
 
 #include <iostream>
 #include <fstream>
@@ -46,7 +46,7 @@ const string version = "2.1.1";
 int safe_save_volume(const volume& source, const string& filename)
 {
   if (!globaloptions::get().nosave) {
-    save_volume(source,filename);
+    save_volume(source,filename,globaloptions::get().datatype);
   }
   return 0;
 }
@@ -169,18 +169,31 @@ void set_param_basis(Matrix &parambasis, int no_params)
   }
 }
 
+
+float estimate_scaling(const volume& vol) {
+  Tracer tr("estimate_scaling");
+  return Min(Min(vol.getx(),vol.gety()),vol.getz());
+}
+
+float estimate_scaling() {
+  Tracer tr("estimate_scaling");
+  return estimate_scaling(globaloptions::get().impair->refvol);
+}
+
 void set_param_tols(ColumnVector &param_tol, int no_params)
 {
       // Tolerances are: 0.57 degrees (0.005 radians), 0.2mm translation
       //    0.005 scale and 0.001 skew
-  float diagonal[12]={0.005, 0.005, 0.005, 0.2, 0.2, 0.2, 0.002, 0.002, 0.002,
-  		      0.001, 0.001, 0.001};
+//    float diagonal[12]={0.005, 0.005, 0.005, 0.2, 0.2, 0.2, 0.002, 0.002, 0.002,
+//    		      0.001, 0.001, 0.001};
   if (param_tol.Nrows()<no_params) {
     param_tol.ReSize(no_params);
   }
   for (int i=1; i<=no_params; i++) {
-    param_tol(i)=diagonal[i-1];
+    //    param_tol(i)=diagonal[i-1];
+    param_tol(i)=globaloptions::get().tolerance(i);
   }
+  param_tol *= estimate_scaling();  // scale it up by the current scaling
 }
 
 
@@ -215,7 +228,8 @@ void powell_opt(ColumnVector& params, int no_params, ColumnVector& param_tol,
   
   // the optimisation call
   //powell(params,parambasis,no_params,ptol,no_its, fans, costfunc, itmax);
-  *fans = MISCMATHS::optimise(params,no_params,param_tol,costfunc,no_its,itmax);
+  *fans = MISCMATHS::optimise(params,no_params,param_tol,costfunc,no_its,itmax,
+			      globaloptions::get().boundguess);
 }
 
 
@@ -348,17 +362,6 @@ float subset_costfn(const ColumnVector& params)
 //------------------------------------------------------------------------//
 
 
-float estimate_scaling(const volume& vol) {
-  Tracer tr("estimate_scaling");
-  return Min(Min(vol.getx(),vol.gety()),vol.getz());
-}
-
-float estimate_scaling() {
-  Tracer tr("estimate_scaling");
-  return estimate_scaling(globaloptions::get().impair->refvol);
-}
-
-
 
 
 void find_cost_minima(Matrix& bestpts, const volume& cost) {
@@ -426,7 +429,11 @@ void find_cost_minima(Matrix& bestpts, const volume& cost) {
 
 int round(const float val) {
   Tracer tr("round");
-  return (int) (val + 0.5);
+  if (val>0.0) {
+    return (int) (val + 0.5);
+  } else {
+    return (int) (val - 0.5);
+  }
 }
 
 
@@ -526,7 +533,6 @@ void search_cost(Matrix& paramlist, volume& costs, volume& tx,
   param_tol0 = globaloptions::get().refparams;
   params12toN(param_tol0);
   set_param_tols(param_tol1,12);
-  param_tol1 = estimate_scaling()*param_tol1;  
   param_tol1 = param_tol1 + globaloptions::get().refparams;
   params12toN(param_tol1);
   param_tol = param_tol1 - param_tol0;
@@ -800,7 +806,6 @@ int optimise_strategy1(Matrix& matresult, float& fans, int input_dof,
   int no_its=0;
   globaloptions::get().no_params = dof;
   set_param_tols(param_tol,12);  // 12 used to be dof
-  param_tol = param_tol * estimate_scaling();
   affmat2vector(matresult,dof,params);
   //optimise(params,dof,param_tol,&no_its,&fans,costfn,max_iterations);
   optimise(params,dof,param_tol,no_its,&fans,costfn,max_iterations);
@@ -988,7 +993,6 @@ void set_perturbations(Matrix& delta, Matrix& perturbmask)
   set_rot_samplings(coarserx,coarsery,coarserz,finerx,finery,finerz);
   ColumnVector param_tol(12);
   set_param_tols(param_tol,12);
-  param_tol = param_tol * estimate_scaling();
   // set the magnitude of the variations
   float delscale, delrx, delry, delrz;
   delrx = 3.0*param_tol(1); 
@@ -1103,12 +1107,20 @@ void optimise_strategy4(Matrix& matresult, const Matrix& opt_matrixlist,
 int get_testvol(volume& testvol)
 {
   Tracer tr("get_testvol");
-  read_volume(testvol,globaloptions::get().inputfname);
+  short dtype;
+  read_volume(testvol,globaloptions::get().inputfname,dtype);
+  globaloptions::get().datatype = dtype;
   read_matrix(globaloptions::get().initmat,globaloptions::get().initmatfname,testvol);
+
+  ColumnVector hist;
+  float minval=0.0, maxval=0.0;
+  find_robust_limits(testvol,globaloptions::get().no_bins,hist,minval,maxval);
+  clamp(testvol,minval,maxval);
 
   if (globaloptions::get().verbose>=2) {
     cerr << "Init Matrix = \n" << globaloptions::get().initmat << endl;
     cerr << "Testvol sampling matrix =\n" << testvol.sampling_matrix() << endl;
+    cerr << "Testvol Data Type = " << dtype << endl;
   }
   return 0;
 }  
@@ -1118,6 +1130,12 @@ int get_refvol(volume& refvol)
 {
   Tracer tr("get_refvol");
   read_volume(refvol,globaloptions::get().reffname);
+
+  ColumnVector hist;
+  float minval=0.0, maxval=0.0;
+  find_robust_limits(refvol,globaloptions::get().no_bins,hist,minval,maxval);
+  clamp(refvol,minval,maxval);
+
   return 0;
 }
 
@@ -1156,7 +1174,8 @@ void no_optimise()
   // set up image pair and global pointer
   
   get_refvol(refvol);
-  read_volume(testvol,globaloptions::get().inputfname);
+  read_volume(testvol,globaloptions::get().inputfname,
+	      globaloptions::get().datatype);
   read_matrix(globaloptions::get().initmat,globaloptions::get().initmatfname,testvol);
   if (globaloptions::get().verbose>=2) {
     cerr << "Init Matrix = \n" << globaloptions::get().initmat << endl;
@@ -1315,11 +1334,7 @@ int setscalarvariable(const string& name, int& namedscalar)
   Tracer tr("setscalarvariable");
   float temp=0.0;
   int retval = setscalarvariable(name,temp);
-  if (temp>0.0) {
-    namedscalar = (int) (temp+0.5);
-  } else {
-    namedscalar = (int) (temp-0.5);
-  }
+  namedscalar = round(temp);
   return retval;
 }
 
@@ -1457,6 +1472,53 @@ int usrsetrow(MatVecPtr usrsrcmat,const std::vector<string> &words)
   }
   usrsrcmat->push_back(currow);
   return 0;
+}
+
+
+
+int usrsetoption(const std::vector<string> &words)
+{
+  Tracer tr("usrsetoption");
+  // SETOPTION name values
+
+  int len = words.size();
+  if (len<3) {
+    cerr << "Must specify an option and a value" << endl;
+    return -2;
+  }
+    
+  string option = words[1];
+
+  ColumnVector fvalues(len-2);
+  float fval=0.0;
+
+  for (int i=2; i<len; i++) {
+    setscalarvariable(words[i],fval);
+    fvalues(i-1) = fval;
+  }
+
+  if (globaloptions::get().verbose>2) {
+    cout << "setoptions: " << option << " " << fvalues.t() << endl;
+  }
+
+  if (option=="smoothing") {
+    globaloptions::get().smoothsize = fvalues(1);
+    return 0;
+  } else if (option=="tolerance") {
+    globaloptions::get().tolerance = fvalues/estimate_scaling();
+    // Note: division by estimate_scaling used so that the absolute
+    //       tolerance used at this scale is that specified by the user
+    return 0;
+  } else if (option=="boundguess") {
+    globaloptions::get().boundguess = fvalues;
+    return 0;
+  } else if (option=="minsampling") {
+    globaloptions::get().min_sampling = fvalues(1);
+    return 0;
+  } else {
+    cerr << "Option " << option << " is unrecognised - ignoring" << endl;
+  }
+  return -1;
 }
 
 
@@ -1928,6 +1990,13 @@ void interpretcommand(const string& comline, bool& skip,
     int d1, d2;
     parsematname(words[1],src,d1,d2);
     usrsetrow(src,words);
+  } else if (words[0]=="setoption") {
+    // SETOPTION
+    if (words.size()<3) {
+      cerr << "Wrong number of args to SETOPTION" << endl;
+      exit(-1);
+    }
+    usrsetoption(words);
   } else if (words[0]=="if") {
     // IF
     if (words.size()<4) {
@@ -2114,7 +2183,8 @@ int main(int argc,char *argv[])
       if (globaloptions::get().outputfname.size()>0) {
 	volume newtestvol = refvol;
 	filled_affine_transform(newtestvol,testvol,finalmat);      
-	save_volume(newtestvol,globaloptions::get().outputfname.c_str());
+	save_volume(newtestvol,globaloptions::get().outputfname.c_str(),
+		    globaloptions::get().datatype);
       }
       if ( (globaloptions::get().outputmatascii.size()<=0) && 
 	   (globaloptions::get().outputmatmedx.size()<=0) ) {
