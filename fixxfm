@@ -1,0 +1,26 @@
+#!/bin/sh
+
+Usage() {
+    echo "Usage: fixxfm <filename>"
+    exit
+}
+
+[ "$1" = "" ] && Usage
+
+# make sure the file saving by MEDx has completed
+sleep 10
+
+# make sure there is a newline at the end of the file
+echo "" >> $1
+
+sed "s/ShadowTransform/UserTransformation/g" $1 > ${1}TMP
+/bin/mv ${1}TMP $1
+
+tal=`grep talairachcalibrated $1 | grep true | wc -l`
+
+if \[ \$tal = 1 \] ; then
+	sed \"s/UserTransformation/IntoTalairachSpace/g\" $filename > ${filename}TMP
+	/bin/mv ${filename}TMP ${filename}
+fi
+
+echo "fixxfm: transform file fixed"
