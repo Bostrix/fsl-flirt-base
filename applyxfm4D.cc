@@ -13,8 +13,9 @@ using namespace NEWIMAGE;
 
 // Globals - needed by fmrib_main
 
-string oname, iname, transname, refname;
+string oname, iname, transname, refname, matprefix="/MAT_0";
 bool singlematrix, fourd;
+
 
 //////////////////////////////////////////////////////////////////////
 
@@ -47,10 +48,10 @@ int fmrib_main(int argc, char* argv[])
       cerr << "WARNING:: More than 10000 volumes - only doing first 10000" << endl;
     }
 
-    for (int m=invol.mint(); m<=Max(invol.maxt(),invol.mint()+10000); m++) {
+    for (int m=invol.mint(); m<=Min(invol.maxt(),invol.mint()+10000); m++) {
 
       if (!singlematrix) {
-	matname = transname + "/MAT_0";
+	matname = transname + matprefix;
 	char nc='0';
 	int n = m;
 	matname += (nc + (char) (n / 1000));
@@ -98,7 +99,7 @@ int main(int argc,char *argv[])
   Tracer tr("main");
   if (argc<5) { 
     cerr << "Usage: " << argv[0] << " <input volume> <ref volume>"
-	 << " <output volume> <transformation matrix file/[dir]> [-singlematrix]]\n"; 
+	 << " <output volume> <transformation matrix file/[dir]> [-singlematrix/-fourdigit/-userprefix <prefix>]]\n"; 
     return -1; 
   }
   
@@ -114,6 +115,11 @@ int main(int argc,char *argv[])
   if (argc>=6) {
     string option = argv[5];
     if (option == "-singlematrix" )  singlematrix = true;
+    if (option == "-fourdigit" )  matprefix = "/MAT_";
+    if ( (option == "-userprefix" ) && (argc>=7) ) {
+      string uprefix = argv[6];
+      matprefix = "/" + uprefix;
+    }
   }
   fourd = true;
   if (argc>=7) {
