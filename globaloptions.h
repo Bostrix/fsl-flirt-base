@@ -125,7 +125,7 @@ inline globaloptions::globaloptions()
 
   searchoptmat.clear();
   preoptsearchmat.clear();
-  usrmat.resize(26);
+  usrmat.resize(27);
   for (unsigned int i=0; i<usrmat.size(); i++) {
     usrmat[i].clear();
   }
