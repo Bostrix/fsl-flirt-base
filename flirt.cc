@@ -1152,10 +1152,12 @@ void no_optimise()
     cerr << "Init Matrix = \n" << globaloptions::get().initmat << endl;
   }
   
-  float min_sampling_ref=1.0, min_sampling_test=1.0;
+  float min_sampling_ref=1.0, min_sampling_test=1.0, min_sampling=1.0;
   min_sampling_ref = Min(refvol.getx(),Min(refvol.gety(),refvol.getz()));
   min_sampling_test = Min(testvol.getx(),Min(testvol.gety(),testvol.getz()));
-  globaloptions::get().min_sampling = Max(min_sampling_ref,min_sampling_test);
+  min_sampling = (float) ceil(Max(min_sampling_ref,min_sampling_test));
+  if (globaloptions::get().min_sampling < min_sampling) 
+    globaloptions::get().min_sampling = min_sampling;
   
   if (globaloptions::get().iso) {
     resample_refvol(refvol,globaloptions::get().min_sampling);
@@ -1976,10 +1978,12 @@ int main(int argc,char *argv[])
     get_refvol(refvol);
     get_testvol(testvol);
 
-    float min_sampling_ref=1.0, min_sampling_test=1.0;
+    float min_sampling_ref=1.0, min_sampling_test=1.0, min_sampling=1.0;
     min_sampling_ref = Min(refvol.getx(),Min(refvol.gety(),refvol.getz()));
     min_sampling_test = Min(testvol.getx(),Min(testvol.gety(),testvol.getz()));
-    globaloptions::get().min_sampling = Max(min_sampling_ref,min_sampling_test);
+    min_sampling = (float) ceil(Max(min_sampling_ref,min_sampling_test));
+    if (globaloptions::get().min_sampling < min_sampling) 
+      globaloptions::get().min_sampling = min_sampling;
 
     
     if (globaloptions::get().verbose>=3) {
@@ -1992,12 +1996,24 @@ int main(int argc,char *argv[])
       // set up subsampled volumes by factors of 2, 4 and 8
       if (globaloptions::get().verbose >= 2) 
 	cout << "Subsampling the volumes" << endl;
-      resample_refvol(refvol,1.0);
-      subsample_by2(refvol,refvol_2);
-      subsample_by2(refvol_2,refvol_4);
-      subsample_by2(refvol_4,refvol_8);
       
-      // set up image pair and global pointer
+      resample_refvol(refvol,globaloptions::get().min_sampling);
+      if (globaloptions::get().min_sampling < 1.9) {
+	subsample_by2(refvol,refvol_2);
+      } else {
+	refvol_2 = refvol;
+      }
+      if (globaloptions::get().min_sampling < 3.9) {
+	subsample_by2(refvol_2,refvol_4);
+      } else {
+	refvol_4 = refvol_2;
+      }
+      if (globaloptions::get().min_sampling < 7.9) {
+	subsample_by2(refvol_4,refvol_8);
+      } else {
+	refvol_8 = refvol_4;
+      }
+      
       {
 	volume testvol_8;
 	blur4subsampling(testvol_8,testvol,8.0);
@@ -2010,6 +2026,7 @@ int main(int argc,char *argv[])
       refvol_2 = refvol;
     }
 
+      // set up image pair and global pointer
     imagepair global_8(refvol_8,testvol);
     global_8.set_no_bins(globaloptions::get().no_bins/8);
     if (globaloptions::get().verbose>=2) print_volume_info(testvol,"TESTVOL");
