@@ -104,4 +104,81 @@ void setdefaultschedule(std::vector<string>& comms)
   comms.push_back("sort U");
 }
 
+
+void set2Ddefaultschedule(std::vector<string>& comms)
+{
+  comms.clear();
+  comms.push_back("# 8mm scale");
+  comms.push_back("setscale 8");
+  comms.push_back("setoption smoothing 8");
+  comms.push_back("setoption paramsubset 3  0 0 1 0 0 0 0 0 0 0 0 0  0 0 0 1 0 0 0 0 0 0 0 0  0 0 0 0 1 0 0 0 0 0 0 0");
+  comms.push_back("clear U");
+  comms.push_back("clear UA");
+  comms.push_back("setrow UA 1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1");
+  comms.push_back("optimise 12 UA:1  0.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 4 ");
+  comms.push_back("");
+  comms.push_back("# 4mm scale");
+  comms.push_back("setscale 4");
+  comms.push_back("setoption smoothing 4");
+  comms.push_back("setoption paramsubset 3  0 0 1 0 0 0 0 0 0 0 0 0  0 0 0 1 0 0 0 0 0 0 0 0  0 0 0 0 1 0 0 0 0 0 0 0");
+  comms.push_back("clear UB");
+  comms.push_back("clear UL");
+  comms.push_back("clear UM");
+  comms.push_back("# remeasure costs at this scale");
+  comms.push_back("clear U");
+  comms.push_back("measurecost 12 UA 0 0 0 0 0 0 rel");
+  comms.push_back("sort U");
+  comms.push_back("copy U UL");
+  comms.push_back("# optimise best 3 candidates");
+  comms.push_back("clear U");
+  comms.push_back("optimise 12 UL:1-3  0.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 4");
+  comms.push_back("copy U UM");
+  comms.push_back("# select best 3 optimised solutions and try perturbations of these");
+  comms.push_back("clear U");
+  comms.push_back("copy UM:1-3 U");
+  comms.push_back("optimise 12 UM:1-3  0.0   0.0   1.0   0.0   0.0   0.0   0.0  rel 4");
+  comms.push_back("optimise 12 UM:1-3  0.0   0.0  -1.0   0.0   0.0   0.0   0.0  rel 4");
+  comms.push_back("sort U");
+  comms.push_back("clear UB");
+  comms.push_back("copy U UB");
+  comms.push_back("");
+  comms.push_back("# 2mm scale");
+  comms.push_back("setscale 2");
+  comms.push_back("setoption smoothing 2");
+  comms.push_back("setoption paramsubset 3  0 0 1 0 0 0 0 0 0 0 0 0  0 0 0 1 0 0 0 0 0 0 0 0  0 0 0 0 1 0 0 0 0 0 0 0");
+  comms.push_back("clear U");
+  comms.push_back("clear UC");
+  comms.push_back("clear UD");
+  comms.push_back("clear UE");
+  comms.push_back("clear UF");
+  comms.push_back("# remeasure costs at this scale");
+  comms.push_back("measurecost 12 UB 0 0 0 0 0 0 rel");
+  comms.push_back("sort U");
+  comms.push_back("copy U UC");
+  comms.push_back("clear U");
+  comms.push_back("optimise 12  UC:1  0.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 4");
+  comms.push_back("copy U UD");
+  comms.push_back("setoption boundguess 1");
+  comms.push_back("if MAXDOF > 7");
+  comms.push_back(" clear U");
+  comms.push_back("if MAXDOF > 7");
+  comms.push_back(" optimise 9  UD:1  0.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 1");
+  comms.push_back("copy U UE");
+  comms.push_back("if MAXDOF > 9");
+  comms.push_back(" clear U");
+  comms.push_back("if MAXDOF > 9");
+  comms.push_back(" optimise 12 UE:1  0.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 2");
+  comms.push_back("sort U");
+  comms.push_back("copy U UF");
+  comms.push_back("");
+  comms.push_back("# 1mm scale");
+  comms.push_back("setscale 1");
+  comms.push_back("setoption smoothing 1");
+  comms.push_back("setoption boundguess 1");
+  comms.push_back("setoption paramsubset 3  0 0 1 0 0 0 0 0 0 0 0 0  0 0 0 1 0 0 0 0 0 0 0 0  0 0 0 0 1 0 0 0 0 0 0 0");
+  comms.push_back("clear U");
+  comms.push_back("optimise 12 UF:1  0.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 1");
+  comms.push_back("sort U");
+}
+
 #endif
