@@ -1,13 +1,19 @@
 #
 
 # FLIRT - FMRIB's Linear Image Registration Tool
-
+#
 # Mark Jenkinson and Stephen Smith, FMRIB Image Analysis Group
-
-# Copyright (C) 1999-2000 University of Oxford
-
+#
+# Copyright (C) 1999-2001 University of Oxford
+#
 # TCLCOPYRIGHT
 
+#{{{ setup
+
+source [ file dirname [ info script ] ]/fslstart.tcl
+
+
+#}}}
 #{{{ FixMedxTransform
 
 proc FixMedxTransform { xfmfname OriginX OriginY OriginZ XPixelSeparation YPixelSeparation ZPixelSeparation } {
@@ -100,52 +106,22 @@ proc ConcatedTalairachMedxTransform { xfmfname } {
 }
 
 #}}}
-#{{{ flirt_proc
+#{{{ flirt:proc
 
-proc flirt_proc { regmode refname testname testname2 nstats statslist output dof bins searchrxmin searchrxmax searchrymin searchrymax searchrzmin searchrzmax disablesearch_yn cost interp sincwidth sincwindow refweight inweight popups } {
+proc flirt:proc { regmode refname testname testname2 nstats statslist output dof bins searchrxmin searchrxmax searchrymin searchrymax searchrzmin searchrzmax disablesearch_yn cost interp sincwidth sincwindow refweight inweight inweight2 popups } {
 
     global PXHOME FSLDIR USER MEDXV HOME INMEDX CLUSTERRSH
 
     #{{{ setup options
 
-    # set up the command to be executed
-    set flirtoptions "-bins $bins -cost $cost -nosave"
-    if { $dof == "2D" } {
-	set flirtoptions "$flirtoptions -2D -dof 12"
-    } else {
-	set flirtoptions "$flirtoptions -dof $dof"
-    }
+#{{{ setup MEDx stuff
 
-    if { $disablesearch_yn } {
-	set flirtoptions "$flirtoptions -searchrx 0 0 -searchry 0 0 -searchrz 0 0"
-    } else {
-	set flirtoptions "$flirtoptions -searchrx $searchrxmin $searchrxmax"
-	set flirtoptions "$flirtoptions -searchry $searchrymin $searchrymax"
-	set flirtoptions "$flirtoptions -searchrz $searchrzmin $searchrzmax"
-    }
-
-    set flirtoptions "$flirtoptions -interp $interp -sincwidth $sincwidth -sincwindow $sincwindow"
-
-    # temporary stuff for refweight and inweight (need to do sanity checking...)
-
-    if { $regmode == 1 } {
-	if { "X${refweight}X" != "XX" } {
-	    set flirtoptions "$flirtoptions -refweight $refweight"
-	}
-	
-	if { "X${inweight}X" != "XX" } {
-	    set flirtoptions "$flirtoptions -inweight $inweight"
-	}
-    }
-
-#}}}
-
-    if { $INMEDX} {
-	#{{{ setup stuff
+if { $INMEDX } {
 
     set TempFileBase [ exec ${FSLDIR}/bin/tmpnam ${HOME}/.fl ]
 
     MxGetCurrentFolder Folder
+ 
     if { ! [ info exists Folder ] } {
 	if { $popups } {
 	    LocalErrorBox "A folder must be opened!"
@@ -153,8 +129,58 @@ proc flirt_proc { regmode refname testname testname2 nstats statslist output dof
 	puts "A folder must be opened!"
 	return 1
     }
+}
 
 #}}}
+
+set flirtoptions "-bins $bins -cost $cost"
+if { $dof == "2D" } {
+    set flirtoptions "$flirtoptions -2D -dof 12"
+} else {
+    set flirtoptions "$flirtoptions -dof $dof"
+}
+if { $disablesearch_yn } {
+    set flirtoptions "$flirtoptions -searchrx 0 0 -searchry 0 0 -searchrz 0 0"
+} else {
+    set flirtoptions "$flirtoptions -searchrx $searchrxmin $searchrxmax -searchry $searchrymin $searchrymax -searchrz $searchrzmin $searchrzmax"
+}
+
+set flirtweights1 ""
+set flirtweights2 ""
+if { $refweight != "" } {
+    if { $INMEDX } {
+	MxGetPageByName $Folder $refweight tmpname
+	FSLSaveAs $tmpname AVW ${TempFileBase}refweight.hdr true
+	set refweight ${TempFileBase}refweight
+    }
+    set flirtweights1 "$flirtweights1 -refweight $refweight"
+}
+if { $inweight != "" } {
+    if { $INMEDX } {
+	MxGetPageByName $Folder $inweight tmpname
+	FSLSaveAs $tmpname AVW ${TempFileBase}inweight.hdr true
+	set inweight ${TempFileBase}inweight
+    }
+    set flirtweights1 "$flirtweights1 -inweight $inweight"
+    set flirtweights2 "$flirtweights2 -refweight $inweight"
+}
+if { $inweight2 != "" } {
+    if { $INMEDX } {
+	MxGetPageByName $Folder $inweight2 tmpname
+	FSLSaveAs $tmpname AVW ${TempFileBase}inweight2.hdr true
+	set inweight2 ${TempFileBase}inweight2
+    }
+    set flirtweights2 "$flirtweights2 -inweight $inweight2"
+}
+
+set flirtinterp "-interp $interp"
+if { $interp == "sinc" } {
+    set flirtinterp "$flirtinterp -sincwidth $sincwidth -sincwindow $sincwindow"
+}
+
+#}}}
+
+    if { $INMEDX} {
 	#{{{ check standard image
 
     set problem [ MxGetPageByName $Folder $refname refptr ]
@@ -298,7 +324,7 @@ proc flirt_proc { regmode refname testname testname2 nstats statslist output dof
     set i 0
     set NewList ""
     foreach testpage $testpages {
-	set returnval [ flirt_run $refptr $testpage $flirtoptions ${TempFileBase}_${i} ]
+	set returnval [ flirt:medxrun $refptr $testpage $flirtoptions $flirtweights1 $flirtinterp ${TempFileBase}_${i} ]
 	MxGetCurrentPage output
 	lappend NewList $output
 	incr i 1
@@ -318,7 +344,7 @@ proc flirt_proc { regmode refname testname testname2 nstats statslist output dof
 	foreach testpage2 $testpages2 {
 
 	    set refptr2 [ lindex $testpages $i ]
-	    set returnval [ flirt_run $refptr2 $testpage2 $flirtoptions ${TempFileBase}_level2_${i} ]
+	    set returnval [ flirt:medxrun $refptr2 $testpage2 $flirtoptions $flirtweights2 $flirtinterp ${TempFileBase}_level2_${i} ]
 	    MxGetCurrentPage output
 	    lappend NewList $output
 	    MxConcatTransforms ${TempFileBase}_level2_${i}_result.xfm AIR ${TempFileBase}_${i}_result.xfm AIR ${TempFileBase}_combined_${i}_result.xfm
@@ -392,17 +418,17 @@ proc flirt_proc { regmode refname testname testname2 nstats statslist output dof
 set outroot [ file rootname $output ]
 
 if { $regmode == 1 } {
-    set thecommand "$CLUSTERRSH ${FSLDIR}/bin/flirt -in $testname -ref $refname -out $output -omat ${outroot}.mat $flirtoptions"
+    set thecommand "$CLUSTERRSH ${FSLDIR}/bin/flirt -in $testname -ref $refname -out $output -omat ${outroot}.mat $flirtoptions $flirtweights1 $flirtinterp"
     puts $thecommand
     catch { exec sh -c $thecommand } errmsg
     puts $errmsg
 } else {
-    set thecommand "$CLUSTERRSH ${FSLDIR}/bin/flirt -in $testname -ref $refname -omat ${outroot}1.mat $flirtoptions"
+    set thecommand "$CLUSTERRSH ${FSLDIR}/bin/flirt -in $testname -ref $refname -omat ${outroot}1.mat $flirtoptions $flirtweights1"
     puts $thecommand
     catch { exec sh -c $thecommand } errmsg
     puts $errmsg
 
-    set thecommand "$CLUSTERRSH ${FSLDIR}/bin/flirt -in $testname2 -ref $testname -omat ${outroot}2.mat $flirtoptions"
+    set thecommand "$CLUSTERRSH ${FSLDIR}/bin/flirt -in $testname2 -ref $testname -omat ${outroot}2.mat $flirtoptions $flirtweights2"
     puts $thecommand
     catch { exec sh -c $thecommand } errmsg
     puts $errmsg
@@ -412,7 +438,7 @@ if { $regmode == 1 } {
     catch { exec sh -c $thecommand } errmsg
     puts $errmsg
 
-    set thecommand "${FSLDIR}/bin/flirt -in $testname2 -ref $refname -out $output -applyxfm -init ${outroot}.mat"
+    set thecommand "${FSLDIR}/bin/flirt -in $testname2 -ref $refname -out $output -applyxfm -init ${outroot}.mat $flirtinterp"
     puts $thecommand
     catch { exec sh -c $thecommand } errmsg
     puts $errmsg
@@ -423,7 +449,7 @@ if { $regmode == 1 } {
 for { set i 1 } { $i <= $nstats } { incr i 1 } {
     set statsname [ lindex $statslist [ expr $i - 1 ] ]
 
-    set thecommand "${FSLDIR}/bin/flirt -in $statsname -ref $refname -out [ file rootname ${output} ]_shadowreg_[ file tail [ file rootname $statsname ] ] -applyxfm -init ${outroot}.mat"
+    set thecommand "${FSLDIR}/bin/flirt -in $statsname -ref $refname -out [ file rootname ${output} ]_shadowreg_[ file tail [ file rootname $statsname ] ] -applyxfm -init ${outroot}.mat $flirtinterp"
     puts $thecommand
     catch { exec sh -c $thecommand } errmsg
     puts $errmsg
@@ -440,9 +466,9 @@ set returnval 0
 }
 
 #}}}
-#{{{ flirt_run
+#{{{ flirt:medxrun
 
-proc flirt_run { reffile infile flirtoptions TempFileBase } {
+proc flirt:medxrun { reffile infile flirtoptions flirtweights flirtinterp TempFileBase } {
 
     # setup vars
     global FSLDIR MEDXV CLUSTERRSH INMEDX
@@ -460,7 +486,7 @@ proc flirt_run { reffile infile flirtoptions TempFileBase } {
     catch { exec sh -c "/bin/chmod 755 ${reffile}* ${infile}*" } junk
     
     # set up the command to be executed
-    set fullcommand "$CLUSTERRSH ${FSLDIR}/bin/flirt -ref $reffile -in $infile -omedx $xfmfilename $flirtoptions"
+    set fullcommand "$CLUSTERRSH ${FSLDIR}/bin/flirt -ref $reffile -in $infile -omedx $xfmfilename $flirtoptions $flirtweights $flirtinterp"
 
     # run command
     ScriptUpdate "$fullcommand"
@@ -499,3 +525,4 @@ proc flirt_run { reffile infile flirtoptions TempFileBase } {
 }
 
 #}}}
+
