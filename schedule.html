@@ -100,6 +100,10 @@ are used, not the cost value (which is initialised to 0).</DD>
 <DT><CODE>sort </CODE><I>mat</I><CODE></CODE></DT>
 <DD>Sorts the rows of matrix <I>mat</I> into <em>ascending</em> order
 based on the first column entries of each row (the cost function values).</DD>
+<DT><CODE>dualsort </CODE><I>mat1 mat2</I><CODE></CODE></DT>
+<DD>Sorts the rows of matrix <I>mat1</I> and <I>mat2</I> into 
+<em>ascending</em> order based on the first column entries <I>mat1</I> only 
+(the cost function values).</DD>
 <DT><CODE>search [</CODE><I>dof</I><CODE>]</CODE></DT>
 <DD>Performs the 8mm search algorithm on the currently defined image pair.
 The result is returned in matrices <CODE>S</CODE> and <CODE>P</CODE> where
