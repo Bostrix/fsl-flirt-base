@@ -144,7 +144,7 @@ globaloptions::globaloptions()
   do_optimise = true;
   measure_cost = false;
   defaultplanes = 2;
-  nosave = false;
+  nosave = true;
   iso = true;
 
   single_param = -1;
@@ -205,7 +205,8 @@ void print_usage(int argc, char *argv[])
        << "        -verbose <num>                     (0 is least and default)\n"
        << "        -v                                 (same as -verbose 5)\n"
        << "        -i                                 (pauses at each stage: default is off)\n"
-       << "        -nosave                            (do not save any volumes)\n"
+       << "        -nosave                            (do not save intermediate volumes - default)\n"
+       << "        -debugsave                         (save any intermediate volumes)\n"
        << "        -help\n";
 }
 
@@ -238,11 +239,13 @@ void parse_command_line(int argc, char* argv[])
       exit(0);
     } else if ( arg == "-applyxfm" ) {
       globalopts.do_optimise = false;
+      globalopts.nosave = false;
       n++;
       continue;
     } else if ( arg == "-applynonisoxfm" ) {
       globalopts.do_optimise = false;
       globalopts.iso = false;
+      globalopts.nosave = false;
       n++;
       continue;
     } else if ( arg == "-measurecost" ) {
@@ -263,6 +266,10 @@ void parse_command_line(int argc, char* argv[])
       continue;
     } else if ( arg == "-nosave") {
       globalopts.nosave = true;
+      n++;
+      continue;
+    } else if ( arg == "-debugsave") {
+      globalopts.nosave = false;
       n++;
       continue;
     } else if ( arg == "-v" ) {
@@ -348,7 +355,7 @@ void parse_command_line(int argc, char* argv[])
 	  globalopts.maincostfn = NormMI;
 	} else {
 	  cerr << "Unrecognised cost function type: " << costarg << endl;
-	  cerr << "Using the default (CorrRatio)\n";
+	  exit(-1);
 	}
       }
       n+=2;
@@ -368,7 +375,7 @@ void parse_command_line(int argc, char* argv[])
 	  globalopts.searchcostfn = NormMI;
 	} else {
 	  cerr << "Unrecognised cost function type: " << costarg << endl;
-	  cerr << "Using the default (CorrRatio)\n";
+	  exit(-1);
 	}
       }
       n+=2;
@@ -382,7 +389,7 @@ void parse_command_line(int argc, char* argv[])
 	  globalopts.anglerep = Euler;
 	} else {
 	  cerr << "Unrecognised angle representation: " << anglearg << endl;
-	  cerr << "Using the default (Quaternion)\n";
+	  exit(-1);
 	}
       }
       n+=2;
@@ -392,7 +399,7 @@ void parse_command_line(int argc, char* argv[])
     if (n+2>=argc) 
       { 
 	cerr << "Lacking argument to option " << arg << endl;
-	break; 
+	exit(-1);
       }
     
     
@@ -415,8 +422,7 @@ void parse_command_line(int argc, char* argv[])
       continue;
     } else { 
       cerr << "Unrecognised option " << arg << endl;
-      n++;
-      continue;
+      exit(-1);
     } 
 
     
@@ -794,7 +800,10 @@ void params12toN(ColumnVector& params)
   // Convert the full 12 dof param vector to a small param vector
   Tracer tr("params12toN");
   ColumnVector nparams;
+  cerr << "params = " << (params -  globalopts.refparams).t() << endl;
+  cerr << "pinv = " << endl << pinv(globalopts.parammask) << endl;
   nparams = pinv(globalopts.parammask)*(params - globalopts.refparams);
+  cerr << "Nparams = " << nparams.t() << endl;
   params = nparams;
 }
 
@@ -1096,28 +1105,23 @@ void search_cost(Matrix& paramlist, volume& costs, volume& tx,
 
   // set up the type of parameter subset (via the global mask)
   // here 3 translations and 1 (common) scaling are used
-  globalopts.parammask.ReSize(12,3);
+  globalopts.parammask.ReSize(12,4);  // was 3
   globalopts.parammask = 0.0;
   globalopts.parammask(4,1) = 1.0;
   globalopts.parammask(5,2) = 1.0;
   globalopts.parammask(6,3) = 1.0;
-  // the 3.0,-1.0,-1.0 at 7,8,9 is a special code to enable equal scaling
-  // comment out the following to stop scales being searched
-  /*
-    // NOW AN OBSOLETE FORM OF PARAMMASK
-    //if (globalopts.dof>=7) {
-     //globalopts.parammask(7) = 3.0;
-     //globalopts.parammask(8) = -1.0;
-     //globalopts.parammask(9) = -1.0;
-   //}
-  */
+  globalopts.parammask(7,4) = 1.0;  // didn't used to exist
+  globalopts.parammask(8,4) = 1.0;  // didn't used to exist
+  globalopts.parammask(9,4) = 1.0;  // didn't used to exist
 	
   ColumnVector param_tol(12), params_8(12);
   set_param_tols(param_tol,12);
   param_tol = estimate_scaling()*param_tol;  
   globalopts.no_params = 12; // necessary for any subset_costfn call
+  cerr << "Param_tol = " << endl << param_tol;
   params12toN(param_tol);
-
+  cerr << "Param_tol = " << endl << param_tol;
+  cerr << "pinv(globalopts.parammask) = " << endl << pinv(globalopts.parammask);
 
   // search coarsely, optimising each point and storing the results
   int no_its=0;
@@ -1169,7 +1173,7 @@ void search_cost(Matrix& paramlist, volume& costs, volume& tx,
   }
   if (globalopts.verbose>=2) cerr << endl;
 
-  scale = 1.0;  // for now disallow non-unity scalings
+  // scale = 1.0;  // for now disallow non-unity scalings
 
   if (globalopts.verbose>=4) {
     safe_save_volume(tx,"tx");
