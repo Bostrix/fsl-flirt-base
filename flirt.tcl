@@ -196,6 +196,7 @@ while { $i <= $reg($w,maxnstats) } {
     $w.f.dof add command 2Dmenu -label "   2D to 2D registration" -state disabled -background "#555555"
     $w.f.dof add command 2D -label "Rigid Body (3 parameter model)"
     $w.f.dof add command 3Dmenu -label "   3D to 3D registration" -state disabled -background "#555555"
+    $w.f.dof add command TRANS -label "Translation Only (3 parameter model)"
     $w.f.dof add command 6 -label "Rigid Body (6 parameter model)"
     $w.f.dof add command 7 -label "Global Rescale (7 parameter model)"
     $w.f.dof add command 9 -label "Traditional (9 parameter model)"
