@@ -2067,15 +2067,17 @@ int main(int argc,char *argv[])
       reshape(matresult,reshaped,4,4);
 
       Matrix finalmat = matresult * globaloptions::get().initmat;
+      read_volume(testvol,globaloptions::get().inputfname);
+      read_volume(refvol,globaloptions::get().reffname);
+      save_matrix_data(finalmat,testvol,refvol);
+      // generate the outputvolume (not safe_save st -out overrides -nosave)
       if (globaloptions::get().outputfname.size()>0) {
-	read_volume(testvol,globaloptions::get().inputfname);
-	read_volume(refvol,globaloptions::get().reffname);
-	save_matrix_data(finalmat,testvol,refvol);
-	// generate the outputvolume (not safe_save st -out overrides -nosave)
 	volume newtestvol = refvol;
 	filled_affine_transform(newtestvol,testvol,finalmat);      
 	save_volume(newtestvol,globaloptions::get().outputfname.c_str());
-      } else {
+      }
+      if ( (globaloptions::get.outputmatascii.size()<=0) && 
+	   (globaloptions::get.outputmatmedx.size()<=0) ) {
 	cout << endl << "Final result: " << endl << finalmat << endl;
       }
     }
