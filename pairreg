@@ -1,4 +1,4 @@
-#!/usr/local/bin/bash
+#!/bin/sh
 
 if [ $# -lt 5 ] ; then
  echo "Usage: $0 brain1 brain2 skull1 skull2 outputmatrix [extra flirt args]"
@@ -15,9 +15,11 @@ matf=$5; export matf
 shift 5
 args=$* ; export args
 
-flirt=/usr/local/fsl/src/flirt/flirt ; export flirt
+flirt=${FSLDIR}/bin/flirt ; export flirt
 
-$flirt -in $bin -ref $bref -schedule ${FSLDIR}/bin/pairregrc1 -omat prgmat1 $args
-$flirt -in $sin -ref $sref -init prgmat1 -schedule ${FSLDIR}/bin/pairregrc2 -omat prgmat2 $args
-convert_xfm -matonly -fixscaleskew prgmat2 prgmat1 -omat prgmat3
-$flirt -in $bin -ref $bref -init prgmat3 -schedule ${FSLDIR}/bin/pairregrc3 -omat $matf $args
+$flirt -in $bin -ref $bref -schedule ${FSLDIR}/bin/pairregrc1 -omat $matf.1.$$ $args
+$flirt -in $sin -ref $sref -init $matf.1.$$ -schedule ${FSLDIR}/bin/pairregrc2 -omat $matf.2.$$ $args
+${FSLDIR}/bin/convert_xfm -matonly -fixscaleskew $matf.2.$$ $matf.1.$$ -omat $matf.3.$$
+$flirt -in $bin -ref $bref -init $matf.3.$$ -schedule ${FSLDIR}/bin/pairregrc3 -omat $matf $args
+# tidy up the temporary matrices
+rm -f $matf.1.$$ $matf.2.$$ $matf.3.$$
