@@ -64,12 +64,12 @@ void set_basescale(const string& filenameA, const string& filenameB)
     read_volume_hdr_only(volB,filenameB);
     float maxdimA = Max(Max(volA.xdim(),volA.ydim()),volA.zdim());
     float maxdimB = Max(Max(volB.xdim(),volB.ydim()),volB.zdim());
-    if (Max(maxdimA,maxdimB)>16) {  // twice the largest scale
+    if (Max(maxdimA,maxdimB)>12) {  // over 150% of largest (8mm) scale
       globaloptions::get().basescale = Max(maxdimA,maxdimB)/8;
     }
     float mindimA = Min(Min(volA.xdim(),volA.ydim()),volA.zdim());
     float mindimB = Min(Min(volB.xdim(),volB.ydim()),volB.zdim());
-    if (Min(mindimA,mindimB)<0.5) { // half the smallest scale
+    if (Min(mindimA,mindimB)<0.75) { // between 0.5 and 1 mm 
       globaloptions::get().basescale = Min(mindimA,mindimB);
     }
   }
