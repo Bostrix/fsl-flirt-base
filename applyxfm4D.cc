@@ -31,7 +31,8 @@ int main(int argc,char *argv[])
   if (fourd) {
     volume4D<float> invol, outvol;
     volume<float> refvol, dummy;
-    read_volume4D(invol,iname);
+    volumeinfo vinfo;
+    read_volume4D(invol,iname,vinfo);
     invol.setextrapolationmethod(extraslice);
 
     refvol = invol[atoi(refname.c_str())];
@@ -54,12 +55,13 @@ int main(int argc,char *argv[])
       affine_transform(invol[m],dummy,affmat);
       outvol.addvolume(dummy);
     }
-    save_volume4D(outvol,oname);
+    save_volume4D(outvol,oname,vinfo);
 
   } else {
     volume<float> invol, outvol;
+    volumeinfo vinfo;
     
-    read_volume(invol,iname);
+    read_volume(invol,iname,vinfo);
     read_volume(outvol,refname);
     invol.setextrapolationmethod(extraslice);
     
@@ -67,7 +69,7 @@ int main(int argc,char *argv[])
     read_matrix(affmat,transname,invol);
     
     affine_transform(invol,outvol,affmat);
-    save_volume(outvol,oname);
+    save_volume(outvol,oname,vinfo);
   }
 
   return 0;
