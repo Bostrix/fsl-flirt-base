@@ -35,6 +35,7 @@ public:
   string coordfname;
   bool mm;
   int verbose;
+  bool medx;
 public:
   globaloptions();
   ~globaloptions() {};
@@ -51,6 +52,7 @@ globaloptions::globaloptions()
   coordfname = "";
   xfmfname = "";
   mm = false;
+  medx=true;
 }
 
 
@@ -67,6 +69,7 @@ void print_usage(int argc, char *argv[])
        << "        -xfm <Source to Destination transform filename>\n"
        << "        -vox                                 (all coordinates in voxels - default)\n"
        << "        -mm                                  (all coordinates in mm)\n"
+       << "        -flirt                               (use flirt, not medx, coordinate conventions)\n" 
        << "        -help\n\n"
        << " Note that the first three options are compulsory\n";
 }
@@ -104,6 +107,10 @@ void parse_command_line(int argc, char* argv[])
       continue;
     } else if ( arg == "-mm" ) {
       globalopts.mm = true;
+      n++;
+      continue;
+    } else if ( arg == "-flirt" ) {
+      globalopts.medx = false;
       n++;
       continue;
     } else if ( arg == "-v" ) {
@@ -198,6 +205,7 @@ int main(int argc,char *argv[])
     cout << " affmat =" << endl << affmat << endl << endl;
   }
 
+
   // Let Volume 2 be Source and Volume 1 be Destination
   //  notate variables as (v=vox, w=world, f=flirt, m=medx, t=dest)
   Matrix vf2w2(4,4), vf1w1(4,4);
@@ -209,15 +217,17 @@ int main(int argc,char *argv[])
   vf1w1(1,1) = destvol.xdim();
   vf1w1(2,2) = destvol.ydim();
   vf1w1(3,3) = destvol.zdim();
-
+  
   // the swap matrices convert flirt voxels to medx voxels
   Matrix swapy1(4,4), swapy2(4,4);
   Identity(swapy1);  Identity(swapy2);
-  swapy1(2,2) = -1.0;
-  swapy2(2,2) = -1.0;
-  swapy1(2,4) = destvol.ysize()-1.0;
-  swapy2(2,4) = srcvol.ysize()-1.0;
-
+  if (globalopts.medx) {
+    swapy1(2,2) = -1.0;
+    swapy2(2,2) = -1.0;
+    swapy1(2,4) = destvol.ysize()-1.0;
+    swapy2(2,4) = srcvol.ysize()-1.0;
+  }
+  
   Matrix destvox2world, srcvox2world;
   destvox2world = vf1w1 * swapy1;
   srcvox2world = vf2w2 * swapy2;
@@ -225,16 +235,16 @@ int main(int argc,char *argv[])
     cout << " destvox2world =" << endl << destvox2world << endl << endl;
     cout << " srcvox2world =" << endl << srcvox2world << endl;
   }
-
+  
   ColumnVector srccoord(4), destcoord(4), oldsrc(4);
   srccoord = 0;
   destcoord = 0;
   srccoord(4)=1;
   destcoord(4)=1;
   oldsrc = 0;  // 4th component set to 0, so that initially oldsrc -ne srccoord
-
+  
   cout << "Coordinates in Destination volume (in mm):" << endl;
-
+  
   if (globalopts.coordfname.size()>1) {
     ifstream matfile(globalopts.coordfname.c_str());
     if (!matfile) { 
