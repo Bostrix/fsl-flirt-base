@@ -1,6 +1,3 @@
-// FLIRT - FMRIB Linear Image Registration Tool
-//  (c) Mark Jenkinson 1999
-
 // Put current version number here:
 #include <string>
 const string version = "2.1.2";
