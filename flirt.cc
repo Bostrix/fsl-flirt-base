@@ -8,10 +8,7 @@
 
 /*  CCOPYRIGHT  */
 
-// Put current version number here:
 #include <string>
-const string version = "5.0";
-
 #include <iostream>
 #include <fstream>
 #include <unistd.h>
@@ -35,6 +32,9 @@ const string version = "5.0";
  using namespace NEWMAT;
  using namespace NEWIMAGE;
 #endif
+
+// Put current version number here:
+const string version = "5.0";
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -416,7 +416,9 @@ void find_cost_minima(Matrix& bestpts, const volume<float>& cost) {
 	}
 	if (cost.in_bounds(x,y,z)) {
 	  if (cost(x,y,z) < 
-	        cost(round(bestpt(1)),round(bestpt(2)),round(bestpt(3))))
+	      cost(MISCMATHS::round(bestpt(1)),
+		   MISCMATHS::round(bestpt(2)),
+		   MISCMATHS::round(bestpt(3))))
 	    {
 	      bestpt(1) = (float) x;
 	      bestpt(2) = (float) y;
@@ -474,22 +476,22 @@ void set_rot_samplings(ColumnVector& rxcoarse, ColumnVector& rycoarse,
   Tracer tr("set_rot_samplings");
   //int coarsesize = 4, finesize = 11;
   // sets the number of rows (angle samples) for each axis
-  rxcoarse.ReSize(round((globaloptions::get().searchrx(2) 
+  rxcoarse.ReSize(MISCMATHS::round((globaloptions::get().searchrx(2) 
 			 - globaloptions::get().searchrx(1))
 			/globaloptions::get().coarsedelta)+1);
-  rycoarse.ReSize(round((globaloptions::get().searchry(2) 
+  rycoarse.ReSize(MISCMATHS::round((globaloptions::get().searchry(2) 
 			 - globaloptions::get().searchry(1))
 			/globaloptions::get().coarsedelta)+1);
-  rzcoarse.ReSize(round((globaloptions::get().searchrz(2) 
+  rzcoarse.ReSize(MISCMATHS::round((globaloptions::get().searchrz(2) 
 			 - globaloptions::get().searchrz(1))
 			/globaloptions::get().coarsedelta)+1);
-  rxfine.ReSize(round((globaloptions::get().searchrx(2) 
+  rxfine.ReSize(MISCMATHS::round((globaloptions::get().searchrx(2) 
 		       - globaloptions::get().searchrx(1))
 			/globaloptions::get().finedelta)+1);
-  ryfine.ReSize(round((globaloptions::get().searchry(2) 
+  ryfine.ReSize(MISCMATHS::round((globaloptions::get().searchry(2) 
 		       - globaloptions::get().searchry(1))
 			/globaloptions::get().finedelta)+1);
-  rzfine.ReSize(round((globaloptions::get().searchrz(2) 
+  rzfine.ReSize(MISCMATHS::round((globaloptions::get().searchrz(2) 
 		       - globaloptions::get().searchrz(1))
 			/globaloptions::get().finedelta)+1);
   // now get the appropriate angle sample values
@@ -748,9 +750,9 @@ void search_cost(Matrix& paramlist, volume<float>& costs, volume<float>& tx,
   paramlist.ReSize(bestpts.Nrows(),12);
   int ix,iy,iz;
   for (int n=1; n<=paramlist.Nrows(); n++) {
-    ix = round(bestpts(n,1));
-    iy = round(bestpts(n,2));
-    iz = round(bestpts(n,3));
+    ix = MISCMATHS::round(bestpts(n,1));
+    iy = MISCMATHS::round(bestpts(n,2));
+    iz = MISCMATHS::round(bestpts(n,3));
     if (globaloptions::get().verbose>=3) 
       cerr << "Cost minima at : " << ix << "," << iy << "," << iz << endl;
     rx = finerx(ix+1);
@@ -1992,7 +1994,7 @@ void usrsetscale(float usrscale,
     }
     // may need to fix this for very small scales - should really work
     //   on number of voxels...
-    globalpair->set_no_bins(globaloptions::get().no_bins/scale);
+    globalpair->set_no_bins(int(globaloptions::get().no_bins/scale));
     globalpair->smoothsize = globaloptions::get().smoothsize;
     globalpair->fuzzyfrac = globaloptions::get().fuzzyfrac;
     if (globaloptions::get().verbose>=3) {
