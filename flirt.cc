@@ -1394,7 +1394,8 @@ void search_cost(Matrix& paramlist, volume& costs, volume& tx,
     ix = (int) bestpts(n,1);
     iy = (int) bestpts(n,2);
     iz = (int) bestpts(n,3);
-    cerr << "Cost minima at : " << ix << "," << iy << "," << iz << endl;
+    if (globalopts.verbose>=3) 
+      cerr << "Cost minima at : " << ix << "," << iy << "," << iz << endl;
     rx = finerx(ix+1);
     ry = finery(iy+1);
     rz = finerz(iz+1);
