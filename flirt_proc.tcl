@@ -8,12 +8,6 @@
 #
 # TCLCOPYRIGHT
 
-#{{{ setup
-
-source [ file dirname [ info script ] ]/fslstart.tcl
-
-
-#}}}
 #{{{ FixMedxTransform
 
 proc FixMedxTransform { xfmfname OriginX OriginY OriginZ XPixelSeparation YPixelSeparation ZPixelSeparation } {
@@ -525,4 +519,3 @@ proc flirt:medxrun { reffile infile flirtoptions flirtweights flirtinterp TempFi
 }
 
 #}}}
-
