@@ -9,11 +9,11 @@
 # TCLCOPYRIGHT
 
 
-proc invertxfm_proc { transAB volA volB transBA popups } {
+proc invertxfm_proc { transAB volA volB transBA xfmtype popups } {
 
     global PXHOME FSLDIR USER MEDXV HOME INMEDX CLUSTERRSH
 
-    invertxfm_run $transAB $volA $volB $transBA u
+    invertxfm_run $transAB $volA $volB $transBA $xfmtype
 
     return 0
 
