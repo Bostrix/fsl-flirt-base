@@ -1428,8 +1428,8 @@ void no_optimise()
   volume refvol, testvol;
   // set up image pair and global pointer
   
-  get_refvol(refvol);
   short dtype;
+  read_volume(refvol,globaloptions::get().reffname);
   read_volume(testvol,globaloptions::get().inputfname,dtype);
   if (!globaloptions::get().forcedatatype)
     globaloptions::get().datatype = dtype;
@@ -1445,8 +1445,6 @@ void no_optimise()
   
   if (globaloptions::get().iso) {
     resample_refvol(refvol,globaloptions::get().isoscale);
-  }
-  {
     volume testvol_1;
     blur4subsampling(testvol_1,testvol,min_sampling_ref);
     testvol = testvol_1;
@@ -1459,7 +1457,8 @@ void no_optimise()
 
   volume outputvol = refvol;
   final_transform(outputvol,testvol,globaloptions::get().initmat);
-  safe_save_volume(outputvol,globaloptions::get().outputfname.c_str());
+  save_volume(outputvol,globaloptions::get().outputfname.c_str(),
+	      globaloptions::get().datatype);
   if (globaloptions::get().verbose>=2) {
     save_matrix_data(globaloptions::get().initmat, testvol, outputvol);
     print_volume_info(outputvol,"Resampled volume");
