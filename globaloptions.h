@@ -17,7 +17,7 @@
 
 #include "costfns.h"
 
-using namespace COSTFNS;
+using namespace NEWIMAGE;
 
   enum anglereps { Euler, Quaternion };
   enum interps { TriLinear, NearestNeighbour, Sinc };
