@@ -157,6 +157,15 @@ void parse_command_line(int argc, char* argv[])
 
 ////////////////////////////////////////////////////////////////////////////
 
+void print_info(const volume& vol, const string& name) {
+  cout << name << ":: SIZE = " << vol.xsize() << " x " << vol.ysize() 
+       << " x " << vol.zsize() << endl;
+  cout << name << ":: DIMS = " << vol.getx() << " x " << vol.gety() 
+       << " x " << vol.getz() << " mm" << endl << endl;
+}  
+
+////////////////////////////////////////////////////////////////////////////
+
 int main(int argc,char *argv[])
 {
   parse_command_line(argc,argv);
@@ -174,9 +183,9 @@ int main(int argc,char *argv[])
   }
     
   if (globalopts.verbose>3) {
-    print_volume_info(talvol,"Talairach Volume");
+    print_info(talvol,"Talairach Volume");
     cout << " origin = " << talvol.avw_origin.t() << endl << endl;
-    print_volume_info(epivol,"EPI Volume");
+    print_info(epivol,"EPI Volume");
     cout << " origin = " << epivol.avw_origin.t() << endl;
   }
 
