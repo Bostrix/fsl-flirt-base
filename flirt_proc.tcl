@@ -12,6 +12,7 @@
 
 proc FixMedxTransform { xfmfname OriginX OriginY OriginZ XPixelSeparation YPixelSeparation ZPixelSeparation } {
 
+
     set notfound 0
     set optr [ open ${xfmfname}TMP w ]
     set fptr [ open $xfmfname r ]
@@ -51,7 +52,7 @@ proc FixMedxTransform { xfmfname OriginX OriginY OriginZ XPixelSeparation YPixel
     close $fptr
     close $optr
 
-    set errrr [ catch { exec /bin/mv -f ${xfmfname}TMP ${xfmfname} } junk ]    
+    set errrr [ catch { exec sh -c "/bin/mv -f ${xfmfname}TMP ${xfmfname}" } junk ]    
 }
 
 #}}}
@@ -73,7 +74,7 @@ proc TalairachMedxTransform { xfmfname } {
     close $fptr
     close $optr
 
-    set errrr [ catch { exec /bin/mv -f ${xfmfname}TMP ${xfmfname} } junk ]    
+    set errrr [ catch { exec sh -c "/bin/mv -f ${xfmfname}TMP ${xfmfname}" } junk ]    
 }
 
 #}}}
@@ -96,7 +97,7 @@ proc ConcatedTalairachMedxTransform { xfmfname } {
     close $fptr
     close $optr
 
-    set errrr [ catch { exec /bin/mv -f ${xfmfname}TMP ${xfmfname} } junk ]    
+    set errrr [ catch { exec sh -c "/bin/mv -f ${xfmfname}TMP ${xfmfname}" } junk ]    
 }
 
 #}}}
@@ -112,7 +113,7 @@ proc flirt:proc { regmode refname testname testname2 nstats statslist output dof
 
 if { $INMEDX } {
 
-    set TempFileBase [ exec ${FSLDIR}/bin/tmpnam ${HOME}/.fl ]
+    set TempFileBase [ exec sh -c "${FSLDIR}/bin/tmpnam ${HOME}/.fl" ]
 
     MxGetCurrentFolder Folder
  
