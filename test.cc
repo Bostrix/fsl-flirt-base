@@ -1,3 +1,13 @@
+/*  FLIRT - FMRIB's Linear Image Registration Tool
+
+    test.cc
+
+    Mark Jenkinson, FMRIB Image Analysis Group
+
+    Copyright (C) 1999-2000 University of Oxford  */
+
+/*  CCOPYRIGHT  */
+
 #include <string>
 #include <iostream>
 #include <fstream>
