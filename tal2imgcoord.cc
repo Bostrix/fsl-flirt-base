@@ -252,9 +252,9 @@ int main(int argc,char *argv[])
     if (imgvol.sform_code()==NIFTI_XFORM_UNKNOWN) { 
       if (globalopts.verbose>0) {
 	cerr << "WARNING:: Standard coordinates not set in img" << endl; 
-	// using sform = sampling_mat
-	vox2tal = imgvol.sampling_mat();
       }
+      // using sform = sampling_mat
+      vox2tal = imgvol.sampling_mat();
     }
   } else {
 
@@ -264,9 +264,9 @@ int main(int argc,char *argv[])
     if (talvol.sform_code()==NIFTI_XFORM_UNKNOWN) { 
       if (globalopts.verbose>0) {
 	cerr << "WARNING:: Standard coordinates not set in tal image" << endl; 
-	// using sform = sampling_mat
-        vox2tal = affmat * imgvol.sampling_mat();
       }
+      // using sform = sampling_mat
+      vox2tal = affmat * imgvol.sampling_mat();
     }
     
     if (globalopts.verbose>3) {
