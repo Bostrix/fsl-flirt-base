@@ -24,6 +24,10 @@ void globaloptions::parse_command_line(int argc,char** argv,
     if (first!='-') {
       inputfname = arg;
       n++;
+      cerr << "WARNING: change in option usage" << endl << endl;
+      cerr << "To specify the input volume the option -in should be used" 
+	   << endl << "Accepting the filename for now, but please update "
+	   << "to new syntax in future." << endl << endl;
       continue;
     }
     
@@ -84,6 +88,10 @@ void globaloptions::parse_command_line(int argc,char** argv,
       continue;
     } else if ( arg == "-ref") {
       reffname = argv[n+1];
+      n+=2;
+      continue;
+    } else if ( arg == "-in") {
+      inputfname = argv[n+1];
       n+=2;
       continue;
     } else if ( arg == "-init") {
@@ -227,8 +235,9 @@ void globaloptions::print_usage(int argc, char *argv[])
 {
   print_version();
   cout << endl;
-  cout << "Usage: " << argv[0] << " [options] <testvol>\n\n"
+  cout << "Usage: " << argv[0] << " [options] -in <inputvol> -ref <refvol>\n\n"
        << "  Available options are:\n"
+       << "        -in  <inputvol>                    (no default)\n"
        << "        -ref <refvol>                      (default is "
                                         << reffname << ")\n"
        << "        -init <matrix-filname>             (4x4 affine matrix - "
