@@ -8,7 +8,7 @@
 #
 # TCLCOPYRIGHT
 
-#{{{ FixMedxTransform
+#{{{ FixMedxTransform 
 
 proc FixMedxTransform { xfmfname OriginX OriginY OriginZ XPixelSeparation YPixelSeparation ZPixelSeparation } {
 
@@ -412,17 +412,17 @@ if { $interp == "sinc" } {
 set outroot [ file rootname $output ]
 
 if { $regmode == 1 } {
-    set thecommand "${FSLDIR}/bin/flirt -in $testname -ref $refname -out $output -omat ${outroot}.mat $flirtoptions $flirtweights1 $flirtinterp"
+    set thecommand "$CLUSTERRSH ${FSLDIR}/bin/flirt -in $testname -ref $refname -out $output -omat ${outroot}.mat $flirtoptions $flirtweights1 $flirtinterp"
     puts $thecommand
     catch { exec sh -c $thecommand } errmsg
     puts $errmsg
 } else {
-    set thecommand "${FSLDIR}/bin/flirt -in $testname -ref $refname -omat ${outroot}1.mat $flirtoptions $flirtweights1"
+    set thecommand "$CLUSTERRSH ${FSLDIR}/bin/flirt -in $testname -ref $refname -omat ${outroot}1.mat $flirtoptions $flirtweights1"
     puts $thecommand
     catch { exec sh -c $thecommand } errmsg
     puts $errmsg
 
-    set thecommand "${FSLDIR}/bin/flirt -in $testname2 -ref $testname -omat ${outroot}2.mat $flirtoptions $flirtweights2"
+    set thecommand "$CLUSTERRSH ${FSLDIR}/bin/flirt -in $testname2 -ref $testname -omat ${outroot}2.mat $flirtoptions $flirtweights2"
     puts $thecommand
     catch { exec sh -c $thecommand } errmsg
     puts $errmsg
@@ -480,7 +480,7 @@ proc flirt:medxrun { reffile infile flirtoptions flirtweights flirtinterp TempFi
     catch { exec sh -c "/bin/chmod 755 ${reffile}* ${infile}*" } junk
     
     # set up the command to be executed
-    set fullcommand "${FSLDIR}/bin/flirt -ref $reffile -in $infile -omedx $xfmfilename $flirtoptions $flirtweights $flirtinterp"
+    set fullcommand "$CLUSTERRSH ${FSLDIR}/bin/flirt -ref $reffile -in $infile -omedx $xfmfilename $flirtoptions $flirtweights $flirtinterp"
 
     # run command
     ScriptUpdate "$fullcommand"
