@@ -66,7 +66,6 @@ class globaloptions {
   int verbose;
   bool interactive;
   bool do_optimise;
-  bool measure_cost;
   bool nosave;
   bool iso;
   bool resample;
@@ -160,7 +159,6 @@ inline globaloptions::globaloptions()
   verbose = 0;
   interactive = false;
   do_optimise = true;
-  measure_cost = false;
   nosave = true;
   iso = true;
   resample = true;
