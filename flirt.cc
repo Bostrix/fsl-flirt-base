@@ -77,10 +77,12 @@ void set_basescale(const string& filenameA, const string& filenameB)
 
 
 int FLIRT_read_volume4D(volume4D<float>& target, const string& filename, 
-			volumeinfo& vinfo)
+			volumeinfo& vinfo, int& LRorder)
 {
   // make voxels bigger if basescale is smaller than 1.0 (and vice versa)
   int retval = read_volume4D(target,filename,vinfo);
+  LRorder = target.left_right_order();
+  target.makeradiological();
   // if basescale != 1.0
   if (fabs(globaloptions::get().basescale - 1.0)>1e-5) {
     target.setxdim(target.xdim() / globaloptions::get().basescale);
@@ -90,21 +92,35 @@ int FLIRT_read_volume4D(volume4D<float>& target, const string& filename,
   return retval;
 }
 
+int FLIRT_read_volume(volume<float>& target, const string& filename, 
+		      volumeinfo& vinfo, int& LRorder)
+{
+  // make voxels bigger if basescale is smaller than 1.0 (and vice versa)
+  int retval = read_volume(target,filename,vinfo);
+  LRorder = target.left_right_order();
+  target.makeradiological();
+  // if basescale != 1.0
+  if (fabs(globaloptions::get().basescale - 1.0)>1e-5) {
+    target.setxdim(target.xdim() / globaloptions::get().basescale);
+    target.setydim(target.ydim() / globaloptions::get().basescale);
+    target.setzdim(target.zdim() / globaloptions::get().basescale);
+  }
+  return retval;
+}
+
+int FLIRT_read_volume4D(volume4D<float>& target, const string& filename, 
+			volumeinfo& vinfo)
+{
+  int LRorder;
+  return FLIRT_read_volume4D(target,filename,vinfo,LRorder);
+}
 
 int FLIRT_read_volume(volume<float>& target, const string& filename, 
 		      volumeinfo& vinfo)
 {
-  // make voxels bigger if basescale is smaller than 1.0 (and vice versa)
-  int retval = read_volume(target,filename,vinfo);
-  // if basescale != 1.0
-  if (fabs(globaloptions::get().basescale - 1.0)>1e-5) {
-    target.setxdim(target.xdim() / globaloptions::get().basescale);
-    target.setydim(target.ydim() / globaloptions::get().basescale);
-    target.setzdim(target.zdim() / globaloptions::get().basescale);
-  }
-  return retval;
+  int LRorder;
+  return FLIRT_read_volume4D(target,filename,vinfo,LRorder);
 }
-
 
 int FLIRT_read_volume(volume<float>& target, const string& filename)
 {
@@ -166,38 +182,8 @@ void save_matrix_data(const Matrix& matresult, const volume<float>& initvol,
 		    initvol,finalvol,"a",globaloptions::get().reffname);
 }
 
-void save_global_data(const Matrix& matresult, const volume<float>& initvol,
-		      const volume<float>& finalvol)
-{
-    // save the data now
-    safe_save_volume(globaloptions::get().impair->testvol,"inputvol");
-    safe_save_volume(globaloptions::get().impair->refvol,"refvol");
-    volume<float> outputvol;
-    outputvol = globaloptions::get().impair->refvol;
-    final_transform(globaloptions::get().impair->testvol,outputvol,
-		     matresult * globaloptions::get().initmat);
-    safe_save_volume(outputvol,globaloptions::get().outputfname.c_str());
-    save_matrix_data(matresult * globaloptions::get().initmat,initvol,finalvol);
-}
-
-void save_global_data(const Matrix& matresult) {
-  save_global_data(matresult,globaloptions::get().impair->testvol,
-		   globaloptions::get().impair->testvol);
-}
-
-
 float costfn(const Matrix& matresult);
 
-void save_workspace_and_pause(const Matrix& matresult) {
-  Tracer tr("save_workspace_and_pause");
-  costfn(matresult);      
-  save_global_data(matresult);
-  if (globaloptions::get().interactive) {
-    cerr << "Enter a number to continue..."; // forces the transform to be done
-    int dummy; 
-    cin >> dummy;
-  }
-}
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -1281,7 +1267,9 @@ void no_optimise()
 
   // set up image pair and global pointer
   
-  FLIRT_read_volume(refvol,globaloptions::get().reffname);
+  int refLRorder;
+  volumeinfo dummy;
+  FLIRT_read_volume(refvol,globaloptions::get().reffname,dummy,refLRorder);
   FLIRT_read_volume4D(testvol,globaloptions::get().inputfname,
 	      globaloptions::get().vinfo);
 
@@ -1297,13 +1285,6 @@ void no_optimise()
     globaloptions::get().datatype = dtype;
   read_matrix(globaloptions::get().initmat,
 	      globaloptions::get().initmatfname,testvol[0]);
-
-  if (!same_left_right_order(refvol,testvol)) {
-    if (globaloptions::get().verbose>0) {
-      cout << "Swapping Left and Right in testvol" << endl;
-    }
-    globaloptions::get().initmat = globaloptions::get().initmat * testvol.swapmat(-1,2,3);
-  }
 
   if (globaloptions::get().verbose>0) {
     if (refvol.sform_code()!=NIFTI_XFORM_UNKNOWN) {
@@ -1339,6 +1320,7 @@ void no_optimise()
     
     final_transform(testvol[t0],outputvol[tref],globaloptions::get().initmat);
   }
+  outputvol.setLRorder(refLRorder);
   save_volume4D_dtype(outputvol,globaloptions::get().outputfname.c_str(),
 		      globaloptions::get().datatype,globaloptions::get().vinfo);
 
@@ -1968,6 +1950,7 @@ void usroptimise(MatVecPtr stdresultmat,
 }
 
 
+
 void usrsetscale(float usrscale,
 		 volume<float>& testvol, volume<float>& refvol, 
 		 volume<float>& refvol_2, volume<float>& refvol_4, 
@@ -1986,12 +1969,6 @@ void usrsetscale(float usrscale,
     globaloptions::get().lastsampling = scale;
     // blur test volume to correct scale
     get_testvol(testvol);
-    if (!same_left_right_order(refvol,testvol)) {
-      if (globaloptions::get().verbose>0) {
-	cout << "Swapping Left and Right in testvol" << endl;
-      }
-      globaloptions::get().initmat = globaloptions::get().initmat * testvol.swapmat(-1,2,3);
-    }
 
     volume<float> testvolnew;
     testvolnew = blur(testvol,scale);
@@ -2359,13 +2336,6 @@ int main(int argc,char *argv[])
   volume<float> refvol, testvol;
   get_refvol(refvol);
   get_testvol(testvol);
-  if (!same_left_right_order(refvol,testvol)) {
-    cerr << "WARNING:: Images have different Left-Right conventions" << endl;
-    cerr << "          (one is radiological and one is neurological)" << endl;
-    cerr << "Inserting a left-right swap in the registration matrix" 
-         << endl << endl;
-    globaloptions::get().initmat = globaloptions::get().initmat * testvol.swapmat(-1,2,3);
-  }
 
   if ( (refvol.sform_code()!=NIFTI_XFORM_UNKNOWN) && 
        (testvol.sform_code()!=NIFTI_XFORM_UNKNOWN) ) {
@@ -2531,8 +2501,9 @@ int main(int argc,char *argv[])
     // want unity basescale for transformed output
     globaloptions::get().basescale = 1.0;
 
+    int refLRorder;
     FLIRT_read_volume(testvol,globaloptions::get().inputfname);
-    FLIRT_read_volume(refvol,globaloptions::get().reffname);
+    FLIRT_read_volume(refvol,globaloptions::get().reffname,dummy,refLRorder);
     if (globaloptions::get().verbose>=2) {
       print_volume_info(testvol,"testvol");
       print_volume_info(testvol,"refvol");
@@ -2556,6 +2527,7 @@ int main(int argc,char *argv[])
       if (globaloptions::get().verbose>=2) {
 	print_volume_info(newtestvol,"Transformed testvol");
       }
+      newtestvol.setLRorder(refLRorder);
       save_volume_dtype(newtestvol,globaloptions::get().outputfname.c_str(),
 			globaloptions::get().datatype,
 			globaloptions::get().vinfo);
