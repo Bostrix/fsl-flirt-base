@@ -864,6 +864,10 @@ int optimise_strategy0(Matrix& matresult, float& fans, int max_iterations=4)
 
   params_N = globaloptions::get().refparams;
   params12toN(params_N);
+  if (globaloptions::get().verbose>6) {
+    cout << "Starting with " << params_N.t();
+    cout << "  and tolerance " << param_tol.t();
+  }
   optimise(params_N,globaloptions::get().parammask.Ncols(),
 	   param_tol,no_its,&fans,subset_costfn,max_iterations);
   paramsNto12(params_N);
@@ -897,6 +901,10 @@ int optimise_strategy1(Matrix& matresult, float& fans, int input_dof,
   set_param_tols(param_tol,12);  // 12 used to be dof
   affmat2vector(matresult,dof,params);
   //optimise(params,dof,param_tol,&no_its,&fans,costfn,max_iterations);
+  if (globaloptions::get().verbose>6) {
+    cout << "Starting with " << params.t();
+    cout << "  and tolerance " << param_tol.t();
+  }
   optimise(params,dof,param_tol,no_its,&fans,costfn,max_iterations);
   vector2affine(params,dof,matresult);
   return no_its;
