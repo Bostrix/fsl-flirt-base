@@ -1105,7 +1105,8 @@ int get_testvol(volume& testvol)
   Tracer tr("get_testvol");
   short dtype;
   read_volume(testvol,globaloptions::get().inputfname,dtype);
-  globaloptions::get().datatype = dtype;
+  if (!globaloptions::get().forcedatatype)
+    globaloptions::get().datatype = dtype;
   read_matrix(globaloptions::get().initmat,globaloptions::get().initmatfname,testvol);
 
   ColumnVector hist;
@@ -1179,8 +1180,10 @@ void no_optimise()
   // set up image pair and global pointer
   
   get_refvol(refvol);
-  read_volume(testvol,globaloptions::get().inputfname,
-	      globaloptions::get().datatype);
+  short dtype;
+  read_volume(testvol,globaloptions::get().inputfname,dtype);
+  if (!globaloptions::get().forcedatatype)
+    globaloptions::get().datatype = dtype;
   read_matrix(globaloptions::get().initmat,
 	      globaloptions::get().initmatfname,testvol);
   if (globaloptions::get().verbose>=2) {
