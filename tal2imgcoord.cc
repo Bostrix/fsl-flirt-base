@@ -230,11 +230,12 @@ int main(int argc,char *argv[])
     cout << " epivox2world =" << endl << epivox2world << endl;
   }
 
-  ColumnVector epicoord(4), talcoord(4);
+  ColumnVector epicoord(4), talcoord(4), oldtal(4);
   epicoord = 0;
   talcoord = 0;
   epicoord(4)=1;
   talcoord(4)=1;
+  oldtal = 0;  // 4th component set to 0, so that initially oldtal -ne talcoord
 
   if (globalopts.mm) {
     cout << "Coordinates in EPI volume (in mm):" << endl;
@@ -268,6 +269,8 @@ int main(int argc,char *argv[])
       for (int j=1; j<=3; j++) {
 	cin >> talcoord(j);
       }
+      if (oldtal == talcoord)  return 0;
+      oldtal = talcoord;
       if (globalopts.mm) {  // in mm
 	epicoord = vf2w2 * epivox2world.i() * affmat * talvox2world * talcoord;
       } else { // in voxels
