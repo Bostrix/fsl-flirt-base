@@ -8,6 +8,7 @@
 #include "miscmaths.h"
 #include "miscimfns.h"
 #include "interpolation.h"
+#include "newmatio.h"
 
 #ifndef NO_NAMESPACE
  using namespace MISCIMFNS;
@@ -428,6 +429,7 @@
       //  value there.
       // Also, the sampling transformations must be accounted for:
       //     T_vox1->vox2 = (T_samp2)^-1 * T_world * T_samp1
+
       Matrix iaffbig = vtest.sampling_matrix().i() * aff.i() *
 	                     vref.sampling_matrix();  
       Matrix iaff=iaffbig.SubMatrix(1,3,1,3);
@@ -439,7 +441,7 @@
 	a21=iaff(2,1), a22=iaff(2,2), a23=iaff(2,3), a24=iaffbig(2,4),
 	a31=iaff(3,1), a32=iaff(3,2), a33=iaff(3,3), a34=iaffbig(3,4), o1,o2,o3;
 
-      for (long int i=0; i<=(no_bins*no_bins+2*no_bins-1); i++) {
+      for (long int i=0; i<((no_bins+1)*(no_bins+1)); i++) {
 	  jointhist[i]=0;
       }
       for (int i=0; i<=no_bins; i++) {
@@ -479,11 +481,12 @@
 	    
 	    // do the cost function record keeping...
 	    a=*bptr;
-	    b=(long int) (val*b1 + b0) + 1;
+	    b=(long int) (val*b1 + b0);
 	    if (b>=no_bins) b=no_bins-1;
-	    (jointhist[(a-1)*(no_bins+1) + b-1])++;
-	    (marghist1[a-1])++;
-	    (marghist2[b-1])++;
+	    if (b<0) b=0;
+	    (jointhist[a*(no_bins+1) + b])++;
+	    (marghist1[a])++;
+	    (marghist2[b])++;
 
 	    bptr++;
 	    o1 += a11;
@@ -499,7 +502,7 @@
       int n=0, psize=plnp.Nrows();
       long int nvoxels = (long int) (vref.rows() * vref.columns() * 
 				     vref.slices());
-      for (long int i=0; i<(no_bins*no_bins+2*no_bins); i++) {
+      for (long int i=0; i<((no_bins+1)*(no_bins+1)); i++) {
 	n = jointhist[i];
 	if (n>0) {
 	  if (n<=psize)
