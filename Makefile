@@ -19,9 +19,9 @@ TAL_OBJS = tal2imgcoord.o
 EPI_OBJS = img2talcoord.o
 IMG_OBJS = img2imgcoord.o
 X_OBJS = applyxfm4D.o
-P_OBJS = procrustes.o
+P_OBJS = pointflirt.o
 
-RUNTCLS = Flirt InvertXFM
+RUNTCLS = Flirt InvertXFM ApplyXFM
 XFILES = flirt convert_xfm avscale rmsdiff tal2imgcoord img2talcoord \
 	img2imgcoord applyxfm4D
 TESTXFILES = 
@@ -58,7 +58,7 @@ img2imgcoord:	${IMG_OBJS}
 applyxfm4D:	${X_OBJS}
 		${CXX}  ${CXXFLAGS} ${LDFLAGS} -o $@  ${X_OBJS} ${LIBS}
 
-procrustes:	${P_OBJS}
+pointflirt:	${P_OBJS}
 		${CXX}  ${CXXFLAGS} ${LDFLAGS} -o $@  ${P_OBJS} ${LIBS}
 
 
