@@ -21,7 +21,7 @@ using namespace COSTFNS;
 
   enum anglereps { Euler, Quaternion };
   enum interps { TriLinear, NearestNeighbour, Sinc };
-  enum windowtype { Rectangular, Hanning, Blackman };
+  enum windowtype { Rect, Hanning, Blackman };
 
   typedef std::vector<RowVector> MatVec;
   typedef MatVec* MatVecPtr;
