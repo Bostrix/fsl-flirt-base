@@ -123,7 +123,7 @@ void globaloptions::parse_command_line(int argc,char** argv,
       do_optimise = false;
       iso = true;
       nosave = false;
-      n++;
+      n+=2;
       continue;
     } else if ( arg == "-minsampling") {
       min_sampling = atof(argv[n+1]);
