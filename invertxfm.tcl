@@ -131,8 +131,11 @@ pack $w.f.type.a $w.f.type.b -in $w.f.type -side top -anchor w
     frame $w.btns
     frame $w.btns.b -relief raised -borderwidth 1
     
-    button $w.apply     -command "InvertXFM:apply $w" \
+    button $w.go     -command "InvertXFM:go $w" \
 	    -text "Go" -width 5
+
+    button $w.apply     -command "InvertXFM:apply $w" \
+	    -text "Apply" -width 5
 
     button $w.cancel    -command "destroy $w" \
 	    -text "Exit" -width 5
@@ -141,7 +144,7 @@ pack $w.f.type.a $w.f.type.b -in $w.f.type -side top -anchor w
 	    -text "Help" -width 5
 
     pack $w.btns.b -side bottom -fill x
-    pack $w.apply $w.cancel $w.help -in $w.btns.b \
+    pack $w.go $w.apply $w.cancel $w.help -in $w.btns.b \
 	    -side left -expand yes -padx 3 -pady 10 -fill y
     
     pack $w.f $w.btns -expand yes -fill both
@@ -152,12 +155,20 @@ pack $w.f.type.a $w.f.type.b -in $w.f.type -side top -anchor w
 #}}}
 #{{{ InvertXFM:apply
 
+proc InvertXFM:go { w } {
+    global entries
+
+    catch { InvertXFM:apply $w }
+    destroy $w
+}
+
 proc InvertXFM:apply { w } {
     global entries
 
     catch { invertxfm:proc $entries($w,1) $entries($w,2) $entries($w,3) $entries($w,4) $entries($w,5) }
 
     update idletasks
+    puts "Done"
 }
 
 #}}}
