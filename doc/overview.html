@@ -11,7 +11,7 @@
 
 <A NAME="section1"></A><HR><H2>INTRODUCTION</H2>
  
-This document gives a brief description of the various command line
+This document gives a brief description of flirt and the various command-line
 programs available in the FLIRT component of FSL.  A description of
 the <a href="gui.html">GUI interface</a> is also available.
 
@@ -25,15 +25,16 @@ program with no options.
 
 <A NAME="section2"></A><HR><H2>flirt</H2>
  
-<B>flirt</B> is the main program that performs affine registration.  It takes
+<B>flirt</B> is the main program that performs affine registration.  The main options are:
 an input (<FONT COLOR=PURPLE>-in</FONT>) and a reference
-(<FONT COLOR=PURPLE>-ref</FONT>) volume, and then calculates the affine
-transformation that registers the input to the reference.  The
-transformation can be saved as a 4x4 affine matrix
-(<FONT COLOR=PURPLE>-omat</FONT>) or as a MEDx transform
-(<FONT COLOR=PURPLE>-omedx</FONT>). The transform can be applied to
-the input volume to create an output (<FONT COLOR=PURPLE>-out</FONT>)
-which will be in alignment with the reference volume.
+(<FONT COLOR=PURPLE>-ref</FONT>) volume; the calculated affine
+transformation that registers the input to the reference which is
+saved as a 4x4 affine matrix
+(<FONT COLOR=PURPLE>-omat</FONT>); and 
+output volume (<FONT COLOR=PURPLE>-out</FONT>)
+where the transform is applied to
+the input volume to 
+align it with the reference volume.
 
 <P>
 In addition, FLIRT can also be used to apply a saved transformation to
@@ -43,7 +44,7 @@ the voxel and image dimensions of the resulting volume.
 <br>
 
 <P>
-<FONT COLOR="#c00000">New Features:</FONT><br>
+Features:<br>
 <DL>
 <DT> <I>Cost Function Weighting</I></DT>
 <DD> Weighting volumes can be specified
@@ -55,27 +56,33 @@ weighting around important structures such as the ventricles.  Note
 that this is different from masking the original images, as masking introduces
 artificial boundaries whereas weighting does not.
 </DD>
-<DT> <I>Different Interpolation Methods</I></DT>
+<DT> <I>Degrees of Freedom</I></DT>
+<DD> Choose from 6,7,9 or 12 Degrees of Freedom (DOF) for full 3D registrations.
+Also includes a 3DOF 2D-to-2D registration mode which is selected using the
+<FONT COLOR=PURPLE>-2D</FONT> option.  Note that
+it does not perform any search in 2D mode, and cannot deal with 2D to 3D
+registrations.  More flexible DOF options are provided by the specific
+schedule files provided in <tt>$FSLDIR/etc/flirtsch</tt>.
+</DD>
+<DT> <I>Interpolation Methods</I></DT>
 <DD> This includes Nearest Neighbour and
 a family of Sinc-based methods (three window types - rectangular, Hanning and
 Blackman) with configurable window width.  The interpolation is only used
 for the final transformation (and in applyxfm), not in the registration
 calculations.
 </DD>
-<DT> <I>2D Rigid-Body Mode</I></DT>
-<DD> This allows 2D to 2D registrations to be performed.
-This is selected with the <FONT COLOR=PURPLE>-2D</FONT> option.  Note that
-it does not perform any search in this mode, and cannot deal with 2D to 3D
-registrations.</DD>
+<DT> <I>Cost Functions</I></DT>
+<DD> This includes the within-modality functions Least Squares and Normalised Correlation, as well as the between-modality functions Correlation Ratio (the default), Mutual Information and Normalised Mutual Information.
+</DD>
 </UL>
 
  <!-- J-Back -->
 
-<A NAME="section3"></A><HR><H2>convert_xfm</H2>
+<A NAME="misc"></A><HR><H2>convert_xfm</H2>
  
 <B>convert_xfm</B> is a utility that is used to convert between different
 transformation file formats.  It can read and write ascii 4x4 matrices
-and MEDx transforms as well as reading MINC transform files.  In
+(and MEDx transforms).  In
 addition, it can be used to concatenate two transforms (using
 <FONT COLOR=PURPLE>-concat</FONT> with the second transform) or to find the
 inverse transformation (using <FONT COLOR=PURPLE>-inverse</FONT>).
@@ -83,9 +90,8 @@ inverse transformation (using <FONT COLOR=PURPLE>-inverse</FONT>).
 <P>
 As MEDx transformations require voxel dimensions, the input and
 reference volume corresponding to the transformation must be specified
-when using this command.  However, if only ascii files are used, the
-<FONT COLOR=PURPLE>-matonly</FONT> option can be used, in which case no volumes
-need to be specified.
+when using this command.  However, if only ascii files are used
+no volumes need to be specified (as in the example usage).
 <br>
 
  <!-- J-Back -->
@@ -133,6 +139,8 @@ trilinear interpolation, while appropriate options (-applyxfm and
 -init) to FLIRT can be used to apply transformations to single volumes
 with other interpolation methods.  A reference volume is required in
 order to determine the matrix size and FOV for the final volume.
+If the required matrices do not start with MAT_ a different prefix
+can be specified with the <font color=purple>-userprefix</font> option.
 
  <!-- J-Back -->
 
@@ -142,7 +150,10 @@ order to determine the matrix size and FOV for the final volume.
 (in millimetres) between two transformations.  That is, it compares
 two transformations (normally two possible registrations of the same
 volume pair) to see how much they differ.  This is useful to compare
-alternative registrations.  Note that this cannot be used with MEDx 
+alternative registrations.  It calculates the average using an analytic
+formula applied over an 80mm sphere with the origin at the centre of the
+image (for which it requires the input image to be specified).  
+Note that this cannot be used with MEDx 
 transformations.
 
  <!-- J-Back -->
@@ -160,5 +171,5 @@ reslice volume).
 
    <HR>
   <!-- No Footnotes -->
-  <H4>Mark Jenkinson  <BR><BR>Copyright &copy; 2000-2001, University of Oxford</H4><BR>
+  <H4>Mark Jenkinson  <BR><BR>Copyright &copy; 2000-2003, University of Oxford</H4><BR>
 </BODY></HTML>

@@ -22,7 +22,7 @@ journal reference listed there.
 <UL>
 <LI><a href="gui.html">Flirt</a> - FLIRT GUI<br>
 <LI><a href="overview.html">flirt</a> - command-line FLIRT program<br>
-<LI><a href="overview.html">misc flirt utilities</a> - associated command-line programs<br>
+<LI><a href="overview.html#misc">misc flirt utilities</a> - associated command-line programs<br>
 </UL>
 
 If you want to register FMRI data with only a few slices, then see <a
@@ -34,13 +34,13 @@ href="ztrans.html">here</a>.
 
 <LI>Use the image with the best quality (tissue contrast and resolution)
 as the Reference image, otherwise poor registrations may occur (the inverse
-transformation can be found afterwards using <b>convert_xfm</b>).
+transformation can be found afterwards using the <b>InvertXFM</b> gui or the <b>convert_xfm</b> command-line utility).
 <LI>Do use the default settings (especially in the GUI advanced
 options) as they have been carefully chosen.  
 <LI>Do use it for Talairaching with the MNI standard brains as it has been
 extensively tested with these images.
 <LI>For images showing pathology, consider using binary cost function weighting
-images - a zero for areas of a pathological nature and one elsewhere.
+images - a zero for areas of a pathological nature and one elsewhere (do not put zero outside the brain).
 <LI>Consider using the Group facility (GUI only)
 for running the registration on a collection of images (this is also easily
 achieved with the command-line version by scripting).
