@@ -59,6 +59,7 @@ class globaloptions {
   costfns searchcostfn;
   costfns currentcostfn;
   anglereps anglerep;
+  float isoscale;
   float min_sampling;
   float smoothsize;
   ColumnVector tolerance;
@@ -146,6 +147,7 @@ inline globaloptions::globaloptions()
   searchcostfn = CorrRatio;
   currentcostfn = CorrRatio;
   anglerep = Euler;
+  isoscale = 1.0;
   min_sampling = 1.0;
   smoothsize = 1.0;
   tolerance.ReSize(12);
