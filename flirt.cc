@@ -51,15 +51,6 @@ void print_vector(float x, float y, float z)
 }
 
 
-int round(const float val) {
-  Tracer tr("round");
-  if (val>0.0) {
-    return (int) (val + 0.5);
-  } else {
-    return (int) (val - 0.5);
-  }
-}
-
 //------------------------------------------------------------------------//
 // Some interfaces to generalio
 
