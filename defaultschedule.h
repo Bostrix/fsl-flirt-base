@@ -12,6 +12,8 @@
 #if !defined(__defaultschedule_h)
 #define __defaultschedule_h
 
+#include <vector>
+#include <string>
 
 void setdefaultschedule(std::vector<string>& comms)
 {

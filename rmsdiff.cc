@@ -6,6 +6,9 @@
 
 /*  CCOPYRIGHT  */
 
+#include <string>
+#include <iostream>
+#include <unistd.h>
 #define WANT_STREAM
 #define WANT_MATH
 

@@ -8,6 +8,13 @@
 
 /*  CCOPYRIGHT  */
 
+#include <string>
+#include <iostream>
+#include <fstream>
+#include <unistd.h>
+#include <time.h>
+#include <vector>
+#include <algorithm>
 #define WANT_STREAM
 #define WANT_MATH
 
