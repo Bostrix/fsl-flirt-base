@@ -170,7 +170,7 @@ inline globaloptions::globaloptions()
   searchrz.ReSize(2);
   searchrx << -M_PI/2.0 << M_PI/2.0;
   searchry << -M_PI/2.0 << M_PI/2.0;
-  searchrz << -M_PI << M_PI;
+  searchrz << -M_PI/2.0 << M_PI/2.0;
   coarsedelta = 60.0*M_PI/180.0;
   finedelta = 18.0*M_PI/180.0;
 
