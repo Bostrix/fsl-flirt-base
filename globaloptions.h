@@ -53,6 +53,8 @@ class globaloptions {
   anglereps anglerep;
   float min_sampling;
   float smoothsize;
+  ColumnVector tolerance;
+  ColumnVector boundguess;
 
   ColumnVector searchrx;
   ColumnVector searchry;
@@ -139,6 +141,11 @@ inline globaloptions::globaloptions()
   anglerep = Euler;
   min_sampling = 1.0;
   smoothsize = 1.0;
+  tolerance.ReSize(12);
+  tolerance << 0.005 << 0.005 << 0.005 << 0.2 << 0.2 << 0.2 << 0.002 
+	    << 0.002 << 0.002 << 0.001 << 0.001 << 0.001; 
+  boundguess.ReSize(2);
+  boundguess << 10.0 << 1.0;
 
   searchrx.ReSize(2);
   searchry.ReSize(2);
