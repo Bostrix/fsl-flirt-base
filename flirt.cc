@@ -2499,6 +2499,7 @@ int main(int argc,char *argv[])
     reshape(matresult,reshaped,4,4);
 
     // want unity basescale for transformed output
+    float oldbasescale = globaloptions::get().basescale;
     globaloptions::get().basescale = 1.0;
 
     int refLRorder;
@@ -2511,6 +2512,9 @@ int main(int argc,char *argv[])
     }
 
     Matrix finalmat = matresult * globaloptions::get().initmat;
+    finalmat(1,4) *= oldbasescale;
+    finalmat(2,4) *= oldbasescale;
+    finalmat(3,4) *= oldbasescale;
     if (globaloptions::get().verbose>=2) {
       cout << "Final transform matrix is:" << endl << finalmat << endl;
     }
