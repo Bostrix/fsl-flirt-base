@@ -142,10 +142,22 @@ proc invertxfm { w } {
 #}}}
 
 
+    frame $w.type
+    set entries($w,5) u
+    label $w.typebanner -text "Type of MEDx transform to save"
+    radiobutton $w.a -text "AlignLinearReslice" \
+	    -variable entries($w,5) -value a -anchor w
+    radiobutton $w.u -text "UserTransformation" \
+	    -variable entries($w,5) -value u -anchor w
+    radiobutton $w.t -text "IntoTalairachSpace" \
+	    -variable entries($w,5) -value t -anchor w
+
+    pack $w.typebanner -in $w.type -side top -padx 3
+    pack $w.u $w.a $w.t -in $w.type -side left -padx 3
 
     # ---- packing ---- #
 
-    pack $w.f.xfm $w.f.ref $w.f.test $w.f.outxfm -in $lfbasic -side top -anchor w -pady $PADY -padx 5
+    pack $w.f.xfm $w.f.ref $w.f.test $w.f.outxfm $w.type -in $lfbasic -side top -anchor w -pady $PADY -padx 5
     pack $w.f.basic -in $w.f -side top -anchor w -pady 0 -padx 5
 
     #{{{ buttons
@@ -191,7 +203,7 @@ proc invertxfm { w } {
 proc InvertXFM:apply { w dialog } {
     global reg entries
 
-    set status [ invertxfm_proc $entries($w,1) $entries($w,2) $entries($w,3) $entries($w,4) 1 ]
+    set status [ invertxfm_proc $entries($w,1) $entries($w,2) $entries($w,3) $entries($w,4) $entries($w,5) 1 ]
 
     update idletasks
     
