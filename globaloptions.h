@@ -94,6 +94,7 @@ class globaloptions {
   interps interpmethod;
   float sincwidth;
   windowtype sincwindow;
+  float paddingsize;
 
   int single_param;
 
@@ -202,6 +203,7 @@ inline globaloptions::globaloptions()
   interpmethod = TriLinear;
   sincwidth = 7.0; // voxels
   sincwindow = Hanning;
+  paddingsize = 0.0;
 
   single_param = -1;
 }
