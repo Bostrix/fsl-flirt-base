@@ -18,10 +18,11 @@ EPI_OBJS = img2talcoord.o
 IMG_OBJS = img2imgcoord.o
 X_OBJS = applyxfm4D.o
 P_OBJS = pointflirt.o
+M_OBJS = makerot.o
 
 RUNTCLS = Flirt InvertXFM ApplyXFM InvertMEDxXFM ConcatXFM
 XFILES = flirt convert_xfm avscale rmsdiff tal2imgcoord img2talcoord \
-	img2imgcoord applyxfm4D pointflirt
+	img2imgcoord applyxfm4D pointflirt makerot
 TESTXFILES = 
 HFILES =
 SCRIPTS = extracttxt pairreg fixxfm
@@ -59,5 +60,8 @@ applyxfm4D:	${X_OBJS}
 
 pointflirt:	${P_OBJS}
 		${CXX}  ${CXXFLAGS} ${LDFLAGS} -o $@  ${P_OBJS} ${LIBS}
+
+makerot:	${M_OBJS}
+		${CXX}  ${CXXFLAGS} ${LDFLAGS} -o $@  ${M_OBJS} ${LIBS}
 
 
