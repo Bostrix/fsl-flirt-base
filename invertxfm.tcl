@@ -97,20 +97,27 @@ FSLFileEntry $w.f.oxfm \
 		-filterhist VARS(history)
 
 #}}}
-    #{{{ Type of MEDx transformation to save
+    #{{{ Type of transformation to save
 
 set entries($w,5) n
     
 frame $w.f.type
-label $w.f.typebanner -text "Type of MEDx transform to save"
+label $w.f.typebanner -text "Type of transform to save"
 
-radiobutton $w.f.n -text "None"               -variable entries($w,5) -value n -anchor w
-radiobutton $w.f.a -text "AlignLinearReslice" -variable entries($w,5) -value a -anchor w
-radiobutton $w.f.u -text "UserTransformation" -variable entries($w,5) -value u -anchor w
-radiobutton $w.f.t -text "IntoTalairachSpace" -variable entries($w,5) -value t -anchor w
+radiobutton $w.f.a -text "MEDx AlignLinearReslice" -variable entries($w,5) -value a -anchor w
+radiobutton $w.f.u -text "MEDx UserTransformation" -variable entries($w,5) -value u -anchor w
+radiobutton $w.f.t -text "MEDx IntoTalairachSpace" -variable entries($w,5) -value t -anchor w
+radiobutton $w.f.n -text "FLIRT matrix"            -variable entries($w,5) -value n -anchor w
 
 pack $w.f.typebanner -in $w.f.type -side top -anchor w
-pack $w.f.n $w.f.u $w.f.a $w.f.t -in $w.f.type -side left -padx 3
+
+frame $w.f.type.a
+frame $w.f.type.b
+
+pack $w.f.u $w.f.a -in $w.f.type.a -side left
+pack $w.f.t $w.f.n -in $w.f.type.b -side left
+
+pack $w.f.type.a $w.f.type.b -in $w.f.type -side top -anchor w
 
 #}}}
     pack $w.f.oxfm $w.f.type -in $lfoutput -side top -anchor w -pady 3 -padx 5
@@ -160,18 +167,18 @@ proc invertxfm:proc { transAB volA volB invxfmfilename xfmtype } {
 
     global FSLDIR
 
-    set savemedx ""
-    if { $xfmtype != "n" } {
-	set savemedx "-omedx [ file rootname $invxfmfilename ].xfm -xfmtype $xfmtype"
+    if { $xfmtype == "n" } {
+	set savemedx "-omat $invxfmfilename"
+    } else {
+	set savemedx "-omedx $invxfmfilename -xfmtype $xfmtype"
     }
     
-    set thecommand "${FSLDIR}/bin/convert_xfm -ref $volB -in $volA -omat [ file rootname $invxfmfilename ].mat $savemedx -inverse $transAB"
+    set thecommand "${FSLDIR}/bin/convert_xfm -ref $volB -in $volA $savemedx -inverse $transAB"
     puts $thecommand
     catch { exec sh -c $thecommand } errmsg
     puts $errmsg
 
-    set success [ file readable [ file rootname $invxfmfilename ].mat ]
-    if { $success == 0 } {
+    if { [ file readable $invxfmfilename ] == 0 } {
 	puts "No transformation saved!"
 	return 4
     }
