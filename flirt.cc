@@ -804,7 +804,8 @@ int optimise_strategy0(Matrix& matresult, float& fans, int max_iterations=4)
     cout << "Using subset cost function" << endl;
   }
 
-  ColumnVector params, params_N, param_tol, param_tol0, param_tol1;
+  ColumnVector params(12), params_N(12), param_tol(12), param_tol0(12), 
+    param_tol1(12);
   int no_its=0;
 
   globaloptions::get().no_params = 12; // necessary for any subset_costfn call
