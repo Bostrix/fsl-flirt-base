@@ -21,7 +21,7 @@ IMG_OBJS = img2imgcoord.o
 X_OBJS = applyxfm4D.o
 P_OBJS = pointflirt.o
 
-RUNTCLS = Flirt InvertXFM ApplyXFM
+RUNTCLS = Flirt InvertXFM ApplyXFM InvertMEDxXFM ConcatXFM
 XFILES = flirt convert_xfm avscale rmsdiff tal2imgcoord img2talcoord \
 	img2imgcoord applyxfm4D pointflirt
 TESTXFILES = 
