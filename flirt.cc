@@ -2520,11 +2520,30 @@ void interpretcommand(const string& comline, bool& skip,
 
 ////////////////////////////////////////////////////////////////////////////
 
+// For random tests
+void test_proc(void) {
+  ColumnVector angl(3), centre(3);
+  Matrix rot(4,4);
+  float anglx=0.0;
+  cout << "Input x angl: ";
+  cin >> anglx;
+  angl << anglx << 0.0 << 0.0 ;
+  centre << 118.575 << 118.575 << 72.5 ;
+  make_rot(angl,centre,rot);
+  cout << "Rot matrix is: " << endl;
+  cout << rot;
+  exit(-1);
+  return;
+}
+
+////////////////////////////////////////////////////////////////////////////
 
 int main(int argc,char *argv[])
 {
   Tracer tr("main");
   try {
+
+    //test_proc();  // only used for some debugging
 
     parse_command_line(argc, argv);
 
