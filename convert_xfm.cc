@@ -93,7 +93,7 @@ void print_usage(int argc, char *argv[])
        << "        -concat <second-matrix-filename>\n"
        << "        -fixscaleskew <second-matrix-filename>\n"
        << "        -middlevol <intermediary-volume-filename>\n"
-       << "        -inverse\n"
+       << "        -inverse                           (Reference image must be the one originally used)\n"
        << "        -matonly                           (Use no volumes or MEDx/MINC support)\n"
        << "        -help\n";
 }
