@@ -1242,8 +1242,10 @@ void no_optimise()
     resample_refvol(refvol,globaloptions::get().isoscale);
   }
 
-  volume<float> outputvol = refvol;
+  volume4D<float> outputvol;
   for (int t0=testvol.mint(); t0<=testvol.maxt(); t0++) {
+    int tref=t0-testvol.mint();
+    outputvol.addvolume(refvol);
     testvol[t0] = blur(testvol[t0],min_sampling_ref);
     
     if (globaloptions::get().verbose>=2) { 
@@ -1251,13 +1253,14 @@ void no_optimise()
       print_volume_info(testvol,"inputvol"); 
     }
     
-    final_transform(testvol[t0],outputvol,globaloptions::get().initmat);
-    if (globaloptions::get().iso) { fix_output_volume(outputvol); }
-    save_volume_dtype(outputvol,globaloptions::get().outputfname.c_str(),
-		      globaloptions::get().datatype,globaloptions::get().vinfo);
+    final_transform(testvol[t0],outputvol[tref],globaloptions::get().initmat);
+    if (globaloptions::get().iso) { fix_output_volume(outputvol[tref]); }
   }
+  save_volume4D_dtype(outputvol,globaloptions::get().outputfname.c_str(),
+		      globaloptions::get().datatype,globaloptions::get().vinfo);
+
   if (globaloptions::get().verbose>=2) {
-    save_matrix_data(globaloptions::get().initmat, testvol[0], outputvol);
+    save_matrix_data(globaloptions::get().initmat, testvol[0], outputvol[0]);
     print_volume_info(outputvol,"Resampled volume");
   }
   exit(0);
