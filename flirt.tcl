@@ -311,7 +311,7 @@ while { $i <= $reg($w,maxnstats) } {
     radiobutton $w.sinc -text "Sinc" \
 	    -variable reg($w,interp) -value sinc -anchor w -command "flirt:updateinterp $w $interplf"
 
-    tixControl $w.sincwidth -label " Width of Sinc Window " \
+    tixControl $w.sincwidth -label " Width of Sinc Window (full width - voxels)" \
 	    -variable reg($w,sincwidth) -step 1 -min 1 -max 5000 -selectmode immediate
     set reg($w,sincwidth) 7
 
@@ -737,7 +737,7 @@ if { $INMEDX } {
 
 #}}}
 
-set flirtoptions "-bins $bins -cost $cost -nosave"
+set flirtoptions "-bins $bins -cost $cost"
 if { $dof == "2D" } {
     set flirtoptions "$flirtoptions -2D -dof 12"
 } else {
