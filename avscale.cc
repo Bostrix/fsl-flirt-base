@@ -35,7 +35,7 @@ int main(int argc,char *argv[])
     }
 
     volume testvol;
-    if (read_volume(testvol,argv[2])<0)  return -1;
+    if (read_volume_hdr_only(testvol,argv[2])<0)  return -1;
     Matrix affmat(4,4);
     ColumnVector params(12);
     if (read_matrix(affmat,argv[1],testvol)<0)   return -2;
