@@ -16,7 +16,7 @@ int main(int argc,char *argv[])
   Tracer tr("main");
   if (argc<5) { 
     cerr << "Usage: " << argv[0] << " <input volume> <ref volume>"
-	 << " <output volume> <transformation matrix file/[dir]> [-4D]\n"; 
+	 << " <output volume> <transformation matrix file/[dir]> [-4D [-singlematrix]]\n"; 
     return -1; 
   }
 
@@ -26,6 +26,11 @@ int main(int argc,char *argv[])
   if (argc>=6) {
     string option = argv[5];
     if (option == "-4D" )  fourd = true;
+  }
+  bool singlematrix = false;
+  if (argc>=7) {
+    string option = argv[6];
+    if (option == "-singlematrix" )  singlematrix = true;
   }
 
   if (fourd) {
@@ -40,16 +45,25 @@ int main(int argc,char *argv[])
     Matrix affmat(4,4);
     string matname;
     for (int m=invol.mint(); m<=invol.maxt(); m++) {
-      matname = transname + "/MAT_0";
-      char nc='0';
-      int n = m;
-      matname += (nc+(n / 100));
-      n -= (n/100)*100;
-      matname += (nc+(n / 10));
-      n -= (n/10)*10;
-      matname += (nc+n);
-      cerr << matname << endl;
-      read_matrix(affmat,matname,invol[0]);
+
+      if (singlematrix)
+	{
+	  read_matrix(affmat,transname,invol[0]);
+	  cout << affmat << endl;
+	}
+      else
+	{
+	  matname = transname + "/MAT_0";
+	  char nc='0';
+	  int n = m;
+	  matname += (nc+(n / 100));
+	  n -= (n/100)*100;
+	  matname += (nc+(n / 10));
+	  n -= (n/10)*10;
+	  matname += (nc+n);
+	  cerr << matname << endl;
+	  read_matrix(affmat,matname,invol[0]);
+	}
       
       dummy = refvol;
       affine_transform(invol[m],dummy,affmat);
