@@ -22,11 +22,14 @@ template <class T>
 int fmrib_main(int argc, char* argv[])
 {
   if (fourd) {
+    // 4D mode
     volume4D<T> invol, outvol;
     volume<T> refvol, dummy;
     volumeinfo vinfo;
     read_volume4D(invol,iname,vinfo);
     invol.setextrapolationmethod(extraslice);
+    invol.setinterpolationmethod(sinc);
+    invol.definesincinterpolation("b",7);
 
     // old form used a volume number
     //    refvol = invol[atoi(refname.c_str())];  
@@ -35,23 +38,22 @@ int fmrib_main(int argc, char* argv[])
 
     Matrix affmat(4,4);
     string matname;
+    if (singlematrix) { read_matrix(affmat,transname,invol[0]); }
+
     for (int m=invol.mint(); m<=invol.maxt(); m++) {
 
-      if (singlematrix)
-	  read_matrix(affmat,transname,invol[0]);
-      else
-	{
-	  matname = transname + "/MAT_0";
-	  char nc='0';
-	  int n = m;
-	  matname += (nc+(n / 100));
-	  n -= (n/100)*100;
-	  matname += (nc+(n / 10));
-	  n -= (n/10)*10;
-	  matname += (nc+n);
-	  cerr << matname << endl;
-	  read_matrix(affmat,matname,invol[0]);
-	}
+      if (!singlematrix) {
+	matname = transname + "/MAT_0";
+	char nc='0';
+	int n = m;
+	matname += (nc+(n / 100));
+	n -= (n/100)*100;
+	matname += (nc+(n / 10));
+	n -= (n/10)*10;
+	matname += (nc+n);
+	cout << matname << endl;
+	read_matrix(affmat,matname,invol[0]);
+      }
       
       dummy = refvol;
       affine_transform(invol[m],dummy,affmat);
@@ -60,13 +62,16 @@ int fmrib_main(int argc, char* argv[])
     save_volume4D(outvol,oname,vinfo);
 
   } else {
+    // 3D mode
     volume<T> invol, outvol;
     volumeinfo vinfo;
     
     read_volume(invol,iname,vinfo);
     read_volume(outvol,refname);
     invol.setextrapolationmethod(extraslice);
-    
+    invol.setinterpolationmethod(sinc);
+    invol.definesincinterpolation("r",9);
+
     Matrix affmat(4,4);
     read_matrix(affmat,transname,invol);
     
