@@ -1,4 +1,4 @@
-/*  epi2talcoord.cc
+/*  img2talcoord.cc
 
     Mark Jenkinson, FMRIB Image Analysis Group
 
@@ -250,7 +250,7 @@ int main(int argc,char *argv[])
     
     while (!matfile.eof()) {
       for (int j=1; j<=3; j++) {
-	matfile >> talcoord(j);
+	matfile >> epicoord(j);
       }
       if (globalopts.mm) {  // in mm
 	talcoord = talvox2world.i() * affmat * epivox2world * vf2w2.i() * epicoord;
