@@ -243,7 +243,12 @@ int main(int argc,char *argv[])
   destcoord(4)=1;
   oldsrc = 0;  // 4th component set to 0, so that initially oldsrc -ne srccoord
   
-  cout << "Coordinates in Destination volume (in mm):" << endl;
+  cout << "Coordinates in Destination volume";
+  if (globalopts.mm) { 
+    cout << " (in mm) :" << endl;
+  } else { 
+    cout << " (in voxels) :" << endl; 
+  }
   
   if (globalopts.coordfname.size()>1) {
     ifstream matfile(globalopts.coordfname.c_str());
