@@ -1314,11 +1314,10 @@ void no_optimise()
   }
 
   if (globaloptions::get().verbose>0) {
-    if (refvol.sform_code()!=NIFTI_XFORM_UNKNOWN) {
-      cout << "The output image will use the sform from the reference image" << endl;    
-    }
     if (testvol[0].sform_code()!=NIFTI_XFORM_UNKNOWN) {
-      cout << "The output image will use the sform from the input image" << endl;    
+      cout << "The output image will use the transformed sform from the input image" << endl;    
+    } else if (refvol.sform_code()!=NIFTI_XFORM_UNKNOWN) {
+      cout << "The output image will use the sform from the reference image" << endl;    
     }
   }
 
@@ -2394,7 +2393,7 @@ int main(int argc,char *argv[])
       cout << "The output image will use the sform from the reference image" << endl;    
     }
     if (testvol.sform_code()!=NIFTI_XFORM_UNKNOWN) {
-      cout << "The output image will use the sform from the input image" << endl;    
+      cout << "The output image will use the transformed sform from the input image" << endl;    
     }
   }
 
