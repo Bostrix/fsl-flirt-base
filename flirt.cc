@@ -2479,7 +2479,7 @@ void interpretcommand(const string& comline, bool& skip,
   } else if (words[0]=="setscale") {
     // SETSCALE
     if (words.size()<2) {
-      cerr << "Wrong number of arguments to SETSCALE" << endl;
+      cerr << "Wrong number of args to SETSCALE" << endl;
       exit(-1);
     }
     int usrscale;
