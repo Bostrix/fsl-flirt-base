@@ -60,6 +60,7 @@ class globaloptions {
   float coarsedelta;
   float finedelta;
 
+  short datatype;
   int verbose;
   bool interactive;
   bool do_optimise;
@@ -148,6 +149,8 @@ inline globaloptions::globaloptions()
   coarsedelta = 60.0*M_PI/180.0;
   finedelta = 18.0*M_PI/180.0;
 
+  datatype = -1;
+  verbose = 0;
   interactive = false;
   do_optimise = true;
   measure_cost = false;
