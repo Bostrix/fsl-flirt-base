@@ -57,8 +57,8 @@ void print_vector(float x, float y, float z)
 
 void set_basescale(const string& filenameA, const string& filenameB)
 {
-  if ((globaloptions::get().basescale - 1.0)<1e-5) { 
-    // only reset if originally left at default of 1.0
+  if (!(globaloptions::get().force_basescale)) { 
+    // only try to automatically determine if it was not requested by the user
     volume<float> volA, volB;
     read_volume_hdr_only(volA,filenameA);
     read_volume_hdr_only(volB,filenameB);
@@ -83,9 +83,9 @@ int FLIRT_read_volume4D(volume4D<float>& target, const string& filename,
   int retval = read_volume4D(target,filename,vinfo);
   // if basescale != 1.0
   if (fabs(globaloptions::get().basescale - 1.0)>1e-5) {
-    target.setxdim(target.xdim() / globaloptions::get().basescale);
-    target.setydim(target.ydim() / globaloptions::get().basescale);
-    target.setzdim(target.zdim() / globaloptions::get().basescale);
+    target.setxdim(target.xdim() * target.xsign() / globaloptions::get().basescale);
+    target.setydim(target.ydim() * target.ysign() / globaloptions::get().basescale);
+    target.setzdim(target.zdim() * target.zsign() / globaloptions::get().basescale);
   }
   return retval;
 }
@@ -98,9 +98,9 @@ int FLIRT_read_volume(volume<float>& target, const string& filename,
   int retval = read_volume(target,filename,vinfo);
   // if basescale != 1.0
   if (fabs(globaloptions::get().basescale - 1.0)>1e-5) {
-    target.setxdim(target.xdim() / globaloptions::get().basescale);
-    target.setydim(target.ydim() / globaloptions::get().basescale);
-    target.setzdim(target.zdim() / globaloptions::get().basescale);
+    target.setxdim(target.xdim() * target.xsign() / globaloptions::get().basescale);
+    target.setydim(target.ydim() * target.ysign() / globaloptions::get().basescale);
+    target.setzdim(target.zdim() * target.zsign() / globaloptions::get().basescale);
   }
   return retval;
 }
@@ -1150,7 +1150,7 @@ void double_end_slices(volume<float>& testvol)
   //  be done (in general it is good to do for small number of slices so
   //  that the end ones get counted and not de-weighted by the cost fns)
   volume<float> newtestvol(testvol.xsize(),testvol.ysize(),testvol.zsize()+2);
-  newtestvol.setdims(testvol.xdim(),testvol.ydim(),8.0f);
+  newtestvol.setdims(testvol.xdim()*testvol.xsign(),testvol.ydim()*testvol.ysign(),testvol.zsign()*8.0f);
   for (int z=0; z<= testvol.zsize()+1; z++) {
     for (int y=0; y<testvol.ysize(); y++) {
       for (int x=0; x<testvol.xsize(); x++) {
@@ -1270,12 +1270,12 @@ int resample_refvol(volume<float>& refvol, float sampling=1.0)
 
 ////////////////////////////////////////////////////////////////////////////
 
-void fix_output_volume(volume<float>& vol)
-{
+//void fix_output_volume(volume<float>& vol)
+//{
   // make all dimensions positive and origin zero (consistency with mjimage)
-  vol.setdims(fabs(vol.xdim()),fabs(vol.ydim()),fabs(vol.zdim()));
-  vol.setorigin(0.0,0.0,0.0);
-}
+  //vol.setdims(fabs(vol.xdim()),fabs(vol.ydim()),fabs(vol.zdim()));
+  //vol.setorigin(0.0,0.0,0.0);
+//}
 
 
 void no_optimise()
@@ -1331,7 +1331,7 @@ void no_optimise()
     }
     
     final_transform(testvol[t0],outputvol[tref],globaloptions::get().initmat);
-    if (globaloptions::get().iso) { fix_output_volume(outputvol[tref]); }
+    //if (globaloptions::get().iso) { fix_output_volume(outputvol[tref]); }
   }
   save_volume4D_dtype(outputvol,globaloptions::get().outputfname.c_str(),
 		      globaloptions::get().datatype,globaloptions::get().vinfo);

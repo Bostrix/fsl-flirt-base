@@ -71,6 +71,7 @@ class globaloptions {
   float min_sampling;
   float lastsampling;
   float requestedscale;
+  bool force_basescale;
   float basescale;
   bool force_scaling;
   float smoothsize;
@@ -175,6 +176,7 @@ inline globaloptions::globaloptions()
   min_sampling = 1.0;
   lastsampling = 8;
   requestedscale = 1.0;
+  force_basescale = false;
   basescale = 1.0;
   force_scaling = false;
   smoothsize = 1.0;

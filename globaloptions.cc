@@ -161,6 +161,7 @@ void globaloptions::parse_command_line(int argc,char** argv,
       n+=2;
       continue;
     } else if ( arg == "-basescale") {
+      force_basescale = true;
       basescale = atof(argv[n+1]);
       n+=2;
       continue;
