@@ -1,5 +1,5 @@
 // FLIRT - FMRIB Linear Image Registration Tool
-//  (c) Mark M. Jenkinson 1999
+//  (c) Mark Jenkinson 1999
 
 // Put current version number here:
 #include <string>
