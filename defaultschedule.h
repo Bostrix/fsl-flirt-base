@@ -12,12 +12,14 @@ void setdefaultschedule(std::vector<string>& comms)
   comms.clear();
   comms.push_back("# 8mm scale");
   comms.push_back("setscale 8");
+  comms.push_back("setoption smoothing 8");
   comms.push_back("clear S");
   comms.push_back("clear P");
   comms.push_back("search");
 
   comms.push_back("# 4mm scale");
   comms.push_back("setscale 4");
+  comms.push_back("setoption smoothing 4");
   comms.push_back("clear U");
   comms.push_back("clear UA ");
   comms.push_back("clear UB");
@@ -57,6 +59,7 @@ void setdefaultschedule(std::vector<string>& comms)
 
   comms.push_back("# 2mm scale");
   comms.push_back("setscale 2");
+  comms.push_back("setoption smoothing 2");
   comms.push_back("clear U");
   comms.push_back("clear UC");
   comms.push_back("clear UD");
@@ -71,6 +74,7 @@ void setdefaultschedule(std::vector<string>& comms)
   comms.push_back("clear U");
   comms.push_back("optimise 7  UC:1  0.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 4");
   comms.push_back("copy U UD");
+  comms.push_back("setoption boundguess 1");
   comms.push_back("if MAXDOF > 7");
   comms.push_back(" clear U");
   comms.push_back("if MAXDOF > 7");
@@ -85,6 +89,8 @@ void setdefaultschedule(std::vector<string>& comms)
 
   comms.push_back("# 1mm scale");
   comms.push_back("setscale 1");
+  comms.push_back("setoption smoothing 1");
+  comms.push_back("setoption boundguess 1");
   comms.push_back("clear U");
   comms.push_back("optimise 12 UF:1  0.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 1");
   comms.push_back("sort U");
