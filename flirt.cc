@@ -245,7 +245,7 @@ float costfn(const Matrix& uninitaffmat)
       retval = 1.0 - fabs(normcorr(globaloptions::get().impair,affmat));  // MAXimise corr
       break;
     case CorrRatio:
-      retval = 1.0 - corr_ratio(globaloptions::get().impair,affmat);  // MAXimise corr
+      retval = 1.0 - corr_ratio_smoothed(globaloptions::get().impair,affmat);  // MAXimise corr
       break;
     case Woods:
       retval = woods_fn(globaloptions::get().impair,affmat);  // minimise variance/mean
