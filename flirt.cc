@@ -213,7 +213,8 @@ void set_param_tols(ColumnVector &param_tol, int no_params)
     //    param_tol(i)=diagonal[i-1];
     param_tol(i)=globaloptions::get().tolerance(i);
   }
-  param_tol *= estimate_scaling();  // scale it up by the current scaling
+  param_tol *= globaloptions::get().requestedscale; 
+    // scale it up by the current scaling
 }
 
 
@@ -1505,7 +1506,8 @@ int usrsetoption(const std::vector<string> &words)
     globaloptions::get().smoothsize = fvalues(1);
     return 0;
   } else if (option=="tolerance") {
-    globaloptions::get().tolerance = fvalues/estimate_scaling();
+    globaloptions::get().tolerance 
+       = fvalues/globaloptions::get().requestedscale;
     // Note: division by estimate_scaling used so that the absolute
     //       tolerance used at this scale is that specified by the user
     return 0;
@@ -1745,6 +1747,7 @@ void usrsetscale(int usrscale,
   Tracer tr("usrsetscale");
   int scale = usrscale;
   imagepair *globalpair=0;
+  if (usrscale > 0.0) globaloptions::get().requestedscale = usrscale;
   if (globaloptions::get().min_sampling<=1.25 * ((float) scale)) {
     get_testvol(testvol);
     volume testvolnew;
