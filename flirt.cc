@@ -70,8 +70,6 @@ void setupsinc(const volume<float>& invol)
 void final_transform(const volume<float>& testvol, volume<float>& newtestvol,
 		     const Matrix& finalmat) 
 {
-  testvol.setpadvalue(testvol.backgroundval());
-  testvol.setextrapolationmethod(extraslice);
   testvol.setorigin(0.0,0.0,0.0);
   if (globaloptions::get().interpmethod == NearestNeighbour) {
     testvol.setinterpolationmethod(nearestneighbour);
@@ -81,13 +79,8 @@ void final_transform(const volume<float>& testvol, volume<float>& newtestvol,
   } else {
     testvol.setinterpolationmethod(trilinear);
   }
-  affine_transform(testvol,newtestvol,finalmat);
-  // now mask the output to eliminate streaks formed by the sinc interp...
-  volume<float> affmask;
-  affmask = affine_transform_mask(testvol,newtestvol,finalmat,
-				  globaloptions::get().paddingsize);
-  newtestvol *= affmask;
-  newtestvol += (1.0f - affmask)*testvol.backgroundval();
+  affine_transform(testvol,newtestvol,finalmat,
+		   globaloptions::get().paddingsize);
 }
 
 template <class T>
