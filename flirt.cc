@@ -794,6 +794,46 @@ float measure_cost(Matrix& affmat, int input_dof)
 
 ////////////////////////////////////////////////////////////////////////////
 
+int optimise_strategy0(Matrix& matresult, float& fans, int max_iterations=4)
+{
+  Tracer tr("optimise_strategy0");
+  // the most basic strategy - just do a single optimisation run at the
+  //  specified dof
+
+  if (globaloptions::get().verbose>3) {
+    cout << "Using subset cost function" << endl;
+  }
+
+  ColumnVector params, params_N, param_tol, param_tol0, param_tol1;
+  int no_its=0;
+
+  globaloptions::get().no_params = 12; // necessary for any subset_costfn call
+
+  affmat2vector(matresult,12,params);
+  globaloptions::get().refparams = params;
+
+  // calculate the parameter tolerances
+  param_tol0 = globaloptions::get().refparams;
+  params12toN(param_tol0);
+  set_param_tols(param_tol1,12);
+  param_tol1 = param_tol1 + globaloptions::get().refparams;
+  params12toN(param_tol1);
+  param_tol = param_tol1 - param_tol0;
+
+
+  params_N = globaloptions::get().refparams;
+  params12toN(params_N);
+  optimise(params_N,globaloptions::get().parammask.Ncols(),
+	   param_tol,no_its,&fans,subset_costfn,max_iterations);
+  paramsNto12(params_N);
+  params = params_N;
+
+  vector2affine(params,12,matresult);
+  return no_its;
+}  
+
+
+
 int optimise_strategy1(Matrix& matresult, float& fans, int input_dof, 
 		       int max_iterations=4)
 {
@@ -820,30 +860,6 @@ int optimise_strategy1(Matrix& matresult, float& fans, int input_dof,
   vector2affine(params,dof,matresult);
   return no_its;
 }  
-
-//-------------------------------------------------------------------------//
-
-void optimise_strategy2(Matrix& matresult)
-{
-  Tracer tr("optimise_strategy2");
-  // initially do a 7 dof optimisation, then increase to 9 and 12 
-  //  (if called for)  - this is best used on the 2x subsampled image
-  int dof, no_its=0;
-  float costval=0.0;
-
-  dof = Min(globaloptions::get().dof,7);
-  no_its = optimise_strategy1(matresult,costval,dof);
-
-  if ((no_its<3) || (globaloptions::get().dof>dof)) {
-    dof = Min(globaloptions::get().dof,9);
-    optimise_strategy1(matresult,costval,dof,1);
-  }
-
-  if (globaloptions::get().dof>=10) {
-    dof = Min(globaloptions::get().dof,12);
-    optimise_strategy1(matresult,costval,dof,2);
-  }
-}
 
 //-------------------------------------------------------------------------//
 
@@ -992,7 +1008,7 @@ void set_perturbations(Matrix& delta, Matrix& perturbmask)
 {
   Tracer tr("set_perturbations");
   // set the perturbations to be applied to the pre-optimised
-  //  solutions (used in optimise_strategy4)
+  //  solutions
   // the perturbations are given by the elementwise product of
   //  delta (a single column) and the individual columns of perturbmask
   // the number of columns of perturbmask set the number of perturbations
@@ -1037,75 +1053,6 @@ void set_perturbations(Matrix& delta, Matrix& perturbmask)
   perturbmask(7,10)=-2.0; 
   perturbmask(8,10)=-2.0; 
   perturbmask(9,10)=-2.0;
-}
-
-
-void optimise_strategy4(Matrix& matresult, const Matrix& opt_matrixlist,
-			int max_num = 3)
-{
-  Tracer tr("optimise_strategy4");
-  // takes the output of optimise_strategy4 and reoptimises the
-  //  first max_num of the optimised results, including the pre-optimised
-  //  positions and perturbations of these - defined in set_perturbations()
-  int dof = Min(globaloptions::get().dof,7);
-  float bestcost=0.0, costval=0.0;
-  Matrix bestmat(4,4), reshaped(1,16);
-  ColumnVector params_8(12);
-  
-  Matrix delta, perturbmask;
-  set_perturbations(delta,perturbmask);
-
-  // for each potentially best transform do an optimisation
-  int verbose = globaloptions::get().verbose;
-  globaloptions::get().verbose -= 2;
-  bool no_previous_cost = true;
-  int no_its = Min(max_num,opt_matrixlist.Nrows());
-
-  for (int n=1; n<=no_its; n++) {
-    for (int matno=1; matno<=2; matno++) {
-      for (int pert=1; pert<=perturbmask.Ncols(); pert++) {
-
-	if ((matno==1) && (pert>1)) {
-	  break;
-	} else {
-	  if (matno==1) { // the previously optimised case
-	    reshaped = opt_matrixlist.SubMatrix(n,n,2,17);
-	    reshape(matresult,reshaped,4,4);
-	  } else { // the pre-optimised case with perturbations
-	    reshaped = opt_matrixlist.SubMatrix(n,n,19,34);
-	    reshape(matresult,reshaped,4,4);
-	    affmat2vector(matresult,12,params_8);
-	    // use the elementwise product to produce the perturbation
-	    params_8 += SP(perturbmask.SubMatrix(1,12,pert,pert),delta);
-	    vector2affine(params_8,12,matresult);
-	    reshape(reshaped,matresult,1,16);
-	  }
-	}
-	
-	optimise_strategy1(matresult,costval,dof);
-	if ( (no_previous_cost) || (costval <= bestcost) ) {
-	  bestcost = costval;
-	  bestmat = matresult;
-	  no_previous_cost = false;
-	}
-
-	if (globaloptions::get().verbose>=3) {
-	  affmat2vector(matresult,dof,params_8);
-	  cout << "Current parameters [" 
-	       << (n-1)*(perturbmask.Ncols()+1) + pert + matno - 1
-	       << " out of " << no_its*(perturbmask.Ncols()+1)
-	       << "] (cost vs bestcost = " << costval 
-	       << " vs " << bestcost << ") are:\n" << params_8.t();
-	  reshape(matresult,reshaped,4,4);
-	  affmat2vector(matresult,dof,params_8);
-	  cout << "  from : " << params_8.t();
-	}
-      }
-    }
-  }
-
-  globaloptions::get().verbose = verbose;
-  matresult = bestmat;  // the return value
 }
 
 
@@ -1520,11 +1467,29 @@ int usrsetoption(const std::vector<string> &words)
   } else if (option=="tolerance") {
     globaloptions::get().tolerance 
        = fvalues/globaloptions::get().requestedscale;
-    // Note: division by estimate_scaling used so that the absolute
+    // Note: division by requestedscale used so that the absolute
     //       tolerance used at this scale is that specified by the user
     return 0;
   } else if (option=="boundguess") {
     globaloptions::get().boundguess = fvalues;
+    return 0;
+  } else if (option=="nosubset") {
+    globaloptions::get().usrsubset = false;
+    return 0;
+  } else if (option=="paramsubset") {
+    globaloptions::get().usrsubset = true;
+    int noparams = (int) fvalues(1);
+    if (fvalues.Nrows()<(12*noparams+1)) {
+      cerr << "Must specify at least " << 12*noparams << " for a " 
+	   << noparams << " parameter subset mask" << endl;
+      return -3;
+    }
+    globaloptions::get().parammask.ReSize(12,noparams);
+    globaloptions::get().parammask = 0;
+    for (int n=1; n<=noparams; n++) {
+      globaloptions::get().parammask.SubMatrix(1,12,n,n) = 
+	fvalues.SubMatrix((n-1)*12+2,n*12+1,1,1);
+    }
     return 0;
   } else if (option=="minsampling") {
     globaloptions::get().min_sampling = fvalues(1);
@@ -1738,7 +1703,11 @@ void usroptimise(MatVecPtr stdresultmat,
       vector2affine(params,12,matresult);
       
       float costval=0.0;
-      optimise_strategy1(matresult,costval,dof,usrmaxitn);
+      if (globaloptions::get().usrsubset) {
+	optimise_strategy0(matresult,costval,usrmaxitn);
+      } else {
+	optimise_strategy1(matresult,costval,dof,usrmaxitn);
+      }
       reshape(reshaped,matresult,1,16);
       rowresult(1) = costval;
       rowresult.SubMatrix(1,1,2,17) = reshaped;
