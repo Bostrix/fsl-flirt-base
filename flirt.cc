@@ -62,16 +62,29 @@ void print_vector(float x, float y, float z)
 //------------------------------------------------------------------------//
 // Some interfaces to generalio
 
-void setupsinc()
+void setupsinc(const volume& invol)
 {
-  int w = (globaloptions::get().sincwidth-1)/2;
-  if (w<0) w=1;
+  // the following is in mm
+  float w = globaloptions::get().sincwidth;
+  float mindim = Min(invol.getx(),Min(invol.gety(),invol.getz()));
+  int wx = (int) ceil((w * mindim/invol.getx() - 1.0)/2.0);
+  int wy = (int) ceil((w * mindim/invol.gety() - 1.0)/2.0);
+  int wz = (int) ceil((w * mindim/invol.getz() - 1.0)/2.0);
+//    ColumnVector winwidth(4);
+//    winwidth << w << w << w << 1.0;
+//    winwidth = invol.sampling_matrix().i() * winwidth;  // now in voxels
+//    int wx = (int) ceil((winwidth(1) - 1.0)/2.0);
+//    int wy = (int) ceil((winwidth(2) - 1.0)/2.0);
+//    int wz = (int) ceil((winwidth(3) - 1.0)/2.0);
+  if (wx<1) wx=1;
+  if (wy<1) wy=1;
+  if (wz<1) wz=1;
   if (globaloptions::get().sincwindow==Hanning) {
-    sincobj.setupkernel(w,"hanning");
+    sincobj.setupkernel(wx,wy,wz,"hanning");
   } else if (globaloptions::get().sincwindow==Blackman) {
-    sincobj.setupkernel(w,"blackman");
+    sincobj.setupkernel(wx,wy,wz,"blackman");
   } else if (globaloptions::get().sincwindow==Rect) {
-    sincobj.setupkernel(w,"rectangular");
+    sincobj.setupkernel(wx,wy,wz,"rectangular");
   }
 }
 
@@ -85,6 +98,7 @@ float sinc_interpolation_shell(const volume& v, const float x, const float y,
 void final_transform(volume& newtestvol,
 		     const volume& testvol,const Matrix& finalmat) 
 {
+  setupsinc(testvol);
   if (globaloptions::get().interpmethod == NearestNeighbour) {
     general_affine_transform(newtestvol,testvol,finalmat,nn_interpolation);
   } else if (globaloptions::get().interpmethod == Sinc) {
@@ -2451,7 +2465,6 @@ int main(int argc,char *argv[])
   //test_proc();  // only used for some debugging
 
   globaloptions::get().parse_command_line(argc, argv,version);
-  setupsinc();
 
   if (!globaloptions::get().do_optimise) {   
     no_optimise();
