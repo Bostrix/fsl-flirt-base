@@ -119,7 +119,7 @@ int FLIRT_read_volume(volume<float>& target, const string& filename,
 		      volumeinfo& vinfo)
 {
   int LRorder;
-  return FLIRT_read_volume4D(target,filename,vinfo,LRorder);
+  return FLIRT_read_volume(target,filename,vinfo,LRorder);
 }
 
 int FLIRT_read_volume(volume<float>& target, const string& filename)
@@ -2502,6 +2502,7 @@ int main(int argc,char *argv[])
     globaloptions::get().basescale = 1.0;
 
     int refLRorder;
+    volumeinfo dummy;
     FLIRT_read_volume(testvol,globaloptions::get().inputfname);
     FLIRT_read_volume(refvol,globaloptions::get().reffname,dummy,refLRorder);
     if (globaloptions::get().verbose>=2) {
