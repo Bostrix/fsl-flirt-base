@@ -1186,6 +1186,10 @@ void search_cost(Matrix& paramlist, volume& costs, volume& tx,
   if (globalopts.verbose>=2) cerr << endl;
 
   // scale = 1.0;  // for now disallow non-unity scalings
+  float medianscale = get_percentile(scale,50.0);
+  scale = medianscale;  // try a constant, median scale for all
+  if (globalopts.verbose>=2) 
+    { cerr << "Median scale = " << medianscale << endl; }
 
   if (globalopts.verbose>=4) {
     safe_save_volume(tx,"tx");
