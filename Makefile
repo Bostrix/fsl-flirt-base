@@ -29,7 +29,8 @@ SCRIPTS = extracttxt pairreg fixxfm
 all:	${XFILES} schedule
 
 schedule:
-	/bin/cp -rf flirtsch ${DESTDIR}/etc
+	@if [ ! -d ${DESTDIR}/etc ] ; then ${MKDIR} ${DESTDIR}/etc ; ${CHMOD} g+w ${DESTDIR}/etc ; fi
+	${CP} -rf flirtsch ${DESTDIR}/etc
 
 flirt:    	${FL_OBJS}
 	        $(CXX)  ${CXXFLAGS} ${LDFLAGS} -o $@ ${FL_OBJS} ${LIBS}
