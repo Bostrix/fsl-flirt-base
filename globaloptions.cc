@@ -105,6 +105,10 @@ void globaloptions::parse_command_line(int argc,char** argv)
       dof = atoi(argv[n+1]);
       n+=2;
       continue;
+    } else if ( arg == "-minsampling") {
+      min_sampling = (float) ceil(atof(argv[n+1]));
+      n+=2;
+      continue;
     } else if ( arg == "-coarsesearch") {
       coarsedelta = atof(argv[n+1])*M_PI/180.0;
       n+=2;
@@ -231,7 +235,8 @@ void globaloptions::print_usage(int argc, char *argv[])
                                         << no_bins << ")\n"
        << "        -dof  <number of transform dofs>   (default is "
                                         << dof << ")\n"
-       << "        -noresample                          (do not change input sampling)\n"
+       << "        -noresample                        (do not change input sampling)\n"
+       << "        -minsampling <vox_dim>             (set minimum voxel dimension for sampling (in mm))\n"
        << "        -applyxfm                          (applies init - "
                                         << "no optimisation)\n"
        << "        -applynonisoxfm                    (as applyxfm but no isotropic resampling)\n"
