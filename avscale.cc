@@ -74,11 +74,22 @@ int main(int argc,char *argv[])
       cout << "Rotation Angles (x,y,z) [rads] = " << params.SubMatrix(1,3,1,1).t() << endl;
       cout << "Translations (x,y,z) [mm] = " << params.SubMatrix(4,6,1,1).t() << endl;
     }
+
     cout << "Scales (x,y,z) = " << params.SubMatrix(7,9,1,1).t() << endl;
     cout << "Skews (xy,xz,yz) = " << params.SubMatrix(10,12,1,1).t() << endl;
     float avscale = (params(7) + params(8) + params(9))/3.0;
     cout << "Average scaling = " << avscale << endl << endl;
-    Matrix m2 = sqrtaff(affmat);
+
+    cout << "Determinant = " << affmat.Determinant() << endl;
+    cout << "Left-Right orientation: ";
+    if (affmat.Determinant()>0) { cout << "preserved" << endl; }
+    else { cout << "swapped" << endl; }
+    cout << endl;
+
+    Matrix swapmat(4,4);
+    swapmat = Identity(4);
+    if (affmat.Determinant()<0) swapmat(1,1) = -1;
+    Matrix m2 = sqrtaff(affmat * swapmat);
     Matrix m0 = m2*affmat.i();
     cout << "Forward half transform =\n" << m2 << endl;
     cout << "Backward half transform =\n" << m0 << endl;
