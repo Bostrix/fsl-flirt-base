@@ -34,17 +34,29 @@
 
   float woods_fn(const imagepair* ims, const Matrix& aff); 
 
+  float woods_fn_smoothed(const imagepair* ims, const Matrix& aff); 
+
   float corr_ratio(const imagepair* ims, const Matrix& aff); 
 
   float corr_ratio_smoothed(const imagepair* ims, const Matrix& aff); 
 
   float mutual_info(imagepair* ims, const Matrix& aff);
 
+  float mutual_info_smoothed(imagepair* ims, const Matrix& aff);
+
   float normalised_mutual_info(imagepair* ims, const Matrix& aff);
 
+  float normalised_mutual_info_smoothed(imagepair* ims, const Matrix& aff);
 
 #ifndef NO_NAMESPACE
  }
 #endif
 
 #endif
+
+
+
+
+
+
+
