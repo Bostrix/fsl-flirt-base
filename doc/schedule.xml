@@ -1,0 +1,277 @@
+<refguide name="FLIRT schedule language reference" section="l" rootdir="/usr/local/fsl/doc/" author="Mark Jenkinson" 
+year="2000">
+
+<p>
+This document describes the commands that can be used within a schedule
+file for <type>flirt</type> via the <attrib>-schedule</attrib> option.
+</p>
+
+<section title="Variables">
+
+There are two types of data variables that are manipulated in a schedule
+file: <em>scalar</em> and <em>matrix</em> data.
+
+<subsection title="Scalar data">
+
+Any constant can be used as a scalar value in the schedule file.  In addition
+token names can be used, and the following token names are currently defined:
+<itemize>
+<item><function type="">MAXDOF</function>
+<break></break>the user-defined maximum degrees of freedom (via the 
+<attrib>-dof</attrib> option).</item>
+<item><function type="">MINSAMPLING</function>
+<break></break>the minimum sampling that is sensible, as calculated from the
+input volumes - defined as Max(Min(refvol voxel dims),Min(testvol voxel dims)).
+</item>
+</itemize>
+
+</subsection>
+
+<subsection title="Matrix data">
+
+Most data in a schedule file is manipulated in matrix form.  Each matrix
+has 17 columns, with the first column representing the cost function value
+and the remaining 16 a reshaped version of the 4 by 4 affine matrix that
+corresponds to that cost function measurement.
+
+<paragraph>
+The matrices that can be accessed are: <em>S P U UA UB ... UZ</em>.
+<break></break>
+Note that <em>S P</em> and <em>U</em> have special functions
+while <em>UA UB ... UZ</em> are provided for user manipulation.
+</paragraph>
+
+<paragraph>
+In addition, a subset of rows of a given matrix can be used in place
+of any matrix. 
+<break></break>
+The form of this reference is: <em>mat:r1-r2</em> 
+<break></break>
+where <em>mat</em> is the matrix name (e.g. <em>UB</em>), <em>r1</em>
+is the first row, and <em>r2</em> the last row to be used.  Note that
+some parts of this may be omitted so that <em>mat:r1- </em> specifies
+the matrix from row <em>r1</em> to the end, and <em>mat:r1</em> just 
+specifies a single row (<em>r1</em>).
+<break></break>NB: The first row of any matrix has an index of 1.
+</paragraph>
+
+<paragraph>
+Matrix <em>U</em> is special as it is used to store the results
+of the current optimisation.
+</paragraph>
+<paragraph>
+Matrices <em>S</em> and <em>P</em> are used to store the (corresponding)
+results of the 8mm search algorithm.
+</paragraph>
+
+</subsection>
+
+<section title="Commands">
+
+<itemize>
+<item><function type="">#</function>
+<break></break>Comment line</item>
+
+<item><function type="">clear</function><param-in type="">mat</param-in>
+<break></break>Clears the matrix <em>mat</em>.</item>
+
+<item><function type="">copy</function><param-in type="">mat1</param-in> <param-in type="">mat2</param-in>
+<break></break>Copies the contents of matrix <em>mat1</em> into matrix <em>mat2</em>.  
+It does not affect the contents of matrix <em>mat1</em>.</item>
+
+<item><function type="">print</function><param-in type="">mat</param-in>
+<break></break>Prints the contents of matrix <em>mat</em> to the screen.</item>
+
+<item><function type="">save</function><param-in type="">mat</param-in> <param-in type="">filename</param-in>
+<break></break>Saves an ascii copy of the contents of matrix <em>mat</em> to the file
+named by <em>filename</em>.</item>
+
+<item><function type="">read</function> <param-in type="">mat</param-in> <param-in type="">filename</param-in>
+<break></break>Reads an ascii file (<em>filename</em>) and stores 
+the contents in matrix <em>mat</em>.</item>
+
+<item><function type="">printparams</function> <param-in type="">mat</param-in>
+<break></break>Prints the contents of matrix <em>mat</em> to the screen as parameter 
+values (rather than reshaped 4 by 4 affine matrices).</item>
+
+<item><function type="">saveparams</function> <param-in type="">mat</param-in>
+<param-in type="">filename</param-in>
+<break></break>Saves an ascii copy of the contents of matrix <em>mat</em>, as parameter 
+values, to the file named by <em>filename</em>.</item>
+
+<item><function type="">readparams</function> <param-in type="">mat</param-in> <param-in type="">filename</param-in>
+<break></break>Reads an ascii file (<em>filename</em>) where each line represents 
+1 cost value followed by 12 parameter values.  It then converts these parameters
+to reshaped affine matrices and stores the contents in matrix <em>mat</em>.</item>
+
+<item><function type="">setrow</function> <param-in type="">mat</param-in> <param-in type="">v1 v2 ... v16</param-in>
+<break></break>Adds a row to the end of matrix <em>mat</em> with the value given by the 
+reshaped matrix: <em>v1 v2 ... v16</em>.  Note that only the 16 matrix values 
+are used, not the cost value (which is initialised to 0).</item>
+
+<item><function type="">setoption</function> <param-in type="">option</param-in> <param-in type="">v1 v2 ...</param-in>
+<break></break>Sets the value of certain defined options.  The name of the option is
+specified as the first parameter, then all remaining parameters are treated
+as a vector of scalars.  Note that no matrix arguments can be used here.
+At present the available options are <em>smoothing</em>, <em>tolerance</em>
+and <em>boundguess</em>.</item>
+
+<item><function type="">sort</function> <param-in type="">mat</param-in>
+<break></break>Sorts the rows of matrix <em>mat</em> into <em>ascending</em> order
+based on the first column entries of each row (the cost function values).</item>
+
+<item><function type="">dualsort</function> <param-in type="">mat1 mat2</param-in>
+<break></break>Sorts the rows of matrix <em>mat1</em> and <em>mat2</em> into 
+<em>ascending</em> order based on the first column entries <em>mat1</em> only 
+(the cost function values).</item>
+
+<item><function type="">search</function> [<param-in type="">dof</param-in>]
+<break></break>Performs the 8mm search algorithm on the currently defined image pair.
+The result is returned in matrices <em>S</em> and <em>P</em> where
+<em>S</em> contains the optimised values (which are sorted), 
+and <em>P</em> the pre-optimised values from the search grid.  
+The rows of the two matrices correspond to each other.  The optional argument
+<em>dof</em> specifies the number of degrees of freedom for the search (only 6 
+or 7 are currently sensible).</item>
+
+<item><function type="">optimise</function> <param-in type="">dof</param-in> <param-in type="">mat</param-in> [<param-in type="">perturbation_vector</param-in> <param-in type="">rel/abs</param-in> <param-in type="">max_iterations</param-in>]
+<break></break>Performs a single optimisation (of Powell) on the currently defined
+image pair.  Number of degrees of freedom are specified by <em>dof</em>
+and initial parameter values are taken from <em>mat</em>.  In addition
+a perturbation vector can be applied to the parameters, using either
+relative <em>rel</em> or absolute <em>abs</em> addition (relative is in terms
+of specially chosen parameter perturbations so that a 1 unit relative change
+should be a small but measurable change).  The perturbation vector may be of
+any length, terminated by either <em>rel</em> or <em>abs</em> - if the vector
+is longer than the number of parameters, extra values are ignored.
+The final parameter (which must follow either <em>rel</em> or <em>abs</em>)
+is the maximum number of iterations that the optimisation is allowed.
+<break></break>
+Note that the minimum of <em>dof</em> and the user-defined maximum degrees
+of freedom (<em>MAXDOF</em>) will always be used.
+</item>
+
+<item><function type="">measurecost</function> <param-in type="">dof</param-in> <param-in type="">mat</param-in> [<param-in type="">perturbation_vector</param-in> <param-in type="">rel/abs</param-in>]
+<break></break>Measures (or re-measures) the cost function specified by the
+transformations stored in the matrix <em>mat</em>.  It stores the
+results in <em>U</em>.  Other syntax is
+the same as for <em>optimise</em>.
+</item>
+
+<item><function type="">setscale</function> <param-in type="">scale</param-in>
+<break></break>Sets the scaling (subsampling) of the current image pair.  Permissable
+values of <em>scale</em> are: 8, 4, 2 and 1.</item>
+
+<item><function type="">if</function> <param-in type="">val1</param-in> <param-in type="">op</param-in> <param-in type="">val2</param-in>
+<break></break>Determines whether the <em>next line only</em> is executed.  The test
+condition compares two scalars: <em>val1</em> and <em>val2</em> using
+the boolean operation <em>op</em>.  There are 6 permissable values for 
+<em>op</em>, which are: <em> <lt></lt> <gt></gt> == != <lt></lt>= <gt></gt>= </em>
+</item>
+</itemize>
+
+</section>
+
+<section title="Example">
+The default flirt schedule file is:
+
+<pre>
+# 8mm scale
+setscale 8
+clear S
+clear P
+search
+
+
+# 4mm scale
+setscale 4
+clear U
+clear UA 
+clear UB
+clear US
+clear UP
+
+# remeasure costs at this scale
+measurecost 7 S 0 0 0 0 0 0 rel
+copy U US
+clear U
+measurecost 7 P 0 0 0 0 0 0 rel
+copy U UP
+dualsort US UP
+
+# optimise best 3 candidates (pre and post 8mm optimisations)
+clear U
+optimise 7 US:1-3  0.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 4
+optimise 7 UP:1-3  0.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 4
+sort U
+copy U UA
+
+# select best 3 optimised solutions and try perturbations of these
+clear U
+copy UA:1-3 U
+optimise 7 UA:1-3  1.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 4
+optimise 7 UA:1-3 -1.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 4
+optimise 7 UA:1-3  0.0   1.0   0.0   0.0   0.0   0.0   0.0  rel 4
+optimise 7 UA:1-3  0.0  -1.0   0.0   0.0   0.0   0.0   0.0  rel 4
+optimise 7 UA:1-3  0.0   0.0   1.0   0.0   0.0   0.0   0.0  rel 4
+optimise 7 UA:1-3  0.0   0.0  -1.0   0.0   0.0   0.0   0.0  rel 4
+optimise 7 UA:1-3  0.0   0.0   0.0   0.0   0.0   0.0   0.1  abs 4
+optimise 7 UA:1-3  0.0   0.0   0.0   0.0   0.0   0.0  -0.1  abs 4
+optimise 7 UA:1-3  0.0   0.0   0.0   0.0   0.0   0.0   0.2  abs 4
+optimise 7 UA:1-3  0.0   0.0   0.0   0.0   0.0   0.0  -0.2  abs 4
+sort U
+copy U UB
+
+
+# 2mm scale
+setscale 2
+clear U
+clear UC
+clear UD
+clear UE
+clear UF
+
+# remeasure costs at this scale
+measurecost 7 UB 0 0 0 0 0 0 rel
+sort U
+copy U UC
+
+clear U
+optimise 7  UC:1  0.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 4
+copy U UD
+if MAXDOF > 7
+ clear U
+if MAXDOF > 7
+ optimise 9  UD:1  0.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 1
+copy U UE
+if MAXDOF > 9
+ clear U
+if MAXDOF > 9
+ optimise 12 UE:1  0.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 2
+sort U
+copy U UF
+
+# 1mm scale
+setscale 1
+clear U
+optimise 12 UF:1  0.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 1
+sort U
+</pre>
+</section>
+
+This page written by <link url="http://www.fmrib.ox.ac.uk/~mark/">Mark
+Jenkinson</link>
+
+
+</refguide>
+
+
+
+
+
+
+
+
+
+
+
