@@ -1298,6 +1298,7 @@ void double_end_slices(volume& testvol)
   //  be done (in general it is good to do for small number of slices so
   //  that the end ones get counted and not de-weighted by the cost fns)
   volume newtestvol(testvol.columns(),testvol.rows(),testvol.slices()+2);
+  newtestvol.setvoxelsize(testvol.getx(),testvol.gety(),8.0);
   for (int z=0; z<= testvol.slices()+1; z++) {
     for (int y=0; y<testvol.rows(); y++) {
       for (int x=0; x<testvol.columns(); x++) {
@@ -1321,7 +1322,6 @@ int get_testvol(volume& testvol)
     globaloptions::get().datatype = dtype;
   if (testvol.slices()==1) {
     double_end_slices(testvol);
-    testvol.setvoxelsize(testvol.getx(),testvol.gety(),8.0);
   }
   read_matrix(globaloptions::get().initmat,globaloptions::get().initmatfname,
 	      testvol);
@@ -1336,8 +1336,6 @@ int get_testvol(volume& testvol)
       read_volume(global_testweight,globaloptions::get().testweightfname);
       if (global_testweight.slices()==1) {
 	double_end_slices(global_testweight);
-	global_testweight.setvoxelsize(global_testweight.getx(),
-				       global_testweight.gety(),8.0);
       }
     } else {
       global_testweight = testvol;  // Fix size and dimensions
@@ -1362,7 +1360,6 @@ int get_refvol(volume& refvol)
   read_volume(refvol,globaloptions::get().reffname);
   if ((refvol.slices()==1) && (globaloptions::get().do_optimise)) {
     double_end_slices(refvol);
-    refvol.setvoxelsize(refvol.getx(),refvol.gety(),8.0);
   }
 
   ColumnVector hist;
@@ -1375,8 +1372,6 @@ int get_refvol(volume& refvol)
       read_volume(global_refweight,globaloptions::get().refweightfname);
       if (global_refweight.slices()==1) { 
 	double_end_slices(global_refweight);
-	global_refweight.setvoxelsize(global_refweight.getx(),
-				      global_refweight.gety(),8.0);
       }
     } else {
       global_refweight = refvol;   // Fix size and dimensions
