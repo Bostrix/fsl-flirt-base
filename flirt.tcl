@@ -455,11 +455,12 @@ while { $i <= $reg($w,maxnstats) } {
 
     #{{{ Utils
 
-menubutton $w.utils -text "Utils" -menu $w.utils.menu -relief raised
+menubutton $w.utils -text "Utils" -menu $w.utils.menu -relief raised -bd 2
 
 menu $w.utils.menu
 
 $w.utils.menu add command -label "Apply FLIRT transform" -command { exec sh -c "${FSLDIR}/bin/ApplyXFM$gui_ext" & }
+$w.utils.menu add command -label "Concat FLIRT transforms" -command { exec sh -c "${FSLDIR}/bin/ConcatXFM$gui_ext" & }
 $w.utils.menu add command -label "Invert FLIRT transform" -command { exec sh -c "${FSLDIR}/bin/InvertXFM$gui_ext" & }
 
 #}}}

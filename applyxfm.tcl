@@ -1,6 +1,6 @@
 #
 
-# ApplyXFM - the GUI for convert_xfm
+# ApplyXFM - the GUI for applying an xfm
 #
 # Mark Jenkinson and Stephen Smith, FMRIB Image Analysis Group
 #
@@ -38,7 +38,7 @@ set entries($w,invol) ""
 
 FSLFileEntry $w.f.invol \
 	-variable entries($w,invol) \
-	-pattern "*.hdr" \
+	-pattern "IMAGE" \
 	-directory $PWD \
 	-label "Input Volume (3D or 4D)  " \
 	-labelwidth 29 \
@@ -78,7 +78,7 @@ set entries($w,refvol) ""
 
 FSLFileEntry $w.f.outsize.refvol \
 	-variable entries($w,refvol) \
-	-pattern "*.hdr" \
+	-pattern "IMAGE" \
 	-directory $PWD \
 	-label "Reference Volume   " \
 	-labelwidth 29 \
@@ -150,7 +150,7 @@ set entries($w,outvol) ""
 
 FSLFileEntry $w.f.outvol \
 	-variable entries($w,outvol) \
-	-pattern "*.hdr" \
+	-pattern "IMAGE" \
 	-directory $PWD \
 	-label "Output Volume   " \
 	-labelwidth 29 \
@@ -341,7 +341,7 @@ proc applyxfm:proc { invol transmat outvol refvol invxfm refsize nx ny nz dx dy 
 	set dtype [ exec sh -c "${FSLDIR}/bin/avwval $invol datatype" ]
 	set tmpnm ${outvol}_tmp
 	set tmpfiles "$tmpfiles $tmpnm"
-	set flirtcommand "${FSLDIR}/bin/avwcreatehd $nx $ny $nz 1 $dx $dy $dz 1 0 0 0 $dtype ${tmpnm}.hdr ; touch ${tmpnm}.img ; $flirtcommand -ref ${tmpnm}"
+	set flirtcommand "${FSLDIR}/bin/avwcreatehd $nx $ny $nz 1 $dx $dy $dz 1 0 0 0 $dtype ${tmpnm}.nii.gz ; $flirtcommand -ref ${tmpnm}"
     } else {
 	set flirtcommand "$flirtcommand -ref $refvol"
     }
@@ -354,7 +354,7 @@ proc applyxfm:proc { invol transmat outvol refvol invxfm refsize nx ny nz dx dy 
     # puts "rm $tmpfiles"
     catch { exec sh -c "rm -f $tmpfiles" }
 
-    if { [ file readable $outvol ] == 0  && [ file readable ${outvol}.hdr] == 0 } {
+    if { [ imtest $outvol ] == 0 } {
 	puts "No output saved!"
 	return 4
     }

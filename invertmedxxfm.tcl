@@ -56,7 +56,7 @@ set entries($w,2) ""
 
 FSLFileEntry $w.f.ref \
 	-variable entries($w,2) \
-	-pattern "*.hdr" \
+	-pattern "IMAGE" \
 	-directory $PWD \
 	-label "Volume A   " \
 	-labelwidth 29 \
@@ -69,7 +69,7 @@ FSLFileEntry $w.f.ref \
 
 FSLFileEntry $w.f.test \
 	-variable entries($w,3) \
-	-pattern "*.hdr" \
+	-pattern "IMAGE" \
 	-directory $PWD \
 	-label "Volume B   " \
 	-labelwidth 29 \
@@ -184,7 +184,7 @@ proc invertmedxxfm:proc { transAB volA volB invxfmfilename xfmtype } {
 	set savemedx "-omedx $invxfmfilename -xfmtype $xfmtype"
     }
     
-    set thecommand "${FSLDIR}/bin/convert_xfm -ref $volB -in $volA $savemedx -inverse $transAB"
+    set thecommand "${FSLDIR}/bin/convert_xfm -ref [ remove_ext $volB ] -in [ remove_ext $volA ] $savemedx -inverse $transAB"
     puts $thecommand
     catch { exec sh -c $thecommand } errmsg
     puts $errmsg
