@@ -33,12 +33,30 @@ int main(int argc,char *argv[])
 
   if (argc!=4) { 
     cerr << "Usage: " << argv[0] << " matrixfile1 matrixfile2 refvol\n"; 
+    cerr << "        Note: only 4x4 ascii matrices are allowed (no MEDx xfms)"
+	 << endl;
     return -1; 
   }
   
   Matrix affmat1(4,4), affmat2(4,4);
-  if (read_ascii_matrix(affmat1,argv[1])<0)   return -2;
-  if (read_ascii_matrix(affmat2,argv[2])<0)   return -2;
+  if (read_ascii_matrix(affmat1,argv[1])<0) {
+    cerr << "Could not read matrix " << argv[1] << endl;
+    return -2;
+  }
+  if (read_ascii_matrix(affmat2,argv[2])<0) {
+    cerr << "Could not read matrix " << argv[2] << endl;
+    return -2;
+  }
+
+  if (fabs(affmat1.Determinant())<0.1) {
+    cerr << "WARNING:: matrix 1 has low determinant" << endl;
+    cerr << affmat1 << endl;
+  }
+
+  if (fabs(affmat2.Determinant())<0.1) {
+    cerr << "WARNING:: matrix 2 has low determinant" << endl;
+    cerr << affmat2 << endl;
+  }
 
   ColumnVector centre(3);
   centre = 0;
