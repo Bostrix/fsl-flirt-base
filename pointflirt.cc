@@ -6,10 +6,10 @@
 
 /*  CCOPYRIGHT  */
 
-#include "newmatio.h"
-#include "newmatap.h"
-#include "miscmaths.h"
-#include "options.h"
+#include "newmat/newmatio.h"
+#include "newmat/newmatap.h"
+#include "miscmaths/miscmaths.h"
+#include "utils/options.h"
 
 #define _GNU_SOURCE 1
 #define POSIX_SOURCE 1

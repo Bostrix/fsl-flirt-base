@@ -9,13 +9,8 @@
 #ifndef __GLOBALOPTIONS_
 #define __GLOBALOPTIONS_
 
-#include <cmath>
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <vector>
 
-#include "costfns.h"
+#include "newimage/costfns.h"
 
 using namespace NEWIMAGE;
 

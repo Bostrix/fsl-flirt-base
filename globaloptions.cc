@@ -7,7 +7,7 @@
 /*  CCOPYRIGHT  */
 
 #include "globaloptions.h"
-#include "avwio.h"
+#include "avwio/avwio.h"
 
 globaloptions* globaloptions::gopt = NULL;
 

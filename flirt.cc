@@ -8,22 +8,15 @@
 
 /*  CCOPYRIGHT  */
 
-#include <string>
-#include <iostream>
-#include <fstream>
-#include <unistd.h>
-#include <time.h>
-#include <vector>
-#include <algorithm>
 #define WANT_STREAM
 #define WANT_MATH
 
-#include "newmatap.h"
-#include "newmatio.h"
-#include "miscmaths.h"
-#include "optimise.h"
-#include "costfns.h"
-#include "newimageall.h"
+#include "newmat/newmatap.h"
+#include "newmat/newmatio.h"
+#include "miscmaths/miscmaths.h"
+#include "miscmaths/optimise.h"
+#include "newimage/costfns.h"
+#include "newimage/newimageall.h"
 #include "defaultschedule.h"
 #include "globaloptions.h"
 

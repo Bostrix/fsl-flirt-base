@@ -6,8 +6,8 @@
 
 /*  CCOPYRIGHT  */
 
-#include "newimageall.h"
-#include "fmribmain.h"
+#include "newimage/newimageall.h"
+#include "newimage/fmribmain.h"
 
 using namespace NEWIMAGE;
 

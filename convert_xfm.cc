@@ -6,17 +6,13 @@
 
 /*  CCOPYRIGHT  */
 
-#include <string>
-#include <iostream>
-#include <fstream>
-#include <unistd.h>
 #define WANT_STREAM
 #define WANT_MATH
 
-#include "newmatap.h"
-#include "newmatio.h"
-#include "newimageall.h"
-#include "miscmaths.h"
+#include "newmat/newmatap.h"
+#include "newmat/newmatio.h"
+#include "newimage/newimageall.h"
+#include "miscmaths/miscmaths.h"
 
 #ifndef NO_NAMESPACE
  using namespace MISCMATHS;
