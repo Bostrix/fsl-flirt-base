@@ -106,6 +106,8 @@
 	  // the following should be the variance of the bth iso-subset
 	  var = (sumy2[b] - sumy[b]*sumy[b]/((float) numy[b]) ) /
 	    ((float) (numy[b]-1));
+	  // cerr << "Set #" << b << " has " << numx[b] << " elements and " 
+	  //   << var << " variance" << endl;
 	  corr_ratio += var * ((float) numx[b]);
 	}
       }
@@ -117,6 +119,10 @@
       if (numtoty>1)
 	var = ( totsumy2 - totsumy*totsumy/((float) numtoty) ) /
 	  ((float) (numtoty - 1));
+      //cerr << "TOTALS are:" << endl 
+      //   << " numerator variance is : " << corr_ratio << endl
+      //   << " and denominator variance is: " << var << " from " << numtoty 
+      //   << " valid elements" << endl;
       if (var>0.0)  corr_ratio/=var;
       // the above is actually 1 - correlation ratio, so correct this now
       if ( (numtotx<=0) || (numtoty<=1) || (var<=0.0) )
