@@ -268,7 +268,7 @@
       float *numy;
       numy = new float[no_bins+1];
       int b=0;
- 
+
       for (int i=0; i<=no_bins; i++) {
 	numy[i]=0.0; sumy[i]=0.0;  sumy2[i]=0.0;
       }
@@ -327,10 +327,10 @@
 	    o1 += a11;
 	    o2 += a21;
 	    o3 += a31;
+
 	  }
 	}
       }
-
 
       float corr_ratio=0.0, var=0.0, totsumy=0.0, totsumy2=0.0;
       float numtoty=0.0;
@@ -370,6 +370,7 @@
       //   << " valid elements" << endl;
       if (var>0.0)  corr_ratio/=var;
       // the above is actually 1 - correlation ratio, so correct this now
+
       if ( (numtoty<=1) || (var<=0.0) )
 	return 0.0;   // the totally uncorrelated condition
       else
