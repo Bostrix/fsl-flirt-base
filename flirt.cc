@@ -10,7 +10,7 @@
 
 // Put current version number here:
 #include <string>
-const string version = "3.0";
+const string version = "3.1";
 
 #include <iostream>
 #include <fstream>
@@ -45,10 +45,11 @@ const string version = "3.0";
 
 ////////////////////////////////////////////////////////////////////////////
 
-// CHEATING GLOBAL VOLUMES FOR WEIGHTING INFO (MUST TIDY SOON)
+// GLOBAL VOLUMES FOR WEIGHTING INFO (MUST TIDY SOON)
 
 volume global_refweight, global_testweight, global_refweight1;
 volume global_refweight2, global_refweight4, global_refweight8;
+sincinterp sincobj;
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -61,6 +62,39 @@ void print_vector(float x, float y, float z)
 //------------------------------------------------------------------------//
 // Some interfaces to generalio
 
+void setupsinc()
+{
+  int w = (globaloptions::get().sincwidth-1)/2;
+  if (w<0) w=1;
+  if (globaloptions::get().sincwindow==Hanning) {
+    sincobj.setupkernel(w,"hanning");
+  } else if (globaloptions::get().sincwindow==Blackman) {
+    sincobj.setupkernel(w,"blackman");
+  } else if (globaloptions::get().sincwindow==Rect) {
+    sincobj.setupkernel(w,"rectangular");
+  }
+}
+
+
+float sinc_interpolation_shell(const volume& v, const float x, const float y, 
+			       const float z)
+{
+  return sincobj.sinc_interpolation(v,x,y,z);
+}
+
+void final_transform(volume& newtestvol,
+		     const volume& testvol,const Matrix& finalmat) 
+{
+  if (globaloptions::get().interpmethod == NearestNeighbour) {
+    general_affine_transform(newtestvol,testvol,finalmat,nn_interpolation);
+  } else if (globaloptions::get().interpmethod == Sinc) {
+    general_affine_transform(newtestvol,testvol,finalmat,
+			     sinc_interpolation_shell);
+  } else {
+    filled_affine_transform(newtestvol,testvol,finalmat);
+  }
+}
+
 int safe_save_volume(const volume& source, const string& filename)
 {
   if (!globaloptions::get().nosave) {
@@ -69,13 +103,13 @@ int safe_save_volume(const volume& source, const string& filename)
   return 0;
 }
 
-
 void save_matrix_data(const Matrix& matresult, const volume& initvol, 
 		      const volume& finalvol)
 {
-    write_ascii_matrix(matresult,globaloptions::get().outputmatascii);
-    write_medx_matrix(matresult,globaloptions::get().outputmatmedx,
-		      initvol,finalvol,"a",globaloptions::get().reffname);
+  Matrix outfmat = matresult;
+  write_ascii_matrix(outfmat,globaloptions::get().outputmatascii);
+  write_medx_matrix(outfmat,globaloptions::get().outputmatmedx,
+		    initvol,finalvol,"a",globaloptions::get().reffname);
 }
 
 void save_global_data(const Matrix& matresult, const volume& initvol,
@@ -86,7 +120,7 @@ void save_global_data(const Matrix& matresult, const volume& initvol,
     safe_save_volume(globaloptions::get().impair->refvol,"refvol");
     volume outputvol;
     outputvol = globaloptions::get().impair->refvol;
-    filled_affine_transform(outputvol,globaloptions::get().impair->testvol,
+    final_transform(outputvol,globaloptions::get().impair->testvol,
 		     matresult * globaloptions::get().initmat);
     safe_save_volume(outputvol,globaloptions::get().outputfname.c_str());
     save_matrix_data(matresult * globaloptions::get().initmat,initvol,finalvol);
@@ -832,6 +866,142 @@ float measure_cost(Matrix& affmat, int input_dof)
   return costfn(affmat);
 }  
 
+
+void aligncog(Matrix& affmat)
+{
+  Tracer tr("aligncog");
+  Matrix resmat = affmat;
+  resmat(1,4) = resmat(2,4) = resmat(3,4) = 0.0;
+  ColumnVector transoff;
+  transoff = resmat.SubMatrix(1,3,1,3)
+    * globaloptions::get().impair->testvol.cog()
+    - globaloptions::get().impair->refvol.cog();
+  resmat(1,4) = -transoff(1);
+  resmat(2,4) = -transoff(2);
+  resmat(3,4) = -transoff(3);
+  affmat = resmat;
+}
+
+
+Matrix principleaxes(const volume& vol)
+{
+  Tracer tr("principleaxes");
+  SymmetricMatrix m2(3);
+  m2 = 0;
+  double val=0, total=0, tot=0;
+  double mxx=0, mxy=0, mxz=0, myy=0, myz=0, mzz=0, mx=0, my=0, mz=0;
+  ColumnVector mean(3);
+  mean = 0;
+  float vmin, vmax;
+  get_min_max(vol,vmin,vmax);
+  
+  int n=0, nlim;
+  nlim = (int) sqrt((float) vol.rows()*vol.columns()*vol.slices());
+  if (nlim<1000) nlim=1000;
+  for (int z=0; z<vol.slices(); z++) {
+    for (int y=0; y<vol.rows(); y++) {
+      for (int x=0; x<vol.columns(); x++) {
+	val = (double) (vol(x,y,z) - vmin);
+	mxx += val*x*x;
+	mxy += val*x*y;
+	mxz += val*x*z;
+	myy += val*y*y;
+	myz += val*y*z;
+	mzz += val*z*z;
+	mx += val*x;
+	my += val*y;
+	mz += val*z;
+	tot += val;
+	n++;
+	if (n>nlim) {
+	  n=0; total+=tot; m2(1,1)+=mxx; m2(1,2)+=mxy; m2(1,3)+=mxz;
+	  m2(2,2)+=myy; m2(2,3)+=myz; m2(3,3)+=mzz;
+	  mean(1)+=mx; mean(2)+=my; mean(3)+=mz;
+	  tot=0; mxx=0; mxy=0; mxz=0; myy=0; myz=0; mzz=0; mx=0; my=0; mz=0;
+	}
+      }
+    }
+  }
+  total+=tot; m2(1,1)+=mxx; m2(1,2)+=mxy; m2(1,3)+=mxz;
+  m2(2,2)+=myy; m2(2,3)+=myz; m2(3,3)+=mzz;
+  mean(1)+=mx; mean(2)+=my; mean(3)+=mz;
+  
+  if (fabs(total) < 1e-5) {
+    cerr << "WARNING::in calculating Principle Axes, total = 0.0" << endl;
+    total = 1.0;
+  }
+  m2 /= total;
+  mean /= total;
+  // Now adjust for voxel dimensions
+  Matrix samp(3,3);
+  samp = vol.sampling_matrix().SubMatrix(1,3,1,3);
+  m2 << samp * m2 * samp;
+  mean = samp*mean;
+  // Now make it central (taking off the cog)
+  Matrix meanprod(3,3);
+  for (int k1=1; k1<=3; k1++) {
+    for (int k2=1; k2<=3; k2++) {
+      meanprod(k1,k2) = mean(k1)*mean(k2);
+    }
+  }
+  m2 << m2 - meanprod;
+  
+  Matrix paxes;
+  DiagonalMatrix evals;
+  Jacobi(m2,evals,paxes);
+  ColumnVector ptemp;
+  float etemp;
+  // brute force sort the eigen values and vectors
+  // find inedx of least e-value
+  int kmin=1;
+  for (int k=2; k<=3; k++) {
+    if (evals(k,k) < evals(kmin,kmin)) kmin = k;
+  }
+  // put the least in position 1
+  etemp = evals(1,1);
+  ptemp = paxes.SubMatrix(1,3,1,1);
+  evals(1,1) = evals(kmin,kmin);
+  paxes.SubMatrix(1,3,1,1) = paxes.SubMatrix(1,3,kmin,kmin);
+  evals(kmin,kmin) = etemp;
+  paxes.SubMatrix(1,3,kmin,kmin) = ptemp;
+  // check if remaining ones require swapping
+  if (evals(3,3) < evals(2,2)) {
+    etemp = evals(2,2);
+    ptemp = paxes.SubMatrix(1,3,2,2);
+    evals(2,2) = evals(3,3);
+    paxes.SubMatrix(1,3,2,2) = paxes.SubMatrix(1,3,3,3);
+    evals(3,3) = etemp;
+    paxes.SubMatrix(1,3,3,3) = ptemp;
+  }
+  return paxes;
+}
+
+
+void alignpaxes(Matrix& affmat)
+{
+  Tracer tr("alignpaxes");
+  Matrix paxref, paxtest;
+  paxref = principleaxes(globaloptions::get().impair->refvol);
+  paxtest = principleaxes(globaloptions::get().impair->testvol);
+  ColumnVector rv, tv;
+  for (int n=1; n<=2; n++) {
+    rv = paxref.SubMatrix(1,3,n,n);
+    tv = paxtest.SubMatrix(1,3,n,n);
+    if (dot(rv,tv)<0) {
+      rv=-rv;
+      paxref.SubMatrix(1,3,n,n)=rv;
+    }
+  }
+  if (paxref.Determinant()<0) 
+    paxref.SubMatrix(1,3,3,3) = -paxref.SubMatrix(1,3,3,3);
+  if (paxtest.Determinant()<0) 
+    paxtest.SubMatrix(1,3,3,3) = -paxtest.SubMatrix(1,3,3,3);
+  affmat = Identity(4);
+  affmat.SubMatrix(1,3,1,3) = paxref * paxtest.t();
+  aligncog(affmat);
+}
+
+
 ////////////////////////////////////////////////////////////////////////////
 
 int optimise_strategy0(Matrix& matresult, float& fans, int max_iterations=4)
@@ -1108,6 +1278,26 @@ void set_perturbations(Matrix& delta, Matrix& perturbmask)
 ////////////////////////////////////////////////////////////////////////////
 
 
+void double_end_slices(volume& testvol)
+{
+  // this is necessary for single slice volumes so that interpolation can
+  //  be done (in general it is good to do for small number of slices so
+  //  that the end ones get counted and not de-weighted by the cost fns)
+  volume newtestvol(testvol.columns(),testvol.rows(),testvol.slices()+2);
+  for (int z=0; z<= testvol.slices()+1; z++) {
+    for (int y=0; y<testvol.rows(); y++) {
+      for (int x=0; x<testvol.columns(); x++) {
+	int ez = z-1;
+	if (ez<0) ez=0;
+	if (ez>=testvol.slices())  ez=testvol.slices()-1;
+	newtestvol(x,y,z) = testvol(x,y,ez);
+      }
+    }
+  }
+  testvol = newtestvol;
+}
+
+
 int get_testvol(volume& testvol)
 {
   Tracer tr("get_testvol");
@@ -1115,8 +1305,13 @@ int get_testvol(volume& testvol)
   read_volume(testvol,globaloptions::get().inputfname,dtype);
   if (!globaloptions::get().forcedatatype)
     globaloptions::get().datatype = dtype;
-  read_matrix(globaloptions::get().initmat,globaloptions::get().initmatfname,testvol);
-
+  if (testvol.slices()==1) {
+    double_end_slices(testvol);
+    testvol.setvoxelsize(testvol.getx(),testvol.gety(),8.0);
+  }
+  read_matrix(globaloptions::get().initmat,globaloptions::get().initmatfname,
+	      testvol);
+  
   ColumnVector hist;
   float minval=0.0, maxval=0.0;
   find_robust_limits(testvol,globaloptions::get().no_bins,hist,minval,maxval);
@@ -1125,6 +1320,11 @@ int get_testvol(volume& testvol)
   if (globaloptions::get().useweights) {
     if (globaloptions::get().testweightfname.length()>0) {
       read_volume(global_testweight,globaloptions::get().testweightfname);
+      if (global_testweight.slices()==1) {
+	double_end_slices(global_testweight);
+	global_testweight.setvoxelsize(global_testweight.getx(),
+				       global_testweight.gety(),8.0);
+      }
     } else {
       global_testweight = testvol;  // Fix size and dimensions
       global_testweight = 1.0;      // Set all elements to unity weighting
@@ -1146,6 +1346,10 @@ int get_refvol(volume& refvol)
 {
   Tracer tr("get_refvol");
   read_volume(refvol,globaloptions::get().reffname);
+  if ((refvol.slices()==1) && (globaloptions::get().do_optimise)) {
+    double_end_slices(refvol);
+    refvol.setvoxelsize(refvol.getx(),refvol.gety(),8.0);
+  }
 
   ColumnVector hist;
   float minval=0.0, maxval=0.0;
@@ -1155,6 +1359,11 @@ int get_refvol(volume& refvol)
   if (globaloptions::get().useweights) {
     if (globaloptions::get().refweightfname.length()>0) {
       read_volume(global_refweight,globaloptions::get().refweightfname);
+      if (global_refweight.slices()==1) { 
+	double_end_slices(global_refweight);
+	global_refweight.setvoxelsize(global_refweight.getx(),
+				      global_refweight.gety(),8.0);
+      }
     } else {
       global_refweight = refvol;   // Fix size and dimensions
       global_refweight = 1.0;      // Set all elements to unity weighting
@@ -1212,6 +1421,7 @@ void no_optimise()
     globaloptions::get().datatype = dtype;
   read_matrix(globaloptions::get().initmat,
 	      globaloptions::get().initmatfname,testvol);
+
   if (globaloptions::get().verbose>=2) {
     cerr << "Init Matrix = \n" << globaloptions::get().initmat << endl;
   }
@@ -1234,7 +1444,7 @@ void no_optimise()
   }
 
   volume outputvol = refvol;
-  filled_affine_transform(outputvol,testvol,globaloptions::get().initmat);
+  final_transform(outputvol,testvol,globaloptions::get().initmat);
   safe_save_volume(outputvol,globaloptions::get().outputfname.c_str());
   if (globaloptions::get().verbose>=2) {
     save_matrix_data(globaloptions::get().initmat, testvol, outputvol);
@@ -1602,6 +1812,50 @@ int usrsetoption(const std::vector<string> &words)
 }
 
 
+void usraligncog(MatVecPtr stdresultmat, 
+		 MatVecPtr usrmatptr, 
+		 unsigned int usrrow1, unsigned int usrrow2)
+{
+  Tracer tr("usraligncog");
+  Matrix delta, perturbmask, matresult;
+  ColumnVector params(12);
+  RowVector rowresult(17);
+  for (unsigned int crow=usrrow1; crow<=Min(usrrow2,usrmatptr->size()); crow++)
+    {
+      Matrix reshaped = (*usrmatptr)[crow-1].SubMatrix(1,1,2,17);
+      reshape(matresult,reshaped,4,4);
+      aligncog(matresult);
+      reshape(reshaped,matresult,1,16);
+      rowresult(1) = (*usrmatptr)[crow-1].SubMatrix(1,1,1,1).AsScalar();
+      rowresult.SubMatrix(1,1,2,17) = reshaped;
+      // store result
+      stdresultmat->push_back(rowresult);
+    }
+}
+
+
+void usralignpaxes(MatVecPtr stdresultmat, 
+		   MatVecPtr usrmatptr, 
+		   unsigned int usrrow1, unsigned int usrrow2)
+{
+  Tracer tr("usralignpaxes");
+  Matrix delta, perturbmask, matresult;
+  ColumnVector params(12);
+  RowVector rowresult(17);
+  for (unsigned int crow=usrrow1; crow<=Min(usrrow2,usrmatptr->size()); crow++)
+    {
+      Matrix reshaped = (*usrmatptr)[crow-1].SubMatrix(1,1,2,17);
+      reshape(matresult,reshaped,4,4);
+      alignpaxes(matresult);
+      reshape(reshaped,matresult,1,16);
+      rowresult(1) = (*usrmatptr)[crow-1].SubMatrix(1,1,1,1).AsScalar();
+      rowresult.SubMatrix(1,1,2,17) = reshaped;
+      // store result
+      stdresultmat->push_back(rowresult);
+    }
+}
+
+
 void usrsort(MatVecPtr usrsrcmat) 
 {
   Tracer tr("usrsort");
@@ -1872,6 +2126,7 @@ void usrsetscale(int usrscale,
       }
     }
     globalpair = new imagepair(*refvolnew,testvol);
+    globalpair->smoothsize = globaloptions::get().smoothsize;
     globalpair->set_no_bins(globaloptions::get().no_bins/scale);
     globalpair->smoothsize = globaloptions::get().smoothsize;
     globalpair->fuzzyfrac = globaloptions::get().fuzzyfrac;
@@ -2078,6 +2333,26 @@ void interpretcommand(const string& comline, bool& skip,
     usrmeasurecost(&(globaloptions::get().usrmat[0]),
 		   usrdefmat,usrrow1,usrrow2,usrdof, 
 		   usrperturbation,usrperturbrelative);
+  } else if (words[0]=="aligncog") {
+    // ALIGNCOG
+    if (words.size()<2) {
+      cerr << "Wrong number of args to ALIGNCOG" << endl;
+      exit(-1);
+    }
+    MatVecPtr src;
+    int d1, d2;
+    parsematname(words[1],src,d1,d2);
+    usraligncog(&(globaloptions::get().usrmat[0]),src,d1,d2);
+  } else if (words[0]=="alignpaxes") {
+    // ALIGNPAXES
+    if (words.size()<2) {
+      cerr << "Wrong number of args to ALIGNPAXES" << endl;
+      exit(-1);
+    }
+    MatVecPtr src;
+    int d1, d2;
+    parsematname(words[1],src,d1,d2);
+    usralignpaxes(&(globaloptions::get().usrmat[0]),src,d1,d2);
   } else if (words[0]=="setscale") {
     // SETSCALE
     if (words.size()<2) {
@@ -2176,6 +2451,7 @@ int main(int argc,char *argv[])
   //test_proc();  // only used for some debugging
 
   globaloptions::get().parse_command_line(argc, argv,version);
+  setupsinc();
 
   if (!globaloptions::get().do_optimise) {   
     no_optimise();
@@ -2223,7 +2499,8 @@ int main(int argc,char *argv[])
     } else {
       refvol_8 = refvol_4;
     }
-      
+
+
     {
       volume testvol_8;
       blur4subsampling(testvol_8,testvol,8.0);
@@ -2292,7 +2569,11 @@ int main(int argc,char *argv[])
   std::vector<string> schedulecoms(0);
   string comline;
   if (globaloptions::get().schedulefname.length()<1) {
-    setdefaultschedule(schedulecoms);
+    if (globaloptions::get().mode2D) {
+      set2Ddefaultschedule(schedulecoms);
+    } else {
+      setdefaultschedule(schedulecoms);
+    }
   } else {
     // open the schedule file
     ifstream schedulefile(globaloptions::get().schedulefname.c_str());
@@ -2330,7 +2611,7 @@ int main(int argc,char *argv[])
     // generate the outputvolume (not safe_save st -out overrides -nosave)
     if (globaloptions::get().outputfname.size()>0) {
       volume newtestvol = refvol;
-      filled_affine_transform(newtestvol,testvol,finalmat);      
+      final_transform(newtestvol,testvol,finalmat);      
       save_volume(newtestvol,globaloptions::get().outputfname.c_str(),
 		  globaloptions::get().datatype);
     }
@@ -2342,11 +2623,4 @@ int main(int argc,char *argv[])
 
   return(0);
 }
-
-
-
-
-
-
-
 
