@@ -17,7 +17,7 @@ args=$* ; export args
 
 flirt=/usr/local/fsl/src/flirt/flirt ; export flirt
 
-$flirt -in $bin -ref $bref -schedule pairregrc1 -omat prgmat1 $args
-$flirt -in $sin -ref $sref -init prgmat1 -schedule pairregrc2 -omat prgmat2 $args
+$flirt -in $bin -ref $bref -schedule ${FSLDIR}/bin/pairregrc1 -omat prgmat1 $args
+$flirt -in $sin -ref $sref -init prgmat1 -schedule ${FSLDIR}/bin/pairregrc2 -omat prgmat2 $args
 convert_xfm -matonly -fixscaleskew prgmat2 prgmat1 -omat prgmat3
-$flirt -in $bin -ref $bref -init prgmat3 -schedule pairregrc3 -omat $matf $args
+$flirt -in $bin -ref $bref -init prgmat3 -schedule ${FSLDIR}/bin/pairregrc3 -omat $matf $args
