@@ -254,7 +254,7 @@ void globaloptions::parse_command_line(int argc,char** argv,
 	} else if (interparg == "nearestneighbour") {
 	  interpmethod = NearestNeighbour;
 	} else if (interparg == "sinc") {
-	  interpmethod = Sinc;
+	  interpmethod = NEWIMAGE::Sinc;
 	} else {
 	  cerr << "Unrecognised interpolation method: " << interparg << endl;
 	  exit(-1);

@@ -114,7 +114,7 @@ void final_transform(const volume<float>& testvol, volume<float>& newtestvol,
   testvol.setorigin(0.0,0.0,0.0);
   if (globaloptions::get().interpmethod == NearestNeighbour) {
     testvol.setinterpolationmethod(nearestneighbour);
-  } else if (globaloptions::get().interpmethod == Sinc) {
+  } else if (globaloptions::get().interpmethod == NEWIMAGE::Sinc) {
     setupsinc(testvol);
     testvol.setinterpolationmethod(sinc);
   } else {

@@ -17,11 +17,14 @@
 
 #include "newimage/costfns.h"
 
-using namespace NEWIMAGE;
 
+namespace NEWIMAGE {
   enum anglereps { Euler, Quaternion };
   enum interps { TriLinear, NearestNeighbour, Sinc };
   enum windowtype { Rect, Hanning, Blackman };
+}
+
+using namespace NEWIMAGE;
 
   typedef std::vector<RowVector> MatVec;
   typedef MatVec* MatVecPtr;
