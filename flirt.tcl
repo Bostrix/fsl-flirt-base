@@ -82,6 +82,28 @@ proc flirt { w } {
     }
 
 #}}}
+
+
+    #{{{ DOF
+
+    tixOptionMenu $w.f.dof -label "  Model/DOF (input to ref)" \
+	    -variable reg($w,dof) \
+	    -options {
+	label.anchor w
+	menubutton.width 30
+    }
+    $w.f.dof add command 2Dmenu -label "   2D to 2D registration" -state disabled -background "#555555"
+    $w.f.dof add command 2D -label "Rigid Body (3 parameter model)"
+    $w.f.dof add command 3Dmenu -label "   3D to 3D registration" -state disabled -background "#555555"
+    $w.f.dof add command TRANS -label "Translation Only (3 parameter model)"
+    $w.f.dof add command 6 -label "Rigid Body (6 parameter model)"
+    $w.f.dof add command 7 -label "Global Rescale (7 parameter model)"
+    $w.f.dof add command 9 -label "Traditional (9 parameter model)"
+    $w.f.dof add command 12 -label "Affine (12 parameter model)"
+    set reg($w,dof) 12
+
+#}}}
+
     #{{{ input/high res image
 
     if { $INMEDX } {
@@ -123,6 +145,26 @@ proc flirt { w } {
 		-filterhist VARS(history)
     }
 
+
+ 
+# DOF 2
+
+    tixOptionMenu $w.f.doftwo -label "  Model/DOF (lowres to highres)" \
+	    -variable reg($w,doftwo) \
+	    -options {
+	label.anchor w
+	menubutton.width 30
+    }
+    $w.f.doftwo add command 2Dmenu -label "   2D to 2D registration" -state disabled -background "#555555"
+    $w.f.doftwo add command 2D -label "Rigid Body (3 parameter model)"
+    $w.f.doftwo add command 3Dmenu -label "   3D to 3D registration" -state disabled -background "#555555"
+    $w.f.doftwo add command TRANS -label "Translation Only (3 parameter model)"
+    $w.f.doftwo add command 6 -label "Rigid Body (6 parameter model)"
+    $w.f.doftwo add command 7 -label "Global Rescale (7 parameter model)"
+    $w.f.doftwo add command 9 -label "Traditional (9 parameter model)"
+    $w.f.doftwo add command 12 -label "Affine (12 parameter model)"
+    set reg($w,doftwo) 12
+
 #}}}
     #{{{ mode
 
@@ -136,7 +178,9 @@ proc flirt { w } {
     $w.f.mode add command 2 -label "Low res $IG -> High res $IG -> Reference image"
 
 #}}}
-    pack $w.f.mode $w.f.ref $w.f.test -in $lfbasic -side top -anchor w -pady $PADY -padx 5
+
+    pack $w.f.mode $w.f.ref $w.f.dof $w.f.test -in $lfbasic -side top -anchor w -pady $PADY -padx 5
+
     #{{{ output image
 
     if { ! $INMEDX } {
@@ -153,6 +197,7 @@ proc flirt { w } {
     } else {
 	set entries($w,4) /tmp/grot
     }
+
 
 #}}}
     #{{{ secondary image(s)
@@ -182,30 +227,7 @@ while { $i <= $reg($w,maxnstats) } {
 }
 
 #}}}
-    #{{{ DOF
-
-    tixLabelFrame $w.f.doff
-    set lfdoff [ $w.f.doff subwidget frame ]
-
-    tixOptionMenu $w.f.dof -label "Model/DOF " \
-	    -variable reg($w,dof) \
-	    -options {
-	label.anchor w
-	menubutton.width 30
-    }
-    $w.f.dof add command 2Dmenu -label "   2D to 2D registration" -state disabled -background "#555555"
-    $w.f.dof add command 2D -label "Rigid Body (3 parameter model)"
-    $w.f.dof add command 3Dmenu -label "   3D to 3D registration" -state disabled -background "#555555"
-    $w.f.dof add command TRANS -label "Translation Only (3 parameter model)"
-    $w.f.dof add command 6 -label "Rigid Body (6 parameter model)"
-    $w.f.dof add command 7 -label "Global Rescale (7 parameter model)"
-    $w.f.dof add command 9 -label "Traditional (9 parameter model)"
-    $w.f.dof add command 12 -label "Affine (12 parameter model)"
-    set reg($w,dof) 12
-
-#}}}
-    pack $w.f.dof -in $lfdoff -side top -anchor w -padx 5 -pady 1
-    pack $w.f.basic $w.f.stats $w.f.doff -in $w.f -side top -anchor w -pady 0 -padx 5
+    pack $w.f.basic $w.f.stats -in $w.f -side top -anchor w -pady 0 -padx 5
     #{{{ advanced options
 
     # ---- Optional stuff ----
@@ -469,7 +491,7 @@ proc flirt:apply { w dialog } {
 	incr i 1
     }
 
-    set status [ flirt:proc $reg($w,mode) $entries($w,1) $entries($w,2) $entries($w,3) $reg($w,nstats) $statslist $entries($w,4) $reg($w,dof) $reg($w,bins) $reg($w,searchrxmin) $reg($w,searchrxmax) $reg($w,searchrymin) $reg($w,searchrymax) $reg($w,searchrzmin) $reg($w,searchrzmax) $reg($w,disablesearch_yn) $reg($w,cost) $reg($w,interp) $reg($w,sincwidth) $reg($w,sincwindow) $entries($w,35) $entries($w,36) $entries($w,37) 1 ]
+    set status [ flirt:proc $reg($w,mode) $entries($w,1) $entries($w,2) $entries($w,3) $reg($w,nstats) $statslist $entries($w,4) $reg($w,dof) $reg($w,doftwo) $reg($w,bins) $reg($w,searchrxmin) $reg($w,searchrxmax) $reg($w,searchrymin) $reg($w,searchrymax) $reg($w,searchrzmin) $reg($w,searchrzmax) $reg($w,disablesearch_yn) $reg($w,cost) $reg($w,interp) $reg($w,sincwidth) $reg($w,sincwindow) $entries($w,35) $entries($w,36) $entries($w,37) 1 ]
 
     update idletasks
     
@@ -497,11 +519,13 @@ proc flirt:updatemode { w junk } {
 	    $w.f.testtxt configure -text "Input image/group"
 	    $w.iwgttxt configure -text "Input weighting"
 	} else {
+	    $w.f.dof.label configure -text "  Model/DOF (input to ref)"
 	    $w.f.test.frame.label configure -text "Input image"
 	    $w.iwgt.frame.label configure -text "Input weighting"
 	}
 	$w.f.nstats configure -label "Number of secondary $IGS to apply transform to "
 	pack forget $w.f.test2
+	pack forget $w.f.doftwo
 	pack forget $w.iwgt2
 #	pack $w.wgt -in [$w.nb subwidget weights] -side top -anchor w -padx 3
 #	pack $w.iwgt -in [$w.nb subwidget weights] -side top -anchor w -padx 3 -pady $PADY
@@ -510,11 +534,12 @@ proc flirt:updatemode { w junk } {
 	    $w.f.testtxt configure -text "High res image/group"
 	    $w.iwgttxt configure -text "High res weighting"
 	} else {
+	    $w.f.dof.label configure -text "  Model/DOF (highres to ref)"
 	    $w.f.test.frame.label configure -text "High res image"
 	    $w.iwgt.frame.label configure -text "High res weighting"
 	}
 	$w.f.nstats configure -label "Number of secondary $IGS to apply combined transform to "
-	pack $w.f.test2 -in $w.f -side top -anchor w -pady $PADY -padx 5 -after $w.f.test
+	pack $w.f.doftwo $w.f.test2 -in $w.f -side top -anchor w -pady $PADY -padx 5 -after $w.f.test
 	pack $w.iwgt2 -in [$w.nb subwidget weights] -side top -anchor w -padx 3 -pady $PADY
 #	pack forget $w.wgt
 #	pack forget $w.iwgt
