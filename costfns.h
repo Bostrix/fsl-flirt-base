@@ -14,6 +14,8 @@
  namespace COSTFNS {
 #endif
 
+  enum costfns { Woods, CorrRatio, MutualInfo, NormCorr, NormMI };
+
   float normcorr(const imagepair* ims, const Matrix& aff); 
 
   float woods_fn(const imagepair* ims, const Matrix& aff); 
