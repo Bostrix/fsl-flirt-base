@@ -262,7 +262,18 @@ float costfn(const Matrix& uninitaffmat)
   switch (globaloptions::get().currentcostfn) 
     {
     case NormCorr:
-      retval = 1.0 - fabs(normcorr(globaloptions::get().impair,affmat));  // MAXimise corr
+      if (globaloptions::get().smoothsize > 0.0) {  // MAXimise corr
+	retval = 1.0 - fabs(normcorr_smoothed(globaloptions::get().impair,affmat));
+      } else {
+	retval = 1.0 - fabs(normcorr(globaloptions::get().impair,affmat));
+      }
+      break;
+    case LeastSq:
+      if (globaloptions::get().smoothsize > 0.0) {
+	retval = leastsquares_smoothed(globaloptions::get().impair,affmat);
+      } else {
+	retval = leastsquares(globaloptions::get().impair,affmat);
+      }
       break;
     case CorrRatio:
       if (globaloptions::get().smoothsize > 0.0) {
@@ -1504,6 +1515,7 @@ int usrsetoption(const std::vector<string> &words)
 
   if (option=="smoothing") {
     globaloptions::get().smoothsize = fvalues(1);
+    globaloptions::get().impair->smoothsize = globaloptions::get().smoothsize;
     return 0;
   } else if (option=="tolerance") {
     globaloptions::get().tolerance 
@@ -2076,9 +2088,11 @@ int main(int argc,char *argv[])
   min_sampling_ref = Min(refvol.getx(),Min(refvol.gety(),refvol.getz()));
   min_sampling_test = Min(testvol.getx(),Min(testvol.gety(),testvol.getz()));
   min_sampling = (float) ceil(Max(min_sampling_ref,min_sampling_test));
-  if (globaloptions::get().min_sampling < min_sampling) 
-    globaloptions::get().min_sampling = min_sampling;
-
+  if (!globaloptions::get().force_scaling) {
+    // take the MAXIMUM of the user specified minimum and the estimated min
+    if (globaloptions::get().min_sampling < min_sampling) 
+      globaloptions::get().min_sampling = min_sampling;
+  }
     
   if (globaloptions::get().verbose>=3) {
     cout << "CoG for refvol is:  " << refvol.cog().t();
