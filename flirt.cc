@@ -34,7 +34,7 @@
 #endif
 
 // Put current version number here:
-const string version = "5.0";
+const string version = "5.1";
 
 ////////////////////////////////////////////////////////////////////////////
 
