@@ -59,7 +59,7 @@
       int b=0, numtotx=0, numtoty=0;
       float a1=no_bins/(max-min), a0=-min*no_bins/(max-min), val;
 
-      for (int i=0; i<no_bins; i++) {
+      for (int i=0; i<=no_bins; i++) {
 	numx[i]=0; numy[i]=0; sumy[i]=0.0;  sumy2[i]=0.0;
       }
   
@@ -97,7 +97,7 @@
 
       // now calculate the individual variances for each iso-set
       //  weighting them by the number of pixels from Image x that contribute
-      for (b=0; b<no_bins; b++) {
+      for (b=0; b<=no_bins; b++) {
 	numtotx += numx[b];
 	if (numy[b]>2) {
 	  numtoty += numy[b];
