@@ -102,8 +102,8 @@ int main(int argc,char *argv[])
     cout << "Backward half transform =\n" << m0 << endl;
 
     Matrix scale(4,4), skew(4,4);
-    identity(scale);
-    identity(skew);
+    Identity(scale);
+    Identity(skew);
     scale(1,1) = params(7);
     scale(2,2) = params(8);
     scale(3,3) = params(9);
