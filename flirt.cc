@@ -1920,7 +1920,7 @@ void usrsetscale(float usrscale,
       if (globaloptions::get().useweights) {
 	global_refweight = global_refweight2;
       }
-    } else if (global_scale1OK && (fabs((scale-1.0)<0.01) ) {
+    } else if (global_scale1OK && (fabs(scale-1.0)<0.01) ) {
       refvolnew = &refvol;
       if (globaloptions::get().useweights) {
 	global_refweight = global_refweight1;
