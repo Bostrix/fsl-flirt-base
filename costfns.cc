@@ -548,10 +548,10 @@
 	}
 	sumxB+=sumxA; sumyB+=sumyA; 
 	sumx2B+=sumx2A; sumy2B+=sumy2A; sumxyB+=sumxyA; 
-	sumx=0.0; sumyA=0.0; sumx2A=0.0; sumy2A=0.0; sumxyA=0.0;
+	sumxA=0.0; sumyA=0.0; sumx2A=0.0; sumy2A=0.0; sumxyA=0.0;
       }
       assert(fabs(sumxA+sumx)<1e-9);
-      sumx=sumxB; sumyA=sumyB; sumx2A=sumx2B; sumy2A=sumy2B; sumxyA=sumxyB;
+      sumx=sumxB; sumy=sumyB; sumx2=sumx2B; sumy2=sumy2B; sumxy=sumxyB;
 
       corr = 0.0;  // uncorrelated (worst) case
       if (num>2) {
@@ -655,7 +655,7 @@
 	}
 	numB+=numA; sumxB+=sumxA; sumyB+=sumyA; 
 	sumx2B+=sumx2A; sumy2B+=sumy2A; sumxyB+=sumxyA; 
-	sumx=0.0; sumyA=0.0; sumx2A=0.0; sumy2A=0.0; sumxyA=0.0;
+	sumxA=0.0; sumyA=0.0; sumx2A=0.0; sumy2A=0.0; sumxyA=0.0;
       }
       assert(fabs(sumxA+sumx)<1e-9);
       num = numB;
