@@ -72,7 +72,7 @@ proc flirt { w } {
 	set entries($w,1) ${FSLDIR}/etc/standard/avg152T1_brain.hdr
 	FSLFileEntry $w.f.ref \
 		-variable entries($w,1) \
-		-pattern "*.hdr" \
+		-pattern "IMAGE" \
 		-directory $PWD \
 		-label "Reference image   " \
 		-labelwidth 18 \
@@ -115,7 +115,7 @@ proc flirt { w } {
     } else {
 	FSLFileEntry $w.f.test \
 		-variable entries($w,2) \
-		-pattern "*.hdr" \
+		-pattern "IMAGE" \
 		-directory $PWD \
 		-label "Input image   " \
 		-labelwidth 18 \
@@ -136,7 +136,7 @@ proc flirt { w } {
     } else {
 	FSLFileEntry $w.f.test2 \
 		-variable entries($w,3) \
-		-pattern "*.hdr" \
+		-pattern "IMAGE" \
 		-directory $PWD \
 		-label "Low res image   " \
 		-labelwidth 18 \
@@ -186,7 +186,7 @@ proc flirt { w } {
     if { ! $INMEDX } {
 	FSLFileEntry $w.f.output \
 		-variable entries($w,4) \
-		-pattern "*.hdr" \
+		-pattern "IMAGE" \
 		-directory $PWD \
 		-label "Output image   " \
 		-labelwidth 18 \
@@ -214,7 +214,7 @@ while { $i <= $reg($w,maxnstats) } {
     } else {
 	FSLFileEntry $w.f.second$i \
 		-variable entries($w,[ expr $i + 4 ]) \
-		-pattern "*.hdr" \
+		-pattern "IMAGE" \
 		-directory $PWD \
 		-label "Secondary image $i" \
 		-labelwidth 18 \
@@ -373,7 +373,7 @@ while { $i <= $reg($w,maxnstats) } {
     } else {
 	FSLFileEntry $w.wgt \
 		-variable entries($w,35) \
-		-pattern "*.hdr" \
+		-pattern "IMAGE" \
 		-directory $PWD \
 		-label "Reference weighting   " \
 		-labelwidth 18 \
@@ -392,7 +392,7 @@ while { $i <= $reg($w,maxnstats) } {
     } else {
 	FSLFileEntry $w.iwgt \
 		-variable entries($w,36) \
-		-pattern "*.hdr" \
+		-pattern "IMAGE" \
 		-directory $PWD \
 		-label "Input weighting   " \
 		-labelwidth 18 \
@@ -411,7 +411,7 @@ while { $i <= $reg($w,maxnstats) } {
     } else {
 	FSLFileEntry $w.iwgt2 \
 		-variable entries($w,37) \
-		-pattern "*.hdr" \
+		-pattern "IMAGE" \
 		-directory $PWD \
 		-label "Low res weighting   " \
 		-labelwidth 18 \
@@ -653,3 +653,4 @@ flirt .rename
 tkwait window .rename
 
 #}}}
+
