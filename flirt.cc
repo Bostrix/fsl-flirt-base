@@ -1986,23 +1986,30 @@ int main(int argc,char *argv[])
       cout << "CoG for refvol is:  " << refvol.cog().t();
       cout << "CoG for testvol is:  " << testvol.cog().t();
     }
-    
-     // set up subsampled volumes by factors of 2, 4 and 8
-    if (globaloptions::get().verbose >= 2) 
-      cout << "Subsampling the volumes" << endl;
-    resample_refvol(refvol,1.0);
+  
     volume refvol_2, refvol_4, refvol_8;
-    subsample_by2(refvol,refvol_2);
-    subsample_by2(refvol_2,refvol_4);
-    subsample_by2(refvol_4,refvol_8);
-
-
-    // set up image pair and global pointer
-    {
-      volume testvol_8;
-      blur4subsampling(testvol_8,testvol,8.0);
-      testvol = testvol_8;
+    if (globaloptions::get().resample) {
+      // set up subsampled volumes by factors of 2, 4 and 8
+      if (globaloptions::get().verbose >= 2) 
+	cout << "Subsampling the volumes" << endl;
+      resample_refvol(refvol,1.0);
+      subsample_by2(refvol,refvol_2);
+      subsample_by2(refvol_2,refvol_4);
+      subsample_by2(refvol_4,refvol_8);
+      
+      // set up image pair and global pointer
+      {
+	volume testvol_8;
+	blur4subsampling(testvol_8,testvol,8.0);
+	testvol = testvol_8;
+      }
+    } else {
+      // if no resampling chosen, then refvol is simply copied
+      refvol_8 = refvol;
+      refvol_4 = refvol;
+      refvol_2 = refvol;
     }
+
     imagepair global_8(refvol_8,testvol);
     global_8.set_no_bins(globaloptions::get().no_bins/8);
     if (globaloptions::get().verbose>=2) print_volume_info(testvol,"TESTVOL");
@@ -2060,14 +2067,16 @@ int main(int argc,char *argv[])
       reshape(matresult,reshaped,4,4);
 
       Matrix finalmat = matresult * globaloptions::get().initmat;
-      read_volume(testvol,globaloptions::get().inputfname);
-      read_volume(refvol,globaloptions::get().reffname);
-      save_matrix_data(finalmat,testvol,refvol);
-      // generate the outputvolume (not safe_save st -out overrides -nosave)
       if (globaloptions::get().outputfname.size()>0) {
+	read_volume(testvol,globaloptions::get().inputfname);
+	read_volume(refvol,globaloptions::get().reffname);
+	save_matrix_data(finalmat,testvol,refvol);
+	// generate the outputvolume (not safe_save st -out overrides -nosave)
 	volume newtestvol = refvol;
 	filled_affine_transform(newtestvol,testvol,finalmat);      
 	save_volume(newtestvol,globaloptions::get().outputfname.c_str());
+      } else {
+	cout << endl << "Final result: " << endl << finalmat << endl;
       }
     }
 
