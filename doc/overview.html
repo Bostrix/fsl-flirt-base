@@ -4,7 +4,7 @@
 </HEAD>
  <BODY BACKGROUND="../images/fsl-bg" BGCOLOR="white">
   <TABLE BORDER=0 WIDTH="100%"><TR>
-  <TD ALIGN=LEFT>  <a href="http://www.fmrib.ox.ac.uk/fsl"><IMG BORDER=0 SRC="../images/fsl-logo"></a>
+  <TD ALIGN=LEFT>  <a href="../index.html"><IMG BORDER=0 SRC="../images/fsl-logo"></a>
    <TD ALIGN=CENTER><H1>FSL User Guide - Overview of the FLIRT project</H1>
   <TD ALIGN=RIGHT> <a href="http://www.fmrib.ox.ac.uk/"><IMG BORDER=0 SRC="../images/fmrib_crest_86.gif"></a>
    </TR></TABLE>
@@ -14,21 +14,19 @@
  
 This document gives a brief description of the various command line
 programs available in the FLIRT component of FSL.  A description of
-the GUI interface is contained in another document.
+the <a href="gui.html">GUI interface</a> is also available.
 
 <P>
-For each of the programs described here, a full list of available options
-can be obtained by running the command with no options.
+For each of the programs described here, a usage message which describes
+the full list of available options can be obtained by running the
+program with no options.
 <br>
-
 
  <!-- J-Back -->
 
-
-
 <A NAME="section2"></A><HR><H2>FLIRT</H2>
  
-<I>flirt</I> is the main program that performs affine registration.  It takes
+<B>flirt</B> is the main program that performs affine registration.  It takes
 an input (<FONT COLOR=PURPLE>-in</FONT>) and a reference
 (<FONT COLOR=PURPLE>-ref</FONT>) volume, and then calculates the affine
 transformation that registers the input to the reference.  The
@@ -44,9 +42,10 @@ the voxel and image dimensions of the resulting volume.
 <br>
 
 <P>
-<FONT COLOR=ORANGE>New Features:</FONT><br>
-<UL>
-<LI> Cost Function Weighting.  Weighting volumes can be specified
+<FONT COLOR=BLUE>New Features:</FONT><br>
+<DL>
+<DT> <I>Cost Function Weighting</I></DT>
+<DD> Weighting volumes can be specified
 using <FONT COLOR=PURPLE>-refweight</FONT>, <FONT
 COLOR=PURPLE>-inweight</FONT> (or both).  This allows the cost
 function to have a different weighting at each voxel, which is useful
@@ -54,24 +53,26 @@ for excluding areas (weight=0) of no interest, or increasing the
 weighting around important structures such as the ventricles.  Note
 that this is different from masking the original images, as masking introduces
 artificial boundaries whereas weighting does not.
-<LI> Different Interpolation Methods.  This includes Nearest Neighbour and
+</DD>
+<DT> <I>Different Interpolation Methods</I></DT>
+<DD> This includes Nearest Neighbour and
 a family of Sinc-based methods (three window types - rectangular, Hanning and
 Blackman) with configurable window width.  The interpolation is only used
 for the final transformation (and in applyxfm), not in the registration
 calculations.
-<LI> 2D Rigid-Body Mode.  This allows 2D to 2D registrations to be performed.
+</DD>
+<DT> <I>2D Rigid-Body Mode</I></DT>
+<DD> This allows 2D to 2D registrations to be performed.
 This is selected with the <FONT COLOR=PURPLE>-2D</FONT> option.  Note that
 it does not perform any search in this mode, and cannot deal with 2D to 3D
-registrations.
+registrations.</DD>
 </UL>
 
  <!-- J-Back -->
 
-
-
 <A NAME="section3"></A><HR><H2>CONVERT_XFM</H2>
  
-<I>convert_xfm</I> is a utility that is used to convert between different
+<B>convert_xfm</B> is a utility that is used to convert between different
 transformation file formats.  It can read and write ascii 4x4 matrices
 and MEDx transforms as well as reading MINC transform files.  In
 addition, it can be used to concatenate two transforms (using
@@ -86,49 +87,11 @@ when using this command.  However, if only ascii files are used, the
 need to be specified.
 <br>
 
-
  <!-- J-Back -->
-
-
-<A NAME="section4"></A><HR><H2>RMSDIFF</H2>
- 
-<I>rmsdiff</I> is a utility that calculates the Root Mean Square deviation
-(in millimetres) between two transformations.  That is, it compares
-two transformations (normally two possible registrations of the same
-volume pair) to see how much they differ.  This is useful to compare
-alternative registrations.
-
- <!-- J-Back -->
-
-
-<A NAME="section5"></A><HR><H2>AVSCALE</H2>
- 
-<I>avscale</I> is a utility that displays the decomposed elements of an
-affine matrix.  It displays the rotation/translation matrix, the
-individual axis scalings, the individual skews, the average scaling,
-and the forward and backward halfway transformations.  In order to set
-the centre of rotation it requires the input volume (also called the
-reslice volume).
-
- <!-- J-Back -->
-
-
-<A NAME="section6"></A><HR><H2>APPLYXFM</H2>
- 
-<I>applyxfm</I> is a utility that transforms an image by applying a
-known affine transformation to it.  It can be used for single volumes
-or for 4D series.  Note that it always uses trilinear interpolation, while
-appropriate options (-applyxfm and -init) to FLIRT can be used to apply 
-transformations to single volumes with other interpolation methods.
-A reference volume is required in order to determine the matrix size and
-FOV for the final volume.
-
- <!-- J-Back -->
-
 
 <A NAME="section7"></A><HR><H2>IMG2IMGCOORD</H2>
  
-<I>img2imgcoord</I> is a utility that calculates the corresponding
+<B>img2imgcoord</B> is a utility that calculates the corresponding
 coordinate positions (in voxels or mm) within a destination volume
 given the original coordinates in the source volume and the transformation
 from the source to the destination volume.  This is useful for finding
@@ -136,12 +99,11 @@ corresponding anatomical/functional locations.  Note that the source
 coordinates need to be stored in a file as three numbers per line, space
 separated.
 
-
  <!-- J-Back -->
 
-<A NAME="section8"></A><HR><H2>EPI2TALCOORD</H2>
+<A NAME="section8"></A><HR><H2>IMG2TALCOORD</H2>
  
-<I>epi2talcoord</I> is a similar utility to <I>img2imgcoord</I>
+<B>img2talcoord</B> is a similar utility to <B>img2imgcoord</B>
 except that the destination volume coordinates are treated as Talairach
 space coordinates.  This requires the Talairach volume to have the
 origin coordinates and voxel dimensions entered in the correct analyse
@@ -149,17 +111,51 @@ header fields.  (Note that this has only been tested with the standard
 images contained in fsl/etc/standard - there is no guarantee with other
 images, as the origin is not a standard analyse header field)
 
+ <!-- J-Back -->
+
+<A NAME="section9"></A><HR><H2>TAL2IMGCOORD</H2>
+ 
+<B>tal2imgcoord</B> is the complementary utility to <B>img2talcoord</B>.
+It works the same way but transfers coordinates from Talairach space to
+the other image (IMG) space.
 
  <!-- J-Back -->
 
-<A NAME="section9"></A><HR><H2>TAL2EPICOORD</H2>
+<A NAME="section6"></A><HR><H2>APPLYXFM4D</H2>
  
-<I>tal2epicoord</I> is the complementary utility to <I>epi2talcoord</I>.
-It works the same way but transfers coordinates from Talairach space to
-the other image (EPI) space.
+<B>applyxfm4D</B> is a utility that transforms a 4D time series by
+applying known affine transformations to them.  It can be used with a
+single transformation applied to all, or using a directory of
+transformation files in the form MAT_XXXX (where XXXX stands for the
+volume number, starting with 0000).  Note that it always uses
+trilinear interpolation, while appropriate options (-applyxfm and
+-init) to FLIRT can be used to apply transformations to single volumes
+with other interpolation methods.  A reference volume is required in
+order to determine the matrix size and FOV for the final volume.
 
+ <!-- J-Back -->
 
+<A NAME="section4"></A><HR><H2>RMSDIFF</H2>
+ 
+<B>rmsdiff</B> is a utility that calculates the Root Mean Square deviation
+(in millimetres) between two transformations.  That is, it compares
+two transformations (normally two possible registrations of the same
+volume pair) to see how much they differ.  This is useful to compare
+alternative registrations.  Note that this cannot be used with MEDx 
+transformations.
 
+ <!-- J-Back -->
+
+<A NAME="section5"></A><HR><H2>AVSCALE</H2>
+ 
+<B>avscale</B> is a utility that displays the decomposed elements of an
+affine matrix.  It displays the rotation/translation matrix, the
+individual axis scalings, the individual skews, the average scaling,
+and the forward and backward halfway transformations.  In order to set
+the centre of rotation it requires the input volume (also called the
+reslice volume).
+
+ <!-- J-Back -->
 
    <HR>
   <!-- No Footnotes -->
