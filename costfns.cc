@@ -17,146 +17,80 @@
  namespace COSTFNS {
 #endif
 
-   inline bool quick_in_bounds(const float x, const float y, 
-				     const float z, const float xb, 
-				     const float yb, const float zb, 
-				     const volume& vol) {
-     return ( (y>=0.0) && (z>=0.0) && (y<=yb) && (z<=zb)
-	      && (x>=0.0) && (x<=xb) );
+
+   void findrangex(unsigned int &xmin1 , unsigned int &xmax1,
+		   float o1, float o2, float o3,
+		   float a11, float a21, float a31,
+		   unsigned int xb1, unsigned int yb1, unsigned int zb1,
+		   float xb2, float yb2, float zb2) {
+     
+     float x1, x2, xmin, xmax, xmin0, xmax0;
+     
+     xmin0 = 0;
+     xmax0 = xb1;
+      
+     if (fabs(a11)<1.0e-8) {
+       if ((0.0<=o1) && (o1<=xb2)) {
+	 x1 = -1.0e8; x2 = 1.0e8;
+       } else {
+	 x1 = -1.0e8; x2 = -1.0e8;
+       }
+     } else {
+       x1 = -o1/a11;
+       x2 = (xb2-o1)/a11;
+     }
+     xmin = Min(x1,x2);
+     xmax = Max(x1,x2);
+     // intersect ranges
+     xmin0 = Max(xmin0,xmin);
+     xmax0 = Min(xmax0,xmax);
+	  
+     if (fabs(a21)<1.0e-8) {
+       if ((0.0<=o2) && (o2<=yb2)) {
+	 x1 = -1.0e8; x2 = 1.0e8;
+       } else {
+	 x1 = -1.0e8; x2 = -1.0e8;
+       }
+     } else {
+       x1 = -o2/a21;
+       x2 = (yb2-o2)/a21;
+     }
+     xmin = Min(x1,x2);
+     xmax = Max(x1,x2);
+     // intersect ranges
+     xmin0 = Max(xmin0,xmin);
+     xmax0 = Min(xmax0,xmax);
+
+     if (fabs(a31)<1.0e-8) {
+       if ((0.0<=o3) && (o3<=zb2)) {
+	 x1 = -1.0e8; x2 = 1.0e8;
+       } else {
+	 x1 = -1.0e8; x2 = -1.0e8;
+       }
+     } else {
+       x1 = -o3/a31;
+       x2 = (zb2-o3)/a31;
+     }
+     xmin = Min(x1,x2);
+     xmax = Max(x1,x2);
+     // intersect ranges
+     xmin0 = Max(xmin0,xmin);
+     xmax0 = Min(xmax0,xmax);
+    
+     //assert(xmin0>=0.0);
+     //assert(xmax0<=xb1);
+
+     if (xmax0<xmin0) {
+       xmax1=0;
+       xmin1=1;
+     } else {
+       xmin1 = (unsigned int) ceil(xmin0);
+       xmax1 = (unsigned int) floor(xmax0);
+     }
+
    }
 
-   
    //--------------------------------------------------------------------//
-   
-   float corr_ratio(const volume& vref, const volume& vtest,
-		    const Matrix& aff,
-		    const float min, const float max,
-		    const int no_bins)
-    {
-      // Do everything in practice via the inverse transformation
-      // That is, for every point in vref, calculate the pre-image in
-      //  vtest to which it corresponds, and interpolate vtest to get the
-      //  value there.
-      // Also, the sampling transformations must be accounted for:
-      //     T_vox1->vox2 = (T_samp2)^-1 * T_world * T_samp1
-
-      Matrix iaffbig = vtest.sampling_matrix().i() * aff.i() *
-	                     vref.sampling_matrix();  
-      Matrix iaff=iaffbig.SubMatrix(1,3,1,3);
-      unsigned int xb1=vref.columns()-1, yb1=vref.rows()-1, zb1=vref.slices()-1;
-      float  xb2 = ((float) vtest.columns())-1.0001,
-	yb2=((float) vtest.rows())-1.0001, zb2=((float) vtest.slices())-1.0001;
-      int io1, io2, io3;
-
-      float *sumy, *sumy2;
-      sumy = new float[no_bins+1];
-      sumy2 = new float[no_bins+1];
-      int *numy;
-      numy = new int[no_bins+1];
-      int b=0;
-      float a1=no_bins/(max-min), a0=-min*no_bins/(max-min), val;
- 
-      for (int i=0; i<=no_bins; i++) {
-	numy[i]=0; sumy[i]=0.0;  sumy2[i]=0.0;
-      }
-
-      float a11=iaff(1,1), a12=iaff(1,2), a13=iaff(1,3), a14=iaffbig(1,4),
-	a21=iaff(2,1), a22=iaff(2,2), a23=iaff(2,3), a24=iaffbig(2,4),
-	a31=iaff(3,1), a32=iaff(3,2), a33=iaff(3,3), a34=iaffbig(3,4), o1,o2,o3;
-
-      float v000, v001, v010, v011, v100, v101, v110, v111;
-      //float v1, v2, v3, v4, v5, v6;
-	      
-
-      // The matrix algebra below has been hand-optimized from
-      //  [o1 o2 o3] = a * [x y z]  at each iteration
-
-      for (unsigned int z=0; z<=zb1; z++) { 
-	for (unsigned int y=0; y<=yb1; y++) { 
-	  o1= y*a12 + z*a13 + a14;  // x=0
-	  o2= y*a22 + z*a23 + a24;  // x=0
-	  o3= y*a32 + z*a33 + a34;  // x=0
-	  for (unsigned int x=0; x<=xb1; x++) {
-	    if (quick_in_bounds(o1,o2,o3,xb2,yb2,zb2,vtest)) {
-	      io1=(int) o1;
-	      io2=(int) o2;
-	      io3=(int) o3;
-	      vtest.getneighbours(io1,io2,io3,
-				  v000,v001,v010,v011,v100,v101,v110,v111);
-	      float dx=o1-io1, dy=o2-io2, dz=o3-io3;
-	      float dx1=1.0-dx, dy1=1.0-dy;
-	      val =  ( dx * ( dy * ( (v111-v110)*dz  + v110 ) +
-			      dy1 * ( (v101-v100)*dz + v100 ) ) + 
-		       dx1 * ( dy * ( (v011-v010)*dz + v010 )  +
-			       dy1 * ( (v001-v000)*dz  + v000 ) ) );
-		
-	      // do the cost function record keeping...
-	      b=(int) (vref(x,y,z)*a1 + a0);
-	      numy[b]++;
-	      sumy[b]+=val;
-	      sumy2[b]+=val*val;
-	    }
-	    o1 += a11;
-	    o2 += a21;
-	    o3 += a31;
-	  }
-	}
-      }
-
-
-      float corr_ratio=0.0, var=0.0, totsumy=0.0, totsumy2=0.0;
-      int numtoty=0;
-
-      // correct for occasion lapses into the last bin
-      numy[no_bins-1] += numy[no_bins];
-      sumy[no_bins-1] += sumy[no_bins];
-      sumy2[no_bins-1] += sumy2[no_bins];
-      numy[no_bins]=0;
-      sumy[no_bins]=0.0;
-      sumy2[no_bins]=0.0;
-
-      // now calculate the individual variances for each iso-set
-      //  weighting them by the number of pixels from Image x that contribute
-      for (b=0; b<no_bins; b++) {
-	if (numy[b]>2) {
-	  numtoty += numy[b];
-	  totsumy += sumy[b];
-	  totsumy2 += sumy2[b];
-	  // the following should be the variance of the bth iso-subset
-	  var = (sumy2[b] - sumy[b]*sumy[b]/((float) numy[b]) ) /
-	    ((float) (numy[b]-1));
-	  // cerr << "Set #" << b << " has " << numy[b] << " elements and " 
-	  //   << var << " variance" << endl;
-	  corr_ratio += var * ((float) numy[b]);
-	}
-      }
-      delete [] numy; delete [] sumy; delete [] sumy2;
-
-      // normalise the weighting of numy[]
-      if (numtoty>0)  corr_ratio/=((float) numtoty);
-      // calculate the total variance of Image y and then normalise by this
-      if (numtoty>1)
-	var = ( totsumy2 - totsumy*totsumy/((float) numtoty) ) /
-	  ((float) (numtoty - 1));
-      //cerr << "TOTALS are:" << endl 
-      //   << " numerator variance is : " << corr_ratio << endl
-      //   << " and denominator variance is: " << var << " from " << numtoty 
-      //   << " valid elements" << endl;
-      if (var>0.0)  corr_ratio/=var;
-      // the above is actually 1 - correlation ratio, so correct this now
-      if ( (numtoty<=1) || (var<=0.0) )
-	return 0.0;   // the totally uncorrelated condition
-      else
-	return (1.0 - corr_ratio);
-
-      // an alternative is to return 1.0/corr_ratio (=1/(1-correlation ratio))
-      //  which may be better at rewarding gains near the best solution
-
-      return 0;
-
-    }
-
-  ///////////////////////////////////////////////////////////////////////
 
    float corr_ratio(const volume& vref, const volume& vtest,
 		    int *bindex, const Matrix& aff,
@@ -175,7 +109,6 @@
       unsigned int xb1=vref.columns()-1, yb1=vref.rows()-1, zb1=vref.slices()-1;
       float  xb2 = ((float) vtest.columns())-1.0001,
 	yb2=((float) vtest.rows())-1.0001, zb2=((float) vtest.slices())-1.0001;
-      //int io1, io2, io3;
 
       float *sumy, *sumy2;
       sumy = new float[no_bins+1];
@@ -193,14 +126,10 @@
 	a31=iaff(3,1), a32=iaff(3,2), a33=iaff(3,3), a34=iaffbig(3,4);
       float val,o1,o2,o3;
 
-      //float v1, v2, v3, v4, v5, v6;
-	      
-
       // The matrix algebra below has been hand-optimized from
       //  [o1 o2 o3] = a * [x y z]  at each iteration
 
-      float x1, x2, xmin, xmax, xmin0, xmax0;
-      unsigned int xmin1, xmax1;
+      unsigned int xmin, xmax;
       int *bptr;
 
       for (unsigned int z=0; z<=zb1; z++) { 
@@ -209,101 +138,17 @@
 	  o1= y*a12 + z*a13 + a14;  // x=0
 	  o2= y*a22 + z*a23 + a24;  // x=0
 	  o3= y*a32 + z*a33 + a34;  // x=0
-	  
-	  xmin0 = 0;
-	  xmax0 = xb1;
-	  
-	  if (fabs(a11)<1.0e-8) {
-	    if ((0.0<=o1) && (o1<=xb2)) {
-	      x1 = -1.0e8; x2 = 1.0e8;
-	    } else {
-	      x1 = -1.0e8; x2 = -1.0e8;
-	    }
-	  } else {
-	    x1 = -o1/a11;
-	    x2 = (xb2-o1)/a11;
-	  }
-	  xmin = Min(x1,x2);
-	  xmax = Max(x1,x2);
-	  // intersect ranges
-	  xmin0 = Max(xmin0,xmin);
-	  xmax0 = Min(xmax0,xmax);
-	  
-	  if (fabs(a21)<1.0e-8) {
-	    if ((0.0<=o2) && (o2<=yb2)) {
-	      x1 = -1.0e8; x2 = 1.0e8;
-	    } else {
-	      x1 = -1.0e8; x2 = -1.0e8;
-	    }
-	  } else {
-	    x1 = -o2/a21;
-	    x2 = (yb2-o2)/a21;
-	  }
-	  xmin = Min(x1,x2);
-	  xmax = Max(x1,x2);
-	  // intersect ranges
-	  xmin0 = Max(xmin0,xmin);
-	  xmax0 = Min(xmax0,xmax);
+	
+	  // determine range
+	  findrangex(xmin,xmax,o1,o2,o3,a11,a21,a31,xb1,yb1,zb1,xb2,yb2,zb2);
 
-	  if (fabs(a31)<1.0e-8) {
-	    if ((0.0<=o3) && (o3<=zb2)) {
-	      x1 = -1.0e8; x2 = 1.0e8;
-	    } else {
-	      x1 = -1.0e8; x2 = -1.0e8;
-	    }
-	  } else {
-	    x1 = -o3/a31;
-	    x2 = (zb2-o3)/a31;
-	  }
-	  xmin = Min(x1,x2);
-	  xmax = Max(x1,x2);
-	  // intersect ranges
-	  xmin0 = Max(xmin0,xmin);
-	  xmax0 = Min(xmax0,xmax);
-    
-	  //assert(xmin0>=0.0);
-	  //assert(xmax0<=xb1);
+	  o1 += xmin * a11;
+	  o2 += xmin * a21;
+	  o3 += xmin * a31;
 
-	  if (xmax0<xmin0) {
-	    xmax1=0;
-	    xmin1=1;
-	  } else {
-	    xmin1 = (unsigned int) ceil(xmin0);
-	    xmax1 = (unsigned int) floor(xmax0);
-	  }
+	  bptr = get_bindexptr(xmin,y,z,vref,bindex);
 
-	  o1 += xmin1 * a11;
-	  o2 += xmin1 * a21;
-	  o3 += xmin1 * a31;
-
-	  bptr = get_bindexptr(xmin1,y,z,vref,bindex);
-
-	  for (unsigned int x=xmin1; x<=xmax1; x++) {
-	    //if (quick_in_bounds(o1,o2,o3,xb2,yb2,zb2,vtest)) {
-//  	    int io1, io2, io3;
-//  	    io1=(int) o1;
-//  	    io2=(int) o2;
-//  	    io3=(int) o3;
-
-//  	    {
-//  	      float v000, v001, v010, v011, v100, v101, v110, v111;
-//  	      vtest.getneighbours(io1,io2,io3,
-//  				  v000,v001,v010,v011,v100,v101,v110,v111);
-//  	      float dx=o1-io1, dy=o2-io2, dz=o3-io3;
-	      
-//  	      {
-//  		float temp1, temp2, temp3, temp4, temp5, temp6;
-//  		temp1 = (v100 - v000)*dx + v000;
-//  		temp2 = (v101 - v001)*dx + v001;
-//  		temp3 = (v110 - v010)*dx + v010;
-//  		temp4 = (v111 - v011)*dx + v011;
-//  		// second order terms
-//  		temp5 = (temp3 - temp1)*dy + temp1;
-//  		temp6 = (temp4 - temp2)*dy + temp2;
-//  		// final third order term
-//  		val = (temp6 - temp5)*dz + temp5;
-//  	      }
-//  	    }
+	  for (unsigned int x=xmin; x<=xmax; x++) {
 
   	    val = q_tri_interpolation(vtest,o1,o2,o3);
 	    
@@ -312,7 +157,7 @@
 	    numy[b]++;
 	    sumy[b]+=val;
 	    sumy2[b]+=val*val;
-	    // }  // if (quick_in_bounds...)
+
 	    bptr++;
 	    o1 += a11;
 	    o2 += a21;
@@ -377,10 +222,8 @@
   ///////////////////////////////////////////////////////////////////////
 
 
-  float woods_fn(const volume& vref, const volume& vtest,
-		 const Matrix& aff,
-		 const float min, const float max,
-		 const int no_bins)
+  float woods_fn(const volume& vref, const volume& vtest, int *bindex, 
+		 const Matrix& aff, const int no_bins)
     {
       // Do everything in practice via the inverse transformation
       // That is, for every point in vref, calculate the pre-image in
@@ -394,7 +237,6 @@
       unsigned int xb1=vref.columns()-1, yb1=vref.rows()-1, zb1=vref.slices()-1;
       float  xb2 = ((float) vtest.columns())-1.0001,
 	yb2=((float) vtest.rows())-1.0001, zb2=((float) vtest.slices())-1.0001;
-      int io1, io2, io3;
 
       float a11=iaff(1,1), a12=iaff(1,2), a13=iaff(1,3), a14=iaffbig(1,4),
 	a21=iaff(2,1), a22=iaff(2,2), a23=iaff(2,3), a24=iaffbig(2,4),
@@ -406,41 +248,51 @@
       int *num;
       num = new int[no_bins+1];
       int b=0;
-      float a1=no_bins/(max-min), a0=-min*no_bins/(max-min), val;
 
       for (int i=0; i<=no_bins; i++) {
 	num[i]=0; sum[i]=0.0;  sum2[i]=0.0;
       }
   
-  // cerr << "Bounds are " << xb << " " << yb << " " << zb << endl;
-  // The matrix algebra below has been hand-optimized from
-  //  [o1 o2 o3] = a * [x y z]  at each iteration
+      float val=0.0;
+      unsigned int xmin, xmax;
+      int *bptr;
+
+      // The matrix algebra below has been hand-optimized from
+      //  [o1 o2 o3] = a * [x y z]  at each iteration
+
       for (unsigned int z=0; z<=zb1; z++) { 
 	for (unsigned int y=0; y<=yb1; y++) { 
+
 	  o1= y*a12 + z*a13 + a14;  // x=0
 	  o2= y*a22 + z*a23 + a24;  // x=0
 	  o3= y*a32 + z*a33 + a34;  // x=0
-	  for (unsigned int x=0; x<=xb1; x++) {
-	    if (quick_in_bounds(o1,o2,o3,xb2,yb2,zb2,vtest)) {
-	      io1=(int) o1;
-	      io2=(int) o2;
-	      io3=(int) o3;
-	      val = q_tri_interpolation(vtest,o1,o2,o3,io1,io2,io3);
-	      // do the cost function record keeping...
-	      b=(int) (vref(x,y,z)*a1 + a0);
-	      if (b>=no_bins) b=no_bins-1;
-	      num[b]++;
-	      sum[b]+=val;  // val = vtest(x',y',z')
-	      sum2[b]+=val*val;
-	    }
+	
+	  // determine range
+	  findrangex(xmin,xmax,o1,o2,o3,a11,a21,a31,xb1,yb1,zb1,xb2,yb2,zb2);
+
+	  o1 += xmin * a11;
+	  o2 += xmin * a21;
+	  o3 += xmin * a31;
+
+	  bptr = get_bindexptr(xmin,y,z,vref,bindex);
+
+	  for (unsigned int x=xmin; x<=xmax; x++) {
+
+  	    val = q_tri_interpolation(vtest,o1,o2,o3);
+	    
+	    // do the cost function record keeping...
+	    b=*bptr;
+	    num[b]++;
+	    sum[b]+=val;
+	    sum2[b]+=val*val;
+
+	    bptr++;
 	    o1 += a11;
 	    o2 += a21;
 	    o3 += a31;
 	  }
 	}
-	//cerr << ".";
       }
-
 
       // now calculate  W = sum_j (n_j/N)*(sigma_j / mu_j)
       //  where n_j = num[j], N = sum_j n_j, mu_j = sum[j]/num[j]
@@ -491,7 +343,6 @@
       unsigned int xb1=vref.columns()-1, yb1=vref.rows()-1, zb1=vref.slices()-1;
       float  xb2 = ((float) vtest.columns())-1.0001,
 	yb2=((float) vtest.rows())-1.0001, zb2=((float) vtest.slices())-1.0001;
-      int io1, io2, io3;
 
       float a11=iaff(1,1), a12=iaff(1,2), a13=iaff(1,3), a14=iaffbig(1,4),
 	a21=iaff(2,1), a22=iaff(2,2), a23=iaff(2,3), a24=iaffbig(2,4),
@@ -503,38 +354,45 @@
       float valx=0.0, valy=0.0, val=0.0;
       int num=0;
 
-      // cerr << "Bounds are " << xb << " " << yb << " " << zb << endl;
+      unsigned int xmin, xmax;
+
       // The matrix algebra below has been hand-optimized from
       //  [o1 o2 o3] = a * [x y z]  at each iteration
+
       for (unsigned int z=0; z<=zb1; z++) { 
 	for (unsigned int y=0; y<=yb1; y++) { 
-	  o1= y*a12 + z*a13 + a14;  // x=x1
-	  o2= y*a22 + z*a23 + a24;  // x=x1
-	  o3= y*a32 + z*a33 + a34;  // x=x1
-	  for (unsigned int x=0; x<=xb1; x++) {
-	    if (quick_in_bounds(o1,o2,o3,xb2,yb2,zb2,vtest)) {
-	      io1=(int) o1;
-	      io2=(int) o2;
-	      io3=(int) o3;
-	      val = q_tri_interpolation(vtest,o1,o2,o3,io1,io2,io3);
-	      // do the cost function record keeping...
-	      num++;
-	      valx = vref(x,y,z);
-	      valy = val;  // vtest(x',y',z')
-	      sumx += valx;
-	      sumx2 += valx*valx;
-	      sumy += valy;
-	      sumy2 += valy*valy;
-	      sumxy += valx*valy;
-	    }
+
+	  o1= y*a12 + z*a13 + a14;  // x=0
+	  o2= y*a22 + z*a23 + a24;  // x=0
+	  o3= y*a32 + z*a33 + a34;  // x=0
+	
+	  // determine range
+	  findrangex(xmin,xmax,o1,o2,o3,a11,a21,a31,xb1,yb1,zb1,xb2,yb2,zb2);
+
+	  o1 += xmin * a11;
+	  o2 += xmin * a21;
+	  o3 += xmin * a31;
+
+	  for (unsigned int x=xmin; x<=xmax; x++) {
+
+  	    val = q_tri_interpolation(vtest,o1,o2,o3);
+	    
+	    // do the cost function record keeping...
+	    num++;
+	    valx = vref(x,y,z);
+	    valy = val;
+	    sumx += valx;
+	    sumx2 += valx*valx;
+	    sumy += valy;
+	    sumy2 += valy*valy;
+	    sumxy += valx*valy;
+
 	    o1 += a11;
 	    o2 += a21;
 	    o3 += a31;
 	  }
 	}
-	//cerr << ".";
       }
-
   
       corr = 0.0;  // uncorrelated (worst) case
       if (num>2) {
@@ -552,17 +410,15 @@
   ///////////////////////////////////////////////////////////////////////
 
   void calc_entropy(const volume& vref, const volume& vtest,
-		    const Matrix& aff,
-		    const float minref, const float maxref,
+		    int *bindex,  const Matrix& aff,
 		    const float mintest, const float maxtest,
 		    const int no_bins, const ColumnVector& plnp, 
 		    int *jointhist, int *marghist1, int *marghist2,
 		    float& jointentropy, float& margentropy1,
 		    float& margentropy2)
     {
-      // actually the joint entropy between the two images is returned
-      //  since minimising the joint entropy is equivalent to maximising
-      //  the mutual information
+      // the joint and marginal entropies between the two images are
+      //  calculated here and returned
       // the last parameter, plnp, is a vector containing values of -p*log(p)
       //  which makes the calculation significantly more efficient
 
@@ -578,7 +434,6 @@
       unsigned int xb1=vref.columns()-1, yb1=vref.rows()-1, zb1=vref.slices()-1;
       float  xb2 = ((float) vtest.columns())-1.0001,
 	yb2=((float) vtest.rows())-1.0001, zb2=((float) vtest.slices())-1.0001;
-      int io1, io2, io3;
 
       float a11=iaff(1,1), a12=iaff(1,2), a13=iaff(1,3), a14=iaffbig(1,4),
 	a21=iaff(2,1), a22=iaff(2,2), a23=iaff(2,3), a24=iaffbig(2,4),
@@ -593,40 +448,50 @@
       }
 
       long int a,b;
-      float a1=no_bins/(maxref-minref), a0=-minref*no_bins/(maxref-minref);
       float b1=no_bins/(maxtest-mintest), b0=-mintest*no_bins/(maxtest-mintest);
       float val=0.0;
  
-      // cerr << "Bounds are " << xb2 << " " << yb2 << " " << zb2 << endl;
+      unsigned int xmin, xmax;
+      int *bptr;
+
       // The matrix algebra below has been hand-optimized from
       //  [o1 o2 o3] = a * [x y z]  at each iteration
+
       for (unsigned int z=0; z<=zb1; z++) { 
 	for (unsigned int y=0; y<=yb1; y++) { 
-	  o1= y*a12 + z*a13 + a14;  // x=x1
-	  o2= y*a22 + z*a23 + a24;  // x=x1
-	  o3= y*a32 + z*a33 + a34;  // x=x1
-	  for (unsigned int x=0; x<=xb1; x++) {
-	    if (quick_in_bounds(o1,o2,o3,xb2,yb2,zb2,vtest)) {
-	      io1=(int) o1;
-	      io2=(int) o2;
-	      io3=(int) o3;
-	      val = q_tri_interpolation(vtest,o1,o2,o3,io1,io2,io3);
-	      // do the cost function record keeping...
-	      a=(long int) (vref(x,y,z)*a1 + a0) + 1;
-	      b=(long int) (val*b1 + b0) + 1;  // val = vtest(x',y',z')
-	      if (a>=no_bins) a=no_bins-1;
-	      if (b>=no_bins) b=no_bins-1;
-	      (jointhist[(a-1)*(no_bins+1) + b-1])++;
-	      (marghist1[a-1])++;
-	      (marghist2[b-1])++;
-	    }
+
+	  o1= y*a12 + z*a13 + a14;  // x=0
+	  o2= y*a22 + z*a23 + a24;  // x=0
+	  o3= y*a32 + z*a33 + a34;  // x=0
+	
+	  // determine range
+	  findrangex(xmin,xmax,o1,o2,o3,a11,a21,a31,xb1,yb1,zb1,xb2,yb2,zb2);
+
+	  o1 += xmin * a11;
+	  o2 += xmin * a21;
+	  o3 += xmin * a31;
+
+	  bptr = get_bindexptr(xmin,y,z,vref,bindex);
+
+	  for (unsigned int x=xmin; x<=xmax; x++) {
+
+  	    val = q_tri_interpolation(vtest,o1,o2,o3);
+	    
+	    // do the cost function record keeping...
+	    a=*bptr;
+	    b=(long int) (val*b1 + b0) + 1;
+	    if (b>=no_bins) b=no_bins-1;
+	    (jointhist[(a-1)*(no_bins+1) + b-1])++;
+	    (marghist1[a-1])++;
+	    (marghist2[b-1])++;
+
+	    bptr++;
 	    o1 += a11;
 	    o2 += a21;
 	    o3 += a31;
 	  }
 	}
       }
-
 
       // note that the plnp values indexed by integers such that:
       //   plnp(n) = n/N * log(n/N)
@@ -641,7 +506,7 @@
 	    jointentropy+=plnp(n);
 	  else {
 	    p = ((float) n) / ((float) nvoxels);
-	    jointentropy+= -((float) p)*(log((float) p));
+	    jointentropy+= - p*log(p);
 	  }
 	}
       }
@@ -652,7 +517,7 @@
 	    margentropy1+=plnp(n);
 	  else {
 	    p = ((float) n) / ((float) nvoxels);
-	    margentropy1+= -((float) p)*(log((float) p));
+	    margentropy1+= - p*log(p);
 	  }
 	}
       }
@@ -666,22 +531,20 @@
 	  else {
 	    //cerr << ":";
 	    p = ((float) n) / ((float) nvoxels);
-	    margentropy2+= -((float) p)*(log((float) p));
+	    margentropy2+= - p*log(p);
 	  }
 	}
       }
 
       // correct for difference in total histogram size
       //  that is: noverlap vs nvoxels
-      // H_1 = N_0/N_1 * H_0 + log(N_1/N_0) + (1 - N_0/N_1)*log(N_0)
+      // H_1 = N_0/N_1 * H_0 + log(N_1/N_0)
+      //     = N_0/N_1 * H_0 - log(N_0/N_1)
       if (noverlap > 0) {
 	float nratio = ((float) nvoxels) / ((float) noverlap);
-	jointentropy = nratio * jointentropy + log(1.0/nratio)
-	                + (1.0 - nratio)*log(nvoxels);
-	margentropy1 = nratio * margentropy1 + log(1.0/nratio)
-	                + (1.0 - nratio)*log(nvoxels);
-	margentropy2 = nratio * margentropy2 + log(1.0/nratio)
-	                + (1.0 - nratio)*log(nvoxels);
+	jointentropy = nratio * jointentropy - log(nratio);
+	margentropy1 = nratio * margentropy1 - log(nratio);
+	margentropy2 = nratio * margentropy2 - log(nratio);
       } else {
 	// Put in maximum entropy values as base cases = BAD registration
 	jointentropy = 2.0*log(no_bins);
@@ -694,14 +557,13 @@
 
 
   float mutual_info(const volume& vref, const volume& vtest,
-		    const Matrix& aff,
-		    const float minref, const float maxref,
+		    int *bindex, const Matrix& aff,
 		    const float mintest, const float maxtest,
 		    const int no_bins, const ColumnVector& plnp, 
 		    int *jointhist, int *marghist1, int *marghist2)
     {
       float jointentropy=0.0, margentropy1=0.0, margentropy2=0.0;
-      calc_entropy(vref,vtest,aff,minref,maxref,mintest,maxtest,no_bins,
+      calc_entropy(vref,vtest,bindex,aff,mintest,maxtest,no_bins,
 		   plnp,jointhist,marghist1,marghist2,
 		   jointentropy,margentropy1,margentropy2);
       float mutualinformation = margentropy1 + margentropy2 - jointentropy;
@@ -711,14 +573,13 @@
 
 
   float normalised_mutual_info(const volume& vref, const volume& vtest,
-			       const Matrix& aff,
-			       const float minref, const float maxref,
+			       int *bindex, const Matrix& aff,
 			       const float mintest, const float maxtest,
 			       const int no_bins, const ColumnVector& plnp, 
 			       int *jointhist, int *marghist1, int *marghist2)
     {
       float jointentropy=0.0, margentropy1=0.0, margentropy2=0.0;
-      calc_entropy(vref,vtest,aff,minref,maxref,mintest,maxtest,no_bins,
+      calc_entropy(vref,vtest,bindex,aff,mintest,maxtest,no_bins,
 		   plnp,jointhist,marghist1,marghist2,
 		   jointentropy,margentropy1,margentropy2);
       float normmi;
@@ -744,16 +605,10 @@
 
   float woods_fn(const imagepair* ims, const Matrix& aff) 
     {
-      return woods_fn(ims->refvol,ims->testvol,aff,
-			ims->refmin,ims->refmax,ims->no_bins);
+      return woods_fn(ims->refvol,ims->testvol,ims->bindex,aff,
+		      ims->no_bins);
     }
 
-  
-  //float corr_ratio(const imagepair* ims, const Matrix& aff) 
-  // {
-  //  return corr_ratio(ims->refvol,ims->testvol,aff,
-  //		ims->refmin,ims->refmax,ims->no_bins);
-  // }
 
   float corr_ratio(const imagepair* ims, const Matrix& aff) 
     {
@@ -764,8 +619,8 @@
 
   float mutual_info(imagepair* ims, const Matrix& aff)
     {
-      return mutual_info(ims->refvol,ims->testvol,aff,
-			 ims->refmin,ims->refmax,ims->testmin,ims->testmax,
+      return mutual_info(ims->refvol,ims->testvol,ims->bindex,aff,
+			 ims->testmin,ims->testmax,
 			 ims->no_bins,ims->plnp,ims->jointhist,
 			 ims->marghist1,ims->marghist2);
     }
@@ -773,8 +628,8 @@
 
   float normalised_mutual_info(imagepair* ims, const Matrix& aff)
     {
-      return mutual_info(ims->refvol,ims->testvol,aff,
-			 ims->refmin,ims->refmax,ims->testmin,ims->testmax,
+      return normalised_mutual_info(ims->refvol,ims->testvol,ims->bindex,aff,
+			 ims->testmin,ims->testmax,
 			 ims->no_bins,ims->plnp,ims->jointhist,
 			 ims->marghist1,ims->marghist2);
     }
