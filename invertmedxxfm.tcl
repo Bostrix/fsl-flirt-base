@@ -1,6 +1,6 @@
 #
 
-# InvertXFM - the GUI for convert_xfm
+# Invertmedxxfm - the GUI for convert_xfm
 #
 # Mark Jenkinson and Stephen Smith, FMRIB Image Analysis Group
 #
@@ -15,9 +15,9 @@ source [ file dirname [ info script ] ]/fslstart.tcl
 set VARS(history) {}
 
 #}}}
-#{{{ invertxfm
+#{{{ invertmedxxfm
 
-proc invertxfm { w } {
+proc invertmedxxfm { w } {
 
     #{{{ setup main window etc
 
@@ -25,8 +25,8 @@ proc invertxfm { w } {
 
     # ---- Set up Frames ----
     toplevel $w
-    wm title $w "InvertXFM"
-    wm iconname $w "InvertXFM"
+    wm title $w "Invertmedxxfm"
+    wm iconname $w "Invertmedxxfm"
     wm iconbitmap $w @${FSLDIR}/tcl/fmrib.xbm
     tixBalloon    $w.bhelp
     frame $w.f
@@ -131,10 +131,10 @@ pack $w.f.type.a $w.f.type.b -in $w.f.type -side top -anchor w
     frame $w.btns
     frame $w.btns.b -relief raised -borderwidth 1
     
-    button $w.go     -command "InvertXFM:go $w" \
+    button $w.go     -command "Invertmedxxfm:go $w" \
 	    -text "OK" -width 5
 
-    button $w.apply     -command "InvertXFM:apply $w" \
+    button $w.apply     -command "Invertmedxxfm:apply $w" \
 	    -text "Apply" -width 5
 
     button $w.cancel    -command "destroy $w" \
@@ -153,28 +153,28 @@ pack $w.f.type.a $w.f.type.b -in $w.f.type -side top -anchor w
 }
 
 #}}}
-#{{{ InvertXFM:apply
+#{{{ Invertmedxxfm:apply
 
-proc InvertXFM:go { w } {
+proc Invertmedxxfm:go { w } {
     global entries
 
-    catch { InvertXFM:apply $w }
+    catch { Invertmedxxfm:apply $w }
     destroy $w
 }
 
-proc InvertXFM:apply { w } {
+proc Invertmedxxfm:apply { w } {
     global entries
 
-    catch { invertxfm:proc $entries($w,1) $entries($w,2) $entries($w,3) $entries($w,4) $entries($w,5) }
+    catch { invertmedxxfm:proc $entries($w,1) $entries($w,2) $entries($w,3) $entries($w,4) $entries($w,5) }
 
     update idletasks
     puts "Done"
 }
 
 #}}}
-#{{{ invertxfm:proc
+#{{{ invertmedxxfm:proc
 
-proc invertxfm:proc { transAB volA volB invxfmfilename xfmtype } {
+proc invertmedxxfm:proc { transAB volA volB invxfmfilename xfmtype } {
 
     global FSLDIR
 
@@ -201,7 +201,7 @@ proc invertxfm:proc { transAB volA volB invxfmfilename xfmtype } {
 #{{{ call GUI
 
 wm withdraw .
-invertxfm .rename
+invertmedxxfm .rename
 tkwait window .rename
 
 #}}}
