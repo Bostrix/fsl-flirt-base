@@ -800,10 +800,7 @@ void params12toN(ColumnVector& params)
   // Convert the full 12 dof param vector to a small param vector
   Tracer tr("params12toN");
   ColumnVector nparams;
-  cerr << "params = " << (params -  globalopts.refparams).t() << endl;
-  cerr << "pinv = " << endl << pinv(globalopts.parammask) << endl;
   nparams = pinv(globalopts.parammask)*(params - globalopts.refparams);
-  cerr << "Nparams = " << nparams.t() << endl;
   params = nparams;
 }
 
@@ -1107,21 +1104,22 @@ void search_cost(Matrix& paramlist, volume& costs, volume& tx,
   // here 3 translations and 1 (common) scaling are used
   globalopts.parammask.ReSize(12,4);  // was 3
   globalopts.parammask = 0.0;
-  globalopts.parammask(4,1) = 1.0;
-  globalopts.parammask(5,2) = 1.0;
-  globalopts.parammask(6,3) = 1.0;
-  globalopts.parammask(7,4) = 1.0;  // didn't used to exist
-  globalopts.parammask(8,4) = 1.0;  // didn't used to exist
-  globalopts.parammask(9,4) = 1.0;  // didn't used to exist
+  globalopts.parammask(7,1) = 1.0;  // didn't used to exist
+  globalopts.parammask(8,1) = 1.0;  // didn't used to exist
+  globalopts.parammask(9,1) = 1.0;  // didn't used to exist
+  globalopts.parammask(4,2) = 1.0;
+  globalopts.parammask(5,3) = 1.0;
+  globalopts.parammask(6,4) = 1.0;
 	
-  ColumnVector param_tol(12), params_8(12);
-  set_param_tols(param_tol,12);
-  param_tol = estimate_scaling()*param_tol;  
+  ColumnVector param_tol, param_tol0(12), param_tol1(12), params_8(12);
   globalopts.no_params = 12; // necessary for any subset_costfn call
-  cerr << "Param_tol = " << endl << param_tol;
-  params12toN(param_tol);
-  cerr << "Param_tol = " << endl << param_tol;
-  cerr << "pinv(globalopts.parammask) = " << endl << pinv(globalopts.parammask);
+  param_tol0 = globalopts.refparams;
+  params12toN(param_tol0);
+  set_param_tols(param_tol1,12);
+  param_tol1 = estimate_scaling()*param_tol1;  
+  param_tol1 = param_tol1 + globalopts.refparams;
+  params12toN(param_tol1);
+  param_tol = param_tol1 - param_tol0;
 
   // search coarsely, optimising each point and storing the results
   int no_its=0;
@@ -2104,6 +2102,21 @@ int usrread(string filename, MatVecPtr usrsrcmat)
 }
 
 
+int usrsetrow(MatVecPtr usrsrcmat,const std::vector<string> &words)
+{
+  Tracer tr("usrsetrow");
+  // SETROW src
+
+  RowVector currow(17);
+  currow = 0.0;
+  for (unsigned int c=2; c<=17; c++) {
+    currow(c) = atof(words[c].c_str());
+  }
+  usrsrcmat->push_back(currow);
+  return 0;
+}
+
+
 void usrsort(MatVecPtr usrsrcmat) 
 {
   Tracer tr("usrsort");
@@ -2500,6 +2513,16 @@ void interpretcommand(const string& comline, bool& skip,
     int usrscale;
     setscalarvariable(words[1],usrscale);
     usrsetscale(usrscale,testvol,refvol,refvol_2,refvol_4,refvol_8);
+  } else if (words[0]=="setrow") {
+    // SETROW
+    if (words.size()<18) {
+      cerr << "Wrong number of args to SETROW" << endl;
+      exit(-1);
+    }
+    MatVecPtr src;
+    int d1, d2;
+    parsematname(words[1],src,d1,d2);
+    usrsetrow(src,words);
   } else if (words[0]=="if") {
     // IF
     if (words.size()<4) {
@@ -2655,18 +2678,21 @@ int main(int argc,char *argv[])
     }
 
     // re-read the initial volume, and transform it by the optimised result
-    Matrix reshaped = (globalusrmat[0])[0].SubMatrix(1,1,2,17);
-    reshape(matresult,reshaped,4,4);
+    Matrix reshaped;
+    if (globalusrmat[0].size()>0) {
+      reshaped = (globalusrmat[0])[0].SubMatrix(1,1,2,17);
+      reshape(matresult,reshaped,4,4);
 
-    Matrix finalmat = matresult * globalopts.initmat;
-    read_volume(testvol,globalopts.inputfname);
-    read_volume(refvol,globalopts.reffname);
-    save_matrix_data(finalmat,testvol,refvol);
-    // generate the outputvolume (not safe_save so that -out overrides -nosave)
-    volume newtestvol = refvol;
-    affine_transform(newtestvol,testvol,finalmat);      
-    save_volume(newtestvol,globalopts.outputfname.c_str());
-    //save_global_data(finalmat,testvol,refvol);
+      Matrix finalmat = matresult * globalopts.initmat;
+      read_volume(testvol,globalopts.inputfname);
+      read_volume(refvol,globalopts.reffname);
+      save_matrix_data(finalmat,testvol,refvol);
+      // generate the outputvolume (not safe_save st -out overrides -nosave)
+      volume newtestvol = refvol;
+      affine_transform(newtestvol,testvol,finalmat);      
+      save_volume(newtestvol,globalopts.outputfname.c_str());
+      //save_global_data(finalmat,testvol,refvol);
+    }
 
   }
   catch(Exception exc) {
