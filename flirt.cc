@@ -1156,8 +1156,8 @@ int get_testvol(volume<float>& testvol)
   if (testvol.zsize()==1) {
     double_end_slices(testvol);
   }
-  read_matrix(globaloptions::get().initmat,globaloptions::get().initmatfname,
-	      testvol);
+  read_matrix(globaloptions::get().initmat,
+	      globaloptions::get().initmatfname, testvol);
   
   float minval=0.0, maxval=0.0;
   minval = testvol.robustmin();
