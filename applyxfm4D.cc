@@ -43,17 +43,23 @@ int fmrib_main(int argc, char* argv[])
     string matname;
     if (singlematrix) { read_matrix(affmat,transname,invol[0]); }
 
-    for (int m=invol.mint(); m<=invol.maxt(); m++) {
+    if (invol.maxt() - invol.mint() > 10000) {
+      cerr << "WARNING:: More than 10000 volumes - only doing first 10000" << endl;
+    }
+
+    for (int m=invol.mint(); m<=Max(invol.maxt(),invol.mint()+10000); m++) {
 
       if (!singlematrix) {
 	matname = transname + "/MAT_0";
 	char nc='0';
 	int n = m;
-	matname += (nc+(n / 100));
+	matname += (nc + (char) (n / 1000));
+	n -= (n/1000)*1000;
+	matname += (nc + (char) (n / 100));
 	n -= (n/100)*100;
-	matname += (nc+(n / 10));
+	matname += (nc + (char) (n / 10));
 	n -= (n/10)*10;
-	matname += (nc+n);
+	matname += (nc + (char) n);
 	cout << matname << endl;
 	read_matrix(affmat,matname,invol[0]);
       }
