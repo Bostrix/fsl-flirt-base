@@ -66,7 +66,7 @@ class globaloptions {
   anglereps anglerep;
   float isoscale;
   float min_sampling;
-  int lastsampling;
+  float lastsampling;
   float requestedscale;
   bool force_scaling;
   float smoothsize;
