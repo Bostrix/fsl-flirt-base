@@ -7,6 +7,7 @@
 /*  CCOPYRIGHT  */
 
 #include "globaloptions.h"
+#include "avwio.h"
 
 globaloptions* globaloptions::gopt = NULL;
 
@@ -141,6 +142,27 @@ void globaloptions::parse_command_line(int argc,char** argv,
       verbose = atoi(argv[n+1]);
       n+=2;
       continue;
+    } else if ( arg == "-datatype") {
+      {
+	forcedatatype = true;
+	string dataarg = argv[n+1];
+	if (dataarg == "double") {
+	  datatype = DT_DOUBLE;
+	} else if (dataarg == "float") {
+	  datatype = DT_FLOAT;
+	} else if (dataarg == "int") {
+	  datatype = DT_SIGNED_INT;
+	} else if (dataarg == "short") {
+	  datatype = DT_SIGNED_SHORT;
+	} else if (dataarg == "char") {
+	  datatype = DT_UNSIGNED_CHAR;
+	} else {
+	  cerr << "Unrecognised data type: " << dataarg << endl;
+	  exit(-1);
+	}
+      }
+      n+=2;
+      continue;
     } else if ( arg == "-cost") {
       {
 	string costarg = argv[n+1];
@@ -256,6 +278,7 @@ void globaloptions::print_usage(int argc, char *argv[])
        << "        -omat <matrix-filename>            (4x4 ascii format)\n"
        << "        -omedx <matrix-filename>           (MEDx format)\n"
        << "        -out, -o <outputvol>               (default is none)\n"
+       << "        -datatype {char,short,int,float,double}                  (force output data type)\n"
        << "        -cost {mutualinfo,woods,corratio,normcorr,normmi}        (default is corratio)\n"
        << "        -searchcost {mutualinfo,woods,corratio,normcorr,normmi}  (default is corratio)\n"
        << "        -anglerep {quaternion,euler}       (default is euler)\n"
