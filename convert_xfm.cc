@@ -175,13 +175,10 @@ void parse_command_line(int argc, char* argv[])
       globalopts.verbose = atoi(argv[n+1]);
       n+=2;
       continue;
-    }
-
-    if (n+2>=argc) 
-      { 
-	cerr << "Lacking argument to option " << arg << endl;
-	break; 
-      }
+    } else { 
+      cerr << "Unrecognised option " << arg << endl;
+      exit(-1);
+    } 
 
   }  // while (n<argc)
 
