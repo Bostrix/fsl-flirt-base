@@ -63,7 +63,7 @@ globaloptions::globaloptions()
   intervolfname = "";
   xfm_type = "a";
   inverse = false;
-  matonly = false;
+  matonly = true;
 }
 
 
@@ -73,7 +73,10 @@ globaloptions::globaloptions()
 
 void print_usage(int argc, char *argv[])
 {
-  cout << "Usage: " << argv[0] << " [options] <input-matrix-filename>\n\n"
+  cout << "Usage: " << argv[0] << " [options] <input-matrix-filename>\n"
+       << "  e.g. " << argv[0] << " -omat <outmat> -inverse <inmat>\n"
+       << "       " << argv[0] << " -omat <outmat> -concat <mat2> <mat1>\n\n"
+       << "       " << argv[0] << " -ref <refvol> -in <invol> -omedx <medxmat> <flirtmat>\n\n"
        << "  Available options are:\n"
        << "        -ref <refvol>                      (no default)\n"
        << "        -in <inputvol>                     (no default)\n"
@@ -90,7 +93,8 @@ void print_usage(int argc, char *argv[])
        << "        -fixscaleskew <second-matrix-filename>\n"
        << "        -middlevol <intermediary-volume-filename>\n"
        << "        -inverse                           (Reference image must be the one originally used)\n"
-       << "        -matonly                           (Use no volumes or MEDx/MINC support)\n"
+       << "        -matonly                           (Use no volumes or MEDx support - default)\n"
+       << "        -medx                              (Use -in and -ref)\n"
        << "        -help\n";
 }
 
@@ -144,10 +148,12 @@ void parse_command_line(int argc, char* argv[])
     // put options with 1 argument here
     if ( arg == "-ref") {
       globalopts.reffname = argv[n+1];
+      globalopts.matonly = false;
       n+=2;
       continue;
     } else if ( arg == "-in") {
       globalopts.testfname = argv[n+1];
+      globalopts.matonly = false;
       n+=2;
       continue;
     } else if ( arg == "-concat") {
@@ -160,6 +166,7 @@ void parse_command_line(int argc, char* argv[])
       continue;
     } else if ( arg == "-middlevol") {
       globalopts.intervolfname = argv[n+1];
+      globalopts.matonly = false;
       n+=2;
       continue;
     } else if ( arg == "-omat") {
@@ -168,10 +175,12 @@ void parse_command_line(int argc, char* argv[])
       continue;
     } else if ( arg == "-omedx") {
       globalopts.outputmatmedx = argv[n+1];
+      globalopts.matonly = false;
       n+=2;
       continue;
     } else if ( arg == "-xfmtype") {
       globalopts.xfm_type = argv[n+1];
+      globalopts.matonly = false;
       n+=2;
       continue;
     } else if ( arg == "-verbose") {
