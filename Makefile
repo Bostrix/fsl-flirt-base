@@ -7,8 +7,9 @@ DBGFLAGS = -g
 PROJNAME = flirt
 
 USRINCFLAGS =  -I${INCDIR}/newmat -I${INCDIR}/avwio -I${INCDIR}/mjimage_dev \
-		-I${INCDIR}/miscmaths
+		-I${INCDIR}/miscmaths -I${INCDIR}/newimage -I${INCDIR}/utils
 LIBS = -lmjimage_dev -lmiscmaths -lavwio -lnewmat -lm 
+XLIBS = -lnewimage -lmiscmaths -lavwio -lutils -lnewmat -lm 
 INHERITVARS = "USRLDFLAGS=${USRLDFLAGS}" "USRINCFLAGS=${USRINCFLAGS}"
 
 FL_OBJS = globaloptions.o costfns.o flirt.o 
@@ -19,9 +20,11 @@ R_OBJS = rmsdiff.o
 TAL_OBJS = tal2epicoord.o
 EPI_OBJS = epi2talcoord.o
 IMG_OBJS = img2imgcoord.o
+X_OBJS = applyxfm.o
 
 RUNTCLS = Flirt
-XFILES = flirt convert_xfm avscale rmsdiff tal2epicoord epi2talcoord img2imgcoord
+XFILES = flirt convert_xfm avscale rmsdiff tal2epicoord epi2talcoord \
+	img2imgcoord applyxfm
 TESTXFILES = testcode
 HFILES =
 SCRIPTS = extract pairreg pairregrc1 pairregrc2 pairregrc3 fixxfm
@@ -53,6 +56,9 @@ epi2talcoord:	${EPI_OBJS}
 
 img2imgcoord:	${IMG_OBJS}
 		${CXX}  ${CXXFLAGS} ${LDFLAGS} -o $@  ${IMG_OBJS} ${LIBS}
+
+applyxfm:	${X_OBJS}
+		${CXX}  ${CXXFLAGS} ${LDFLAGS} -o $@  ${X_OBJS} ${XLIBS}
 
 
 
