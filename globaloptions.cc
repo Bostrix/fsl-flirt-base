@@ -123,10 +123,6 @@ void globaloptions::parse_command_line(int argc,char** argv,
       min_sampling = (float) ceil(atof(argv[n+1]));
       n+=2;
       continue;
-    } else if ( arg == "-smooth") {
-      smoothsize = atof(argv[n+1]);
-      n+=2;
-      continue;
     } else if ( arg == "-coarsesearch") {
       coarsedelta = atof(argv[n+1])*M_PI/180.0;
       n+=2;
@@ -258,7 +254,6 @@ void globaloptions::print_usage(int argc, char *argv[])
                                         << dof << ")\n"
        << "        -noresample                        (do not change input sampling)\n"
        << "        -minsampling <vox_dim>             (set minimum voxel dimension for sampling (in mm))\n"
-       << "        -smooth <size>                     (set cost fn smoothing (in mm): default " << smoothsize << "\n"
        << "        -applyxfm                          (applies init - "
                                         << "no optimisation)\n"
        << "        -applynonisoxfm                    (as applyxfm but no isotropic resampling)\n"
