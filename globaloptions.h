@@ -61,6 +61,7 @@ class globaloptions {
   anglereps anglerep;
   float isoscale;
   float min_sampling;
+  float requestedscale;
   float smoothsize;
   ColumnVector tolerance;
   ColumnVector boundguess;
@@ -150,6 +151,7 @@ inline globaloptions::globaloptions()
   anglerep = Euler;
   isoscale = 1.0;
   min_sampling = 1.0;
+  requestedscale = 1.0;
   smoothsize = 1.0;
   tolerance.ReSize(12);
   tolerance << 0.005 << 0.005 << 0.005 << 0.2 << 0.2 << 0.2 << 0.002 
