@@ -10,7 +10,7 @@
 
 // Put current version number here:
 #include <string>
-const string version = "4.1";
+const string version = "5.0";
 
 #include <iostream>
 #include <fstream>
@@ -42,6 +42,7 @@ const string version = "4.1";
 
 volume<float> global_refweight, global_testweight, global_refweight1;
 volume<float> global_refweight2, global_refweight4, global_refweight8;
+bool global_scale1OK=true;
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -1180,13 +1181,13 @@ int resample_refvol(volume<float>& refvol, float sampling=1.0)
 {
   Tracer tr("resample_refvol");
   float sampl=sampling;
-  if (sampl<1e-4) { 
-    cerr << "WARNING: sampling " << sampl << " less than 0.0001" << endl
+  if (sampl<1e-5) { 
+    cerr << "WARNING: sampling " << sampl << " less than 0.00001 mm" << endl
 	 << "         Setting to 1.0 sampling instead" << endl;
     sampl=1.0;
   }
-  if (sampl<0.1) { 
-    cerr << "WARNING: under minimum sampling of 0.1" << endl;
+  if (sampl<1e-3) { 
+    cerr << "WARNING: under minimum sampling of 0.001 mm" << endl;
   }
 
   if (globaloptions::get().verbose >= 2) 
@@ -1878,7 +1879,7 @@ void usroptimise(MatVecPtr stdresultmat,
 }
 
 
-void usrsetscale(int usrscale,
+void usrsetscale(float usrscale,
 		 volume<float>& testvol, volume<float>& refvol, 
 		 volume<float>& refvol_2, volume<float>& refvol_4, 
 		 volume<float>& refvol_8) {
@@ -1887,47 +1888,54 @@ void usrsetscale(int usrscale,
   //  the object pointed to in globaloptions::get().impair does not go 
   //  out of scope
   Tracer tr("usrsetscale");
-  int scale = usrscale;
+  float scale = usrscale;
   Costfn *globalpair=0;
   if (usrscale > 0.0) globaloptions::get().requestedscale = usrscale;
   
-  if (globaloptions::get().min_sampling<=1.25 * ((float) scale)) {
+  if ( (globaloptions::get().force_scaling) || 
+       (globaloptions::get().min_sampling<=1.25 * scale) ) {
     globaloptions::get().lastsampling = scale;
+    // blur test volume to correct scale
     get_testvol(testvol);
     volume<float> testvolnew;
-    testvolnew = blur(testvol,(float) scale);
+    testvolnew = blur(testvol,scale);
     if (globaloptions::get().useweights) {
-      global_testweight = blur(global_testweight,(float) scale);
+      global_testweight = blur(global_testweight,scale);
     }
     testvol = testvolnew;
+    // select correct refvol
     volume<float> *refvolnew=0;
-    if (scale==8) {
+    if (fabs(scale-8.0)<0.01) {
       refvolnew = &refvol_8;
       if (globaloptions::get().useweights) {
 	global_refweight = global_refweight8;
       }
-    } else if (scale==4) {
+    } else if (fabs(scale-4.0)<0.01) {
       refvolnew = &refvol_4;
       if (globaloptions::get().useweights) {
 	global_refweight = global_refweight4;
       }
-    } else if (scale==2) {
+    } else if (fabs(scale-2.0)<0.01) {
       refvolnew = &refvol_2;
       if (globaloptions::get().useweights) {
 	global_refweight = global_refweight2;
       }
-    } else if (scale==1) {
+    } else if (global_scale1OK && (fabs((scale-1.0)<0.01) ) {
       refvolnew = &refvol;
       if (globaloptions::get().useweights) {
 	global_refweight = global_refweight1;
       }
     } else {
-      cerr << "Cannot set scale to " << scale << endl;
-      cerr << "Instead using unity scale" << endl;
-      scale = 1;
+      // make a new refvol at this requested scale
+      global_scale1OK = false;
+      volume<float> tmpvol;
+      get_refvol(tmpvol);  // gets raw refvol and global_refweight
+      resample_refvol(tmpvol,scale);
+      refvol = tmpvol;  // destroy base refvol!
       refvolnew = &refvol;
       if (globaloptions::get().useweights) {
-	global_refweight = global_refweight1;
+	resample_refvol(global_refweight,scale);
+	global_refweight1 = global_refweight;  // destroy global_refweight
       }
     }
     if (globaloptions::get().useweights) {
@@ -1936,7 +1944,8 @@ void usrsetscale(int usrscale,
     } else {
       globalpair = new Costfn(*refvolnew,testvol);
     }
-    globalpair->smoothsize = globaloptions::get().smoothsize;
+    // may need to fix this for very small scales - should really work
+    //   on number of voxels...
     globalpair->set_no_bins(globaloptions::get().no_bins/scale);
     globalpair->smoothsize = globaloptions::get().smoothsize;
     globalpair->fuzzyfrac = globaloptions::get().fuzzyfrac;
@@ -2170,7 +2179,7 @@ void interpretcommand(const string& comline, bool& skip,
       cerr << "Wrong number of args to SETSCALE" << endl;
       exit(-1);
     }
-    int usrscale;
+    float usrscale;
     setscalarvariable(words[1],usrscale);
     usrsetscale(usrscale,testvol,refvol,refvol_2,refvol_4,refvol_8);
   } else if (words[0]=="setrow") {
