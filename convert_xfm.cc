@@ -38,9 +38,12 @@ public:
   string outputmatascii;
   string outputmatmedx;
   string initmatfname;
+  string concatfname;
+  string intervolfname;
   string xfm_type;
   int verbose;
   bool inverse;
+  bool matonly;
 public:
   globaloptions();
   ~globaloptions() {};
@@ -52,14 +55,17 @@ globaloptions globalopts;
 globaloptions::globaloptions()
 {
   // set up defaults
-  reffname = "/usr/people/steve/reg/stroke_stpendle/average_305";
+  reffname = "";
 
   testfname = "";
   outputmatascii = "";
   outputmatmedx = "";
   initmatfname = "";
-  xfm_type = "u";
+  concatfname = "";
+  intervolfname = "";
+  xfm_type = "a";
   inverse = false;
+  matonly = false;
 }
 
 
@@ -71,18 +77,20 @@ void print_usage(int argc, char *argv[])
 {
   cout << "Usage: " << argv[0] << " [options] <input-matrix-filename>\n\n"
        << "  Available options are:\n"
-       << "        -ref <refvol>                      (default is "
-                                        << globalopts.reffname << ")\n"
+       << "        -ref <refvol>                      (no default)\n"
        << "        -in <inputvol>                     (no default)\n"
        << "        -omat <matrix-filename>            (4x4 ascii format)\n"
        << "        -omedx <matrix-filename>           (MEDx format)\n"
     //       << "        -ominc <matrix-filename>           (MINC format)\n"
-       << "        -xfmtype {u,a,m,g,s}              (Specify MEDx xfm format)\n"
-       << "                      u   = UserTransformation (default)\n"
-       << "                      a,m = AlignLinearReslice\n"
+       << "        -xfmtype {a,m,u,g,s}               (Specify MEDx xfm format)\n"
+       << "                      a,m = AlignLinearReslice (default)\n"
+       << "                      u   = UserTransformation\n"
        << "                      g   = GenericReslice\n"
        << "                      s   = ShadowTransform\n"
+       << "        -concat <second-matrix-filename>\n"
+       << "        -middlevol <intermediary-volume-filename>\n"
        << "        -inverse\n"
+       << "        -matonly                           (Use no volumes or MEDx/MINC support)\n"
        << "        -help\n";
 }
 
@@ -117,6 +125,10 @@ void parse_command_line(int argc, char* argv[])
       globalopts.inverse = true;
       n++;
       continue;
+    } else if ( arg == "-matonly" ) {
+      globalopts.matonly = true;
+      n++;
+      continue;
     } else if ( arg == "-v" ) {
       globalopts.verbose = 5;
       n++;
@@ -136,6 +148,14 @@ void parse_command_line(int argc, char* argv[])
       continue;
     } else if ( arg == "-in") {
       globalopts.testfname = argv[n+1];
+      n+=2;
+      continue;
+    } else if ( arg == "-concat") {
+      globalopts.concatfname = argv[n+1];
+      n+=2;
+      continue;
+    } else if ( arg == "-middlevol") {
+      globalopts.intervolfname = argv[n+1];
       n+=2;
       continue;
     } else if ( arg == "-omat") {
@@ -169,8 +189,11 @@ void parse_command_line(int argc, char* argv[])
     print_usage(argc,argv);
     exit(2);
   }
-  if (globalopts.testfname.size()<1) {
-    cerr << "WARNING:: Inputvol filename not found\n\n";
+  if ((!globalopts.matonly) && (globalopts.testfname.size()<1)) {
+    cerr << "ERROR:: Inputvol filename not found\n\n";
+  }
+  if ((!globalopts.matonly) && (globalopts.reffname.size()<1)) {
+    cerr << "ERROR:: Reference volume filename not found\n\n";
   }
 }
 
@@ -178,58 +201,94 @@ void parse_command_line(int argc, char* argv[])
 
 int main(int argc,char *argv[])
 {
-  try {
+  parse_command_line(argc,argv);
 
-    parse_command_line(argc,argv);
 
-    volume testvol, refvol;
-    if (read_volume_hdr_only(testvol,globalopts.testfname)<0)  return -1;
-    if (read_volume_hdr_only(refvol,globalopts.reffname)<0)  return -1;
-
+  volume testvol, refvol, intervol;
+  if (! globalopts.matonly) {
+    // read volumes
+    if (read_volume_hdr_only(testvol,globalopts.testfname)<0) {
+      cerr << "Cannot read input volume" << endl;
+      return -1;
+    }
+    if (read_volume_hdr_only(refvol,globalopts.reffname)<0) {
+      cerr << "Cannot read reference volume" << endl;
+      return -1;
+    }
+    if (globalopts.intervolfname.size()>=1) {
+      if (read_volume_hdr_only(intervol,globalopts.intervolfname)<0) {
+	cerr << "Cannot read intermediary volume" << endl;
+	return -1;
+      }
+    } else {
+      intervol = refvol;
+    }
+    
     if (globalopts.verbose>3) {
       print_volume_info(refvol,"Reference Volume");
       cout << " origin = " << refvol.avw_origin.t() << endl << endl;
       print_volume_info(testvol,"Input Volume");
       cout << " origin = " << testvol.avw_origin.t() << endl;
     }
+  }
 
-    Matrix affmat(4,4);
-    ColumnVector params(12);
-    if (read_matrix(affmat,globalopts.initmatfname,testvol,refvol)<0) 
-      return -2;
-    if (globalopts.inverse) {
-      affmat = affmat.i();
-    }
-    if (globalopts.outputmatmedx.size() >= 1) {
-      if (globalopts.inverse) {
-	write_medx_matrix(affmat,globalopts.outputmatmedx,refvol,testvol,
-			  globalopts.xfm_type,globalopts.testfname);
-      } else {
-	write_medx_matrix(affmat,globalopts.outputmatmedx,testvol,refvol,
-			  globalopts.xfm_type,globalopts.reffname);
+  // read matrices
+  Matrix affmat(4,4);
+  int returnval;
+  if (globalopts.matonly)
+    returnval = read_ascii_matrix(affmat,globalopts.initmatfname);
+  else 
+    returnval = read_matrix(affmat,globalopts.initmatfname,testvol,intervol);
+  if (returnval<0) {
+    cerr << "Cannot read input-matrix" << endl;
+    return -2;
+  }
+    
+  if (globalopts.concatfname.size() >= 1) {
+    Matrix concatmat(4,4);
+    if (globalopts.matonly)
+      returnval = read_ascii_matrix(concatmat,globalopts.concatfname);
+    else 
+      returnval = read_matrix(concatmat,globalopts.concatfname,intervol,refvol);
+    
+    if (returnval<0) {
+      cerr << "Cannot read concat-matrix" << endl;
+      return -3;
+    } else {
+      if (globalopts.verbose>2) {
+	cout << "Initial matrix:" << endl << affmat << endl;
+	cout << "Second matrix:" << endl << concatmat << endl;
       }
+      affmat = concatmat * affmat;
     }
-    if (globalopts.outputmatascii.size() >= 1) {
-      write_ascii_matrix(affmat,globalopts.outputmatascii);
-    }
-
-    if (globalopts.verbose>0) {
-      cout << affmat << endl;
-    }
-
-    return 0;
   }
-  catch(Exception exc) {
-    cerr << exc.what() << endl;
-    throw;
+  
+  // apply inverse (if requested)
+  if (globalopts.inverse) {
+    affmat = affmat.i();
   }
-  catch(...) {
-    cerr << "Image error" << endl;
-    throw;
-  } 
-  return(0);
+  
+  
+  // Write outputs
+  if ((! globalopts.matonly) && (globalopts.outputmatmedx.size() >= 1)) {
+    if (globalopts.inverse) {
+      write_medx_matrix(affmat,globalopts.outputmatmedx,refvol,testvol,
+			globalopts.xfm_type,globalopts.testfname);
+    } else {
+      write_medx_matrix(affmat,globalopts.outputmatmedx,testvol,refvol,
+			globalopts.xfm_type,globalopts.reffname);
+    }
+  }
+  
+  if (globalopts.outputmatascii.size() >= 1) {
+    write_ascii_matrix(affmat,globalopts.outputmatascii);
+  }
+  
+  if (globalopts.verbose>0) {
+    cout << affmat << endl;
+  }
+
+  return 0;
 }
-
-
 
 
