@@ -45,6 +45,12 @@ const string version = "2.1.3";
 
 ////////////////////////////////////////////////////////////////////////////
 
+void print_vector(float x, float y, float z)
+{
+  cerr << "(" << x << "," << y << "," << z << ")"; 
+}
+
+
 int round(const float val) {
   Tracer tr("round");
   if (val>0.0) {
@@ -1193,7 +1199,10 @@ void no_optimise()
     testvol = testvol_1;
   }
 
-  if (globaloptions::get().verbose>=2) { print_volume_info(refvol,"refvol"); }
+  if (globaloptions::get().verbose>=2) { 
+    print_volume_info(refvol,"refvol"); 
+    print_volume_info(testvol,"inputvol"); 
+  }
 
   volume outputvol = refvol;
   filled_affine_transform(outputvol,testvol,globaloptions::get().initmat);
