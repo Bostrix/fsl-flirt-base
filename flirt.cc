@@ -45,6 +45,13 @@ const string version = "2.2";
 
 ////////////////////////////////////////////////////////////////////////////
 
+// CHEATING GLOBAL VOLUMES FOR WEIGHTING INFO (MUST TIDY SOON)
+
+volume global_refweight, global_testweight, global_refweight1;
+volume global_refweight2, global_refweight4, global_refweight8;
+
+////////////////////////////////////////////////////////////////////////////
+
 void print_vector(float x, float y, float z)
 {
   cerr << "(" << x << "," << y << "," << z << ")"; 
@@ -267,10 +274,16 @@ float costfn(const Matrix& uninitaffmat)
       }
       break;
     case CorrRatio:  // MAXimise corr
-      if (globaloptions::get().smoothsize > 0.0) {
-	retval = 1.0 - corr_ratio_smoothed(globaloptions::get().impair,affmat);
+      if (globaloptions::get().useweights) {
+	retval = 1.0-corr_ratio_fully_weighted(globaloptions::get().impair,
+					       affmat,global_refweight,
+					       global_testweight);
       } else {
-	retval = 1.0 - corr_ratio(globaloptions::get().impair,affmat); 
+	if (globaloptions::get().smoothsize > 0.0) {
+	  retval = 1.0-corr_ratio_smoothed(globaloptions::get().impair,affmat);
+	} else {
+	  retval = 1.0 - corr_ratio(globaloptions::get().impair,affmat); 
+	}
       }
       break;
     case Woods:  // minimise variance/mean
@@ -1075,6 +1088,15 @@ int get_testvol(volume& testvol)
   find_robust_limits(testvol,globaloptions::get().no_bins,hist,minval,maxval);
   clamp(testvol,minval,maxval);
 
+  if (globaloptions::get().useweights) {
+    if (globaloptions::get().testweightfname.length()>0) {
+      read_volume(global_testweight,globaloptions::get().testweightfname);
+    } else {
+      global_testweight = testvol;  // Fix size and dimensions
+      global_testweight = 1.0;      // Set all elements to unity weighting
+    }
+  }
+
   if (globaloptions::get().verbose>=2) {
     cerr << "Init Matrix = \n" << globaloptions::get().initmat << endl;
     cerr << "Testvol sampling matrix =\n" << testvol.sampling_matrix() << endl;
@@ -1095,6 +1117,15 @@ int get_refvol(volume& refvol)
   float minval=0.0, maxval=0.0;
   find_robust_limits(refvol,globaloptions::get().no_bins,hist,minval,maxval);
   clamp(refvol,minval,maxval);
+
+  if (globaloptions::get().useweights) {
+    if (globaloptions::get().refweightfname.length()>0) {
+      read_volume(global_refweight,globaloptions::get().refweightfname);
+    } else {
+      global_refweight = refvol;   // Fix size and dimensions
+      global_refweight = 1.0;      // Set all elements to unity weighting
+    }
+  }
 
   if (globaloptions::get().verbose>=2) {
     cerr << "Refvol intensity clamped between " 
@@ -1741,21 +1772,40 @@ void usrsetscale(int usrscale,
     get_testvol(testvol);
     volume testvolnew;
     blur4subsampling(testvolnew,testvol,(float) scale);
+    if (globaloptions::get().useweights) {
+      volume weightcopy = global_testweight;
+      blur4subsampling(global_testweight,weightcopy,(float) scale);
+    }
     testvol = testvolnew;
     volume *refvolnew=0;
     if (scale==8) {
       refvolnew = &refvol_8;
+      if (globaloptions::get().useweights) {
+	global_refweight = global_refweight8;
+      }
     } else if (scale==4) {
       refvolnew = &refvol_4;
+      if (globaloptions::get().useweights) {
+	global_refweight = global_refweight4;
+      }
     } else if (scale==2) {
       refvolnew = &refvol_2;
+      if (globaloptions::get().useweights) {
+	global_refweight = global_refweight2;
+      }
     } else if (scale==1) {
       refvolnew = &refvol;
+      if (globaloptions::get().useweights) {
+	global_refweight = global_refweight1;
+      }
     } else {
       cerr << "Cannot set scale to " << scale << endl;
       cerr << "Instead using unity scale" << endl;
       scale = 1;
       refvolnew = &refvol;
+      if (globaloptions::get().useweights) {
+	global_refweight = global_refweight1;
+      }
     }
     globalpair = new imagepair(*refvolnew,testvol);
     globalpair->set_no_bins(globaloptions::get().no_bins/scale);
@@ -2105,11 +2155,45 @@ int main(int argc,char *argv[])
       blur4subsampling(testvol_8,testvol,8.0);
       testvol = testvol_8;
     }
+
+    // If weights are used then do the same for the weighting volumes...
+    if (globaloptions::get().useweights) {
+      resample_refvol(global_refweight,globaloptions::get().min_sampling);
+      global_refweight1 = global_refweight;
+      if (globaloptions::get().min_sampling < 1.9) {
+	subsample_by2(global_refweight1,global_refweight2);
+      } else {
+	global_refweight2 = global_refweight1;
+      }
+      if (globaloptions::get().min_sampling < 3.9) {
+	subsample_by2(global_refweight2,global_refweight4);
+      } else {
+	global_refweight4 = global_refweight2;
+      }
+      if (globaloptions::get().min_sampling < 7.9) {
+	subsample_by2(global_refweight4,global_refweight8);
+      } else {
+	global_refweight8 = global_refweight4;
+      }
+
+      {
+	volume tempvol = global_testweight;
+	blur4subsampling(global_testweight,tempvol,8.0);
+      }
+      
+    }
+
   } else {
     // if no resampling chosen, then refvol is simply copied
     refvol_8 = refvol;
     refvol_4 = refvol;
     refvol_2 = refvol;
+    if (globaloptions::get().useweights) {
+      global_refweight1 = global_refweight;
+      global_refweight2 = global_refweight;
+      global_refweight4 = global_refweight;
+      global_refweight8 = global_refweight;
+    }
   }
 
   // set up image pair and global pointer
@@ -2182,4 +2266,11 @@ int main(int argc,char *argv[])
 
   return(0);
 }
+
+
+
+
+
+
+
 

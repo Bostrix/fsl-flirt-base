@@ -1581,6 +1581,16 @@
 			ims->no_bins, ims->smoothsize);
     }
   
+  float corr_ratio_fully_weighted(const imagepair* ims, const Matrix& aff,
+				  const volume& refweight, 
+				  const volume& testweight) 
+    {
+      return corr_ratio_fully_weighted(ims->refvol,ims->testvol,
+				       refweight,testweight,
+				       ims->bindex,aff,
+				       ims->no_bins, ims->smoothsize);
+    }
+  
 
   float mutual_info(imagepair* ims, const Matrix& aff)
     {

@@ -40,6 +40,10 @@
 
   float corr_ratio_smoothed(const imagepair* ims, const Matrix& aff); 
 
+  float corr_ratio_fully_weighted(const imagepair* ims, const Matrix& aff,
+				  const volume& refweight, 
+				  const volume& testweight);
+
   float mutual_info(imagepair* ims, const Matrix& aff);
 
   float mutual_info_smoothed(imagepair* ims, const Matrix& aff);

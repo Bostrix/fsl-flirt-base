@@ -44,6 +44,8 @@ class globaloptions {
   string outputmatascii;
   string outputmatmedx;
   string initmatfname;
+  string refweightfname;
+  string testweightfname;
   Matrix initmat;
 
   string schedulefname;
@@ -83,6 +85,7 @@ class globaloptions {
   bool nosave;
   bool iso;
   bool resample;
+  bool useweights;
 
   int single_param;
 
@@ -134,6 +137,8 @@ inline globaloptions::globaloptions()
   outputmatascii = "";
   outputmatmedx = "";
   initmatfname = "";
+  refweightfname = "";
+  testweightfname = "";
   initmat = Identity(4);
 
   schedulefname = "";
@@ -182,6 +187,7 @@ inline globaloptions::globaloptions()
   nosave = true;
   iso = true;
   resample = true;
+  useweights = false;
 
   single_param = -1;
 }

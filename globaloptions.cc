@@ -106,6 +106,16 @@ void globaloptions::parse_command_line(int argc,char** argv,
       schedulefname = argv[n+1];
       n+=2;
       continue;
+    } else if ( arg == "-refweight") {
+      refweightfname = argv[n+1];
+      useweights = true;
+      n+=2;
+      continue;
+    } else if ( arg == "-inweight") {
+      testweightfname = argv[n+1];
+      useweights = true;
+      n+=2;
+      continue;
     } else if ( arg == "-omat") {
       outputmatascii = argv[n+1];
       n+=2;
@@ -306,6 +316,8 @@ void globaloptions::print_usage(int argc, char *argv[])
        << "        -coarsesearch <delta_angle>        (angle in degrees: default is 60)\n" 
        << "        -finesearch <delta_angle>          (angle in degrees: default is 18)\n" 
        << "        -schedule <schedule-file>          (replaces default schedule)\n"
+       << "        -refweight <volume>                (use weights for reference volume)\n"
+       << "        -inweight <volume>                 (use weights for input volume)\n"
        << "        -verbose <num>                     (0 is least and default)\n"
        << "        -v                                 (same as -verbose 1)\n"
        << "        -i                                 (pauses at each stage: default is off)\n"
