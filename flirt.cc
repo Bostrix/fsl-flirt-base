@@ -1238,8 +1238,9 @@ void no_optimise()
   
   if (globaloptions::get().iso) {
     resample_refvol(refvol,globaloptions::get().isoscale);
-    testvol = blur(testvol,min_sampling_ref);
   }
+
+  testvol = blur(testvol,min_sampling_ref);
 
   if (globaloptions::get().verbose>=2) { 
     print_volume_info(refvol,"refvol"); 
