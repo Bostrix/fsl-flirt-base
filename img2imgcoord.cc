@@ -187,9 +187,7 @@ int main(int argc,char *argv[])
     
   if (globalopts.verbose>3) {
     print_info(destvol,"Destination Volume");
-    cout << " origin = " << destvol.getorigin().t() << endl << endl;
     print_info(srcvol,"Source Volume");
-    cout << " origin = " << srcvol.getorigin().t() << endl;
   }
 
   // read matrices
@@ -208,15 +206,6 @@ int main(int argc,char *argv[])
 
   // Let Volume 2 be Source and Volume 1 be Destination
   //  notate variables as (v=vox, w=world, f=flirt, m=medx, t=dest)
-  Matrix vf2w2(4,4), vf1w1(4,4);
-  Identity(vf2w2);
-  vf2w2(1,1) = srcvol.xdim();
-  vf2w2(2,2) = srcvol.ydim();
-  vf2w2(3,3) = srcvol.zdim();
-  Identity(vf1w1);
-  vf1w1(1,1) = destvol.xdim();
-  vf1w1(2,2) = destvol.ydim();
-  vf1w1(3,3) = destvol.zdim();
   
   // the swap matrices convert flirt voxels to medx voxels
   Matrix swapy1(4,4), swapy2(4,4);
@@ -229,8 +218,8 @@ int main(int argc,char *argv[])
   }
   
   Matrix destvox2world, srcvox2world;
-  destvox2world = vf1w1 * swapy1;
-  srcvox2world = vf2w2 * swapy2;
+  destvox2world = destvol.sampling_mat() * swapy1;
+  srcvox2world = srcvol.sampling_mat() * swapy2;
   if (globalopts.verbose>3) {
     cout << " destvox2world =" << endl << destvox2world << endl << endl;
     cout << " srcvox2world =" << endl << srcvox2world << endl;
@@ -262,7 +251,7 @@ int main(int argc,char *argv[])
 	matfile >> srccoord(j);
       }
       if (globalopts.mm) {  // in mm
-	destcoord = vf1w1 * destvox2world.i() * affmat * srcvox2world * vf2w2.i() * srccoord;
+	destcoord = destvol.sampling_mat() * destvox2world.i() * affmat * srcvox2world * srcvol.sampling_mat().i() * srccoord;
       } else { // in voxels
 	destcoord = destvox2world.i() * affmat * srcvox2world * srccoord; 
       }
@@ -284,7 +273,7 @@ int main(int argc,char *argv[])
       if (oldsrc == srccoord)  return 0;
       oldsrc = srccoord;
       if (globalopts.mm) {  // in mm
-	destcoord = vf1w1 * destvox2world.i() * affmat * srcvox2world * vf2w2.i() * srccoord;
+	destcoord = destvol.sampling_mat() * destvox2world.i() * affmat * srcvox2world * srcvol.sampling_mat().i() * srccoord;
       } else { // in voxels
 	destcoord = destvox2world.i() * affmat * srcvox2world * srccoord; 
       }

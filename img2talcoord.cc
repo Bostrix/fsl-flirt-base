@@ -207,10 +207,8 @@ int main(int argc,char *argv[])
   if (globalopts.verbose>3) {
     if (globalopts.usetal) {
       print_info(talvol,"Talairach Volume");
-      cout << " origin = " << talvol.getorigin().t() << endl << endl;
     }
     print_info(imgvol,"IMG Volume");
-    cout << " origin = " << imgvol.getorigin().t() << endl;
   }
 
   // read matrices
@@ -243,11 +241,9 @@ int main(int argc,char *argv[])
     // set the main matrix
     vox2tal = imgvol.sform_mat();
  
-    if (imgvol.sform_code()<=1) { 
-      if (imgvol.getorigin().MaximumAbsoluteValue()<1e-10) {
-	if (globalopts.verbose>0) {
-	  cerr << "WARNING:: Standard coordinates not set in img" << endl; 
-	}
+    if (imgvol.sform_code()==NIFTI_XFORM_UNKNOWN) { 
+      if (globalopts.verbose>0) {
+	cerr << "WARNING:: Standard coordinates not set in img" << endl; 
       }
     }
   } else {
@@ -255,11 +251,9 @@ int main(int argc,char *argv[])
     // set the main matrix
     vox2tal = talvol.sform_mat() * talvol.sampling_mat().i() * affmat * imgvol.sampling_mat();
     
-    if (talvol.sform_code()<=1) { 
-      if (talvol.getorigin().MaximumAbsoluteValue()<1e-10) {
-	if (globalopts.verbose>0) {
-	  cerr << "WARNING:: Standard coordinates not set in tal image" << endl; 
-	}
+    if (talvol.sform_code()==NIFTI_XFORM_UNKNOWN) { 
+      if (globalopts.verbose>0) {
+	cerr << "WARNING:: Standard coordinates not set in tal image" << endl; 
       }
     }
     

@@ -258,9 +258,7 @@ int main(int argc,char *argv[])
     
     if (globalopts.verbose>3) {
       print_volume_info(refvol,"Reference Volume");
-      cout << " origin = " << refvol.getorigin().t() << endl << endl;
       print_volume_info(testvol,"Input Volume");
-      cout << " origin = " << testvol.getorigin().t() << endl;
     }
   }
 

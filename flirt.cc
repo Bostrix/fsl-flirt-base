@@ -83,9 +83,9 @@ int FLIRT_read_volume4D(volume4D<float>& target, const string& filename,
   int retval = read_volume4D(target,filename,vinfo);
   // if basescale != 1.0
   if (fabs(globaloptions::get().basescale - 1.0)>1e-5) {
-    target.setxdim(target.xdim() * target.xsign() / globaloptions::get().basescale);
-    target.setydim(target.ydim() * target.ysign() / globaloptions::get().basescale);
-    target.setzdim(target.zdim() * target.zsign() / globaloptions::get().basescale);
+    target.setxdim(target.xdim() / globaloptions::get().basescale);
+    target.setydim(target.ydim() / globaloptions::get().basescale);
+    target.setzdim(target.zdim() / globaloptions::get().basescale);
   }
   return retval;
 }
@@ -98,9 +98,9 @@ int FLIRT_read_volume(volume<float>& target, const string& filename,
   int retval = read_volume(target,filename,vinfo);
   // if basescale != 1.0
   if (fabs(globaloptions::get().basescale - 1.0)>1e-5) {
-    target.setxdim(target.xdim() * target.xsign() / globaloptions::get().basescale);
-    target.setydim(target.ydim() * target.ysign() / globaloptions::get().basescale);
-    target.setzdim(target.zdim() * target.zsign() / globaloptions::get().basescale);
+    target.setxdim(target.xdim() / globaloptions::get().basescale);
+    target.setydim(target.ydim() / globaloptions::get().basescale);
+    target.setzdim(target.zdim() / globaloptions::get().basescale);
   }
   return retval;
 }
@@ -129,10 +129,9 @@ void setupsinc(const volume<float>& invol)
 }
 
 
-void final_transform(const volume<float>& testvol, volume<float>& newtestvol,
+void final_transform(const volume<float>& testvol, volume<float>& outputvol,
 		     const Matrix& finalmat) 
 {
-  testvol.setorigin(0.0,0.0,0.0);
   if (globaloptions::get().interpmethod == NearestNeighbour) {
     testvol.setinterpolationmethod(nearestneighbour);
   } else if (globaloptions::get().interpmethod == NEWIMAGE::Sinc) {
@@ -145,7 +144,7 @@ void final_transform(const volume<float>& testvol, volume<float>& newtestvol,
   if (globaloptions::get().mode2D) {
     paddingsize = Max(1.0,paddingsize);
   }
-  affine_transform(testvol,newtestvol,finalmat,paddingsize);
+  affine_transform(testvol,outputvol,finalmat,paddingsize);
 }
 
 template <class T>
@@ -1150,7 +1149,7 @@ void double_end_slices(volume<float>& testvol)
   //  be done (in general it is good to do for small number of slices so
   //  that the end ones get counted and not de-weighted by the cost fns)
   volume<float> newtestvol(testvol.xsize(),testvol.ysize(),testvol.zsize()+2);
-  newtestvol.setdims(testvol.xdim()*testvol.xsign(),testvol.ydim()*testvol.ysign(),testvol.zsign()*8.0f);
+  newtestvol.setdims(testvol.xdim(),testvol.ydim(),8.0f);
   for (int z=0; z<= testvol.zsize()+1; z++) {
     for (int y=0; y<testvol.ysize(); y++) {
       for (int x=0; x<testvol.xsize(); x++) {
@@ -1270,13 +1269,6 @@ int resample_refvol(volume<float>& refvol, float sampling=1.0)
 
 ////////////////////////////////////////////////////////////////////////////
 
-//void fix_output_volume(volume<float>& vol)
-//{
-  // make all dimensions positive and origin zero (consistency with mjimage)
-  //vol.setdims(fabs(vol.xdim()),fabs(vol.ydim()),fabs(vol.zdim()));
-  //vol.setorigin(0.0,0.0,0.0);
-//}
-
 
 void no_optimise()
 {
@@ -1296,7 +1288,7 @@ void no_optimise()
   if ( (refvol.sform_code()!=NIFTI_XFORM_UNKNOWN) && 
        (testvol[0].sform_code()!=NIFTI_XFORM_UNKNOWN) ) {
     cerr << "WARNING: Both reference and input images have an sform matrix set" << endl;
-    cerr << "  The output image will use the transformed sform from the input image" << endl;
+    cerr << "  The output image will use the transformed sform from the reference image" << endl;
   }
 
   short dtype;
@@ -1314,10 +1306,10 @@ void no_optimise()
   }
 
   if (globaloptions::get().verbose>0) {
-    if (testvol[0].sform_code()!=NIFTI_XFORM_UNKNOWN) {
-      cout << "The output image will use the transformed sform from the input image" << endl;    
-    } else if (refvol.sform_code()!=NIFTI_XFORM_UNKNOWN) {
+    if (refvol.sform_code()!=NIFTI_XFORM_UNKNOWN) {
       cout << "The output image will use the sform from the reference image" << endl;    
+    } else if (testvol[0].sform_code()!=NIFTI_XFORM_UNKNOWN) {
+      cout << "The output image will use the transformed sform from the input image" << endl;    
     }
   }
 
@@ -1346,13 +1338,6 @@ void no_optimise()
     }
     
     final_transform(testvol[t0],outputvol[tref],globaloptions::get().initmat);
-    //if (globaloptions::get().iso) { fix_output_volume(outputvol[tref]); }
-    if (testvol[t0].sform_code()!=NIFTI_XFORM_UNKNOWN) {
-      Matrix trans_sform;
-      trans_sform = testvol[t0].sform_mat() * testvol[t0].sampling_mat().i() *
-	globaloptions::get().initmat.i() * outputvol[tref].sampling_mat();
-      outputvol[tref].set_sform(testvol[t0].sform_code(),trans_sform);
-    }
   }
   save_volume4D_dtype(outputvol,globaloptions::get().outputfname.c_str(),
 		      globaloptions::get().datatype,globaloptions::get().vinfo);
