@@ -72,6 +72,7 @@ void final_transform(const volume<float>& testvol, volume<float>& newtestvol,
 {
   testvol.setpadvalue(testvol.backgroundval());
   testvol.setextrapolationmethod(extraslice);
+  testvol.setorigin(0.0,0.0,0.0);
   if (globaloptions::get().interpmethod == NearestNeighbour) {
     testvol.setinterpolationmethod(nearestneighbour);
     affine_transform(testvol,newtestvol,finalmat);
