@@ -234,6 +234,22 @@ void globaloptions::parse_command_line(int argc,char** argv,
       }
       n+=2;
       continue;
+    } else if ( arg == "-interp") {
+      {
+	string interparg = argv[n+1];
+	if (interparg == "trilinear") {
+	  interpmethod = TriLinear;
+	} else if (interparg == "nearestneighbour") {
+	  interpmethod = NearestNeighbour;
+	} else if (interparg == "sinc") {
+	  interpmethod = Sinc;
+	} else {
+	  cerr << "Unrecognised interpolation method: " << interparg << endl;
+	  exit(-1);
+	}
+      }
+      n+=2;
+      continue;
     } else if ( arg == "-anglerep" ) {
       {
 	string anglearg = argv[n+1];
@@ -308,10 +324,11 @@ void globaloptions::print_usage(int argc, char *argv[])
        << "        -omat <matrix-filename>            (4x4 ascii format)\n"
        << "        -omedx <matrix-filename>           (MEDx format)\n"
        << "        -out, -o <outputvol>               (default is none)\n"
-       << "        -datatype {char,short,int,float,double}                  (force output data type)\n"
+       << "        -datatype {char,short,int,float,double}                    (force output data type)\n"
        << "        -cost {mutualinfo,corratio,normcorr,normmi,leastsq}        (default is corratio)\n"
        << "        -searchcost {mutualinfo,corratio,normcorr,normmi,leastsq}  (default is corratio)\n"
        << "        -anglerep {quaternion,euler}       (default is euler)\n"
+       << "        -interp {trilinear,nearestneighbour,sinc}  (final interpolation: def - trilinear)\n"
        << "        -bins <number of histogram bins>   (default is "
                                         << no_bins << ")\n"
        << "        -dof  <number of transform dofs>   (default is "
