@@ -1,4 +1,10 @@
+// FLIRT - FMRIB Linear Image Registration Tool
+//  (c) Mark Jenkinson 1999
+
+// Put current version number here:
 #include <string>
+const string version = "2.1";
+
 #include <iostream>
 #include <fstream>
 #include <unistd.h>
@@ -12,6 +18,7 @@
 #include "newmatio.h"
 #include "miscimfns.h"
 #include "miscmaths.h"
+#include "optimise.h"
 #include "interpolation.h"
 #include "nrcode.h"
 #include "mjimage.h"
@@ -185,8 +192,11 @@ void initialise_params(ColumnVector& params)
 }
 
 
+//  void powell_opt(ColumnVector& params, int no_params, ColumnVector& param_tol, 
+//  		int *no_its, float *fans, float (*costfunc)(float []), 
+//  		int itmax)
 void powell_opt(ColumnVector& params, int no_params, ColumnVector& param_tol, 
-		int *no_its, float *fans, float (*costfunc)(float []), 
+		int &no_its, float *fans, float (*costfunc)(const ColumnVector &), 
 		int itmax)
 {
   // sets up the initial parameters and calls the powell optimisation routine
@@ -204,12 +214,16 @@ void powell_opt(ColumnVector& params, int no_params, ColumnVector& param_tol,
   for (int i=1; i<=no_params; i++) { ptol[i] = param_tol(i); }
   
   // the optimisation call
-  powell(params,parambasis,no_params,ptol,no_its, fans, costfunc, itmax);
+  //powell(params,parambasis,no_params,ptol,no_its, fans, costfunc, itmax);
+  *fans = MISCMATHS::optimise(params,no_params,param_tol,costfunc,no_its,itmax);
 }
 
 
+//  void optimise(ColumnVector& params, int no_params, ColumnVector& param_tol, 
+//  	      int *no_its, float *fans, float (*costfunc)(float []), 
+//  	      int itmax=4)
 void optimise(ColumnVector& params, int no_params, ColumnVector& param_tol, 
-	      int *no_its, float *fans, float (*costfunc)(float []), 
+	      int &no_its, float *fans, float (*costfunc)(const ColumnVector &), 
 	      int itmax=4)
 {
   powell_opt(params,no_params,param_tol,no_its,fans,costfunc,itmax);
@@ -256,24 +270,25 @@ float costfn(const ColumnVector& params)
   Matrix affmat(4,4);
   vector2affine(params,globaloptions::get().no_params,affmat);
   float retval = costfn(affmat);
-  return retval;
-}
-  
-
-float costfn(float params[])
-{
-  Tracer tr("costfn");
-  Matrix affmat(4,4);
-  vector2affine(params,globaloptions::get().no_params,affmat);
-  float retval = costfn(affmat);
   if (globaloptions::get().verbose>=5) {
     cout << globaloptions::get().impair->count++ << " : ";
     cout << retval << " :: ";
-    for (int i=1; i<=globaloptions::get().no_params; i++) cout << params[i] << " ";
+    for (int i=1; i<=globaloptions::get().no_params; i++) 
+      { cout << params(i) << " "; }
     cout << endl;
   }
   return retval;
 }
+  
+
+//  float costfn(float params[])
+//  {
+//    Tracer tr("costfn");
+//    Matrix affmat(4,4);
+//    vector2affine(params,globaloptions::get().no_params,affmat);
+//    float retval = costfn(affmat);
+//    return retval;
+//  }
 
 //----------------------------------------------------------------------//
 
@@ -314,15 +329,15 @@ float subset_costfn(const ColumnVector& params)
 }
 
 
-float subset_costfn(float params[])
-{
-  Tracer tr("subset_costfn");
-  ColumnVector newparams(globaloptions::get().parammask.Ncols());
-  for (int n=1; n<=globaloptions::get().parammask.Ncols(); n++) {
-    newparams(n) = params[n];
-  }
-  return subset_costfn(newparams);
-}
+//  float subset_costfn(float params[])
+//  {
+//    Tracer tr("subset_costfn");
+//    ColumnVector newparams(globaloptions::get().parammask.Ncols());
+//    for (int n=1; n<=globaloptions::get().parammask.Ncols(); n++) {
+//      newparams(n) = params[n];
+//    }
+//    return subset_costfn(newparams);
+//  }
 
 
 
@@ -548,7 +563,8 @@ void search_cost(Matrix& paramlist, volume& costs, volume& tx,
 	}
 	params12toN(params_8);
 	optimise(params_8,globaloptions::get().parammask.Ncols(),
-		 param_tol,&no_its,&fans,subset_costfn);
+		 param_tol,no_its,&fans,subset_costfn);
+	//		 param_tol,&no_its,&fans,subset_costfn);
 	paramsNto12(params_8);
 	tx(ix,iy,iz) = params_8(4);
 	ty(ix,iy,iz) = params_8(5);
@@ -677,7 +693,8 @@ void search_cost(Matrix& paramlist, volume& costs, volume& tx,
 	  globaloptions::get().refparams = params_8;
 	  params12toN(params_8);
 	  optimise(params_8,globaloptions::get().parammask.Ncols(),
-		   param_tol,&no_its,&fans,subset_costfn);
+		   param_tol,no_its,&fans,subset_costfn);
+	           //param_tol,&no_its,&fans,subset_costfn);
 	  paramsNto12(params_8);
 	  costs(ix,iy,iz) = fans;
 	  bestparams(n,1) = fans;
@@ -781,7 +798,8 @@ int optimise_strategy1(Matrix& matresult, float& fans, int input_dof,
   set_param_tols(param_tol,12);  // 12 used to be dof
   param_tol = param_tol * estimate_scaling();
   affmat2vector(matresult,dof,params);
-  optimise(params,dof,param_tol,&no_its,&fans,costfn,max_iterations);
+  //optimise(params,dof,param_tol,&no_its,&fans,costfn,max_iterations);
+  optimise(params,dof,param_tol,no_its,&fans,costfn,max_iterations);
   vector2affine(params,dof,matresult);
   return no_its;
 }  
@@ -952,7 +970,7 @@ void optimise_strategy3(Matrix& opt_matrixlist)
     add2list(matrow,opt_matrixlist,rms_min);
     if (verbose>=3) { 
       affmat2vector(matresult,12,params_8);
-      cout << costval << " :: " << params_8.t(); 
+      cout << costval << " ::: " << params_8.t(); 
     }
   }
   globaloptions::get().verbose = verbose;
@@ -1667,7 +1685,8 @@ void usrsetscale(int usrscale,
 		 volume& refvol_8) {
   // SETSCALE (int usrscale = 8,4,2,1)
   // testvol must be passed in as a static storage is needed so that
-  //  the object pointed to in globaloptions::get().impair does not go out of scope
+  //  the object pointed to in globaloptions::get().impair does not go 
+  //  out of scope
   Tracer tr("usrsetscale");
   int scale = usrscale;
   imagepair *globalpair=0;
@@ -1693,6 +1712,12 @@ void usrsetscale(int usrscale,
     }
     globalpair = new imagepair(*refvolnew,testvol);
     globalpair->set_no_bins(globaloptions::get().no_bins/scale);
+    if (globaloptions::get().verbose>=3) {
+      if (globaloptions::get().impair) {
+	cout << "Previous scale used " << globaloptions::get().impair->count
+	     << " cost function evaluations" << endl;
+      }
+    }
     globaloptions::get().impair = globalpair;
   }
 }
@@ -1967,7 +1992,7 @@ int main(int argc,char *argv[])
 
     //test_proc();  // only used for some debugging
 
-    globaloptions::get().parse_command_line(argc, argv);
+    globaloptions::get().parse_command_line(argc, argv,version);
 
     if (!globaloptions::get().do_optimise) {   
       no_optimise();
