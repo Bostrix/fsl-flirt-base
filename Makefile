@@ -27,8 +27,7 @@ TESTXFILES =
 HFILES =
 SCRIPTS = extracttxt pairreg fixxfm
 
-#all:	${XFILES} schedule
-all:	${XFILES}
+all:	${XFILES} schedule
 
 schedule:
 	/bin/cp -rf flirtsch ${FSLDIR}/etc
