@@ -477,6 +477,125 @@
   ///////////////////////////////////////////////////////////////////////
 
 
+  float woods_fn_smoothed(const volume& vref, const volume& vtest, int *bindex, 
+			  const Matrix& aff, const int no_bins, 
+			  const float smoothsize)
+    {
+      // Do everything in practice via the inverse transformation
+      // That is, for every point in vref, calculate the pre-image in
+      //  vtest to which it corresponds, and interpolate vtest to get the
+      //  value there.
+      // Also, the sampling transformations must be accounted for:
+      //     T_vox1->vox2 = (T_samp2)^-1 * T_world * T_samp1
+      Matrix iaffbig = vtest.sampling_matrix().i() * aff.i() *
+	                     vref.sampling_matrix();  
+      Matrix iaff=iaffbig.SubMatrix(1,3,1,3);
+      unsigned int xb1=vref.columns()-1, yb1=vref.rows()-1, zb1=vref.slices()-1;
+      float  xb2 = ((float) vtest.columns())-1.0001,
+	yb2=((float) vtest.rows())-1.0001, zb2=((float) vtest.slices())-1.0001;
+
+      float a11=iaff(1,1), a12=iaff(1,2), a13=iaff(1,3), a14=iaffbig(1,4),
+	a21=iaff(2,1), a22=iaff(2,2), a23=iaff(2,3), a24=iaffbig(2,4),
+	a31=iaff(3,1), a32=iaff(3,2), a33=iaff(3,3), a34=iaffbig(3,4), o1,o2,o3;
+
+      float *sum, *sum2;
+      sum = new float[no_bins+1];
+      sum2 = new float[no_bins+1];
+      float *num;
+      num = new float[no_bins+1];
+      int b=0;
+
+      for (int i=0; i<=no_bins; i++) {
+	num[i]=0.0; sum[i]=0.0;  sum2[i]=0.0;
+      }
+  
+      float smoothx, smoothy, smoothz, weight;
+      smoothx = smoothsize / vtest.getx();
+      smoothy = smoothsize / vtest.gety();
+      smoothz = smoothsize / vtest.getz();
+
+      float val=0.0;
+      unsigned int xmin, xmax;
+      int *bptr;
+
+      // The matrix algebra below has been hand-optimized from
+      //  [o1 o2 o3] = a * [x y z]  at each iteration
+
+      for (unsigned int z=0; z<=zb1; z++) { 
+	for (unsigned int y=0; y<=yb1; y++) { 
+
+	  o1= y*a12 + z*a13 + a14;  // x=0
+	  o2= y*a22 + z*a23 + a24;  // x=0
+	  o3= y*a32 + z*a33 + a34;  // x=0
+	
+	  // determine range
+	  findrangex(xmin,xmax,o1,o2,o3,a11,a21,a31,xb1,yb1,zb1,xb2,yb2,zb2);
+
+	  o1 += xmin * a11;
+	  o2 += xmin * a21;
+	  o3 += xmin * a31;
+
+	  bptr = get_bindexptr(xmin,y,z,vref,bindex);
+
+	  for (unsigned int x=xmin; x<=xmax; x++) {
+
+  	    val = q_tri_interpolation(vtest,o1,o2,o3);
+	    
+	    // do the cost function record keeping...
+	    b=*bptr;
+	    weight=1.0;
+	    if (o1<smoothx)  weight*=o1/smoothx;
+	    else if ((xb2-o1)<smoothx) weight*=(xb2-o1)/smoothx;
+	    if (o2<smoothy)  weight*=o2/smoothy;
+	    else if ((yb2-o2)<smoothy) weight*=(yb2-o2)/smoothy;
+	    if (o3<smoothz)  weight*=o3/smoothz;
+	    else if ((zb2-o3)<smoothz) weight*=(zb2-o3)/smoothz;
+	    if (weight<0.0)  weight=0.0;
+	    num[b]+=weight;
+	    sum[b]+=weight*val;
+	    sum2[b]+=weight*val*val;
+
+	    bptr++;
+	    o1 += a11;
+	    o2 += a21;
+	    o3 += a31;
+	  }
+	}
+      }
+
+      // now calculate  W = sum_j (n_j/N)*(sigma_j / mu_j)
+      //  where n_j = num[j], N = sum_j n_j, mu_j = sum[j]/num[j]
+      //        sigma_j^2 = sum_j 1/(n_j - 1) * (sum2[j] - mu_j^2 * n_j)
+      float woods=0.0, stdev=0.0, var=0.0;
+      float numtot=0.0;
+      for (b=0; b<=no_bins; b++) {
+	if (num[b]>2.0) {
+	  numtot += num[b];
+	  // the following should be the variance of the bth subset
+	  var = (sum2[b] - sum[b]*sum[b]/(num[b])) / (num[b]-1.0);
+	  if (var>0.0)
+	    stdev = sqrt(var);
+	  else
+	    stdev = 0.0;
+	  if (sum[b]>0)
+	    woods += Sqr(num[b])*stdev/sum[b];
+	  else
+	    woods += Sqr(num[b])*stdev;
+	}
+      }
+      delete [] num; delete [] sum; delete [] sum2;
+      if (numtot>0) {
+	woods/=numtot;
+	return woods;
+      } else {
+	return MAXFLOAT;
+      }
+    }
+
+
+  ///////////////////////////////////////////////////////////////////////
+
+
   float normcorr(const volume& vref, const volume& vtest,
 		 const Matrix& aff)
     {
@@ -1046,6 +1165,228 @@
 
   ///////////////////////////////////////////////////////////////////////
 
+   void calc_smoothed_entropy(const volume& vref, const volume& vtest,
+			      int *bindex,  const Matrix& aff,
+			      const float mintest, const float maxtest,
+			      const int no_bins,
+			      float *jointhist, float *marghist1, 
+			      float *marghist2,
+			      float& jointentropy, float& margentropy1,
+			      float& margentropy2,
+			      const float smoothsize, const float fuzzyfrac)
+   {
+      // the joint and marginal entropies between the two images are
+      //  calculated here and returned
+
+      // Do everything in practice via the inverse transformation
+      // That is, for every point in vref, calculate the pre-image in
+      //  vtest to which it corresponds, and interpolate vtest to get the
+      //  value there.
+      // Also, the sampling transformations must be accounted for:
+      //     T_vox1->vox2 = (T_samp2)^-1 * T_world * T_samp1
+
+      Matrix iaffbig = vtest.sampling_matrix().i() * aff.i() *
+	                     vref.sampling_matrix();  
+      Matrix iaff=iaffbig.SubMatrix(1,3,1,3);
+      unsigned int xb1=vref.columns()-1, yb1=vref.rows()-1, zb1=vref.slices()-1;
+      float  xb2 = ((float) vtest.columns())-1.0001,
+	yb2=((float) vtest.rows())-1.0001, zb2=((float) vtest.slices())-1.0001;
+
+      float a11=iaff(1,1), a12=iaff(1,2), a13=iaff(1,3), a14=iaffbig(1,4),
+	a21=iaff(2,1), a22=iaff(2,2), a23=iaff(2,3), a24=iaffbig(2,4),
+	a31=iaff(3,1), a32=iaff(3,2), a33=iaff(3,3), a34=iaffbig(3,4), o1,o2,o3;
+
+      for (long int i=0; i<((no_bins+1)*(no_bins+1)); i++) {
+	  jointhist[i]=0;
+      }
+      for (int i=0; i<=no_bins; i++) {
+	  marghist1[i]=0;
+	  marghist2[i]=0;
+      }
+
+      long int a;
+      float b1=no_bins/(maxtest-mintest), b0=-mintest*no_bins/(maxtest-mintest);
+      float val=0.0;
+ 
+      float smoothx, smoothy, smoothz, geomweight, wcentre, wplus, wminus, bidx;
+      long int bcentre, bplus, bminus;
+      smoothx = smoothsize / vtest.getx();
+      smoothy = smoothsize / vtest.gety();
+      smoothz = smoothsize / vtest.getz();
+
+      unsigned int xmin, xmax;
+      int *bptr;
+
+      // The matrix algebra below has been hand-optimized from
+      //  [o1 o2 o3] = a * [x y z]  at each iteration
+
+      for (unsigned int z=0; z<=zb1; z++) { 
+	for (unsigned int y=0; y<=yb1; y++) { 
+
+	  o1= y*a12 + z*a13 + a14;  // x=0
+	  o2= y*a22 + z*a23 + a24;  // x=0
+	  o3= y*a32 + z*a33 + a34;  // x=0
+	
+	  // determine range
+	  findrangex(xmin,xmax,o1,o2,o3,a11,a21,a31,xb1,yb1,zb1,xb2,yb2,zb2);
+
+	  o1 += xmin * a11;
+	  o2 += xmin * a21;
+	  o3 += xmin * a31;
+
+	  bptr = get_bindexptr(xmin,y,z,vref,bindex);
+
+	  for (unsigned int x=xmin; x<=xmax; x++) {
+
+  	    val = q_tri_interpolation(vtest,o1,o2,o3);
+	    
+	    // do the cost function record keeping...
+	    geomweight=1.0;
+	    if (o1<smoothx)  geomweight*=o1/smoothx;
+	    else if ((xb2-o1)<smoothx) geomweight*=(xb2-o1)/smoothx;
+	    if (o2<smoothy)  geomweight*=o2/smoothy;
+	    else if ((yb2-o2)<smoothy) geomweight*=(yb2-o2)/smoothy;
+	    if (o3<smoothz)  geomweight*=o3/smoothz;
+	    else if ((zb2-o3)<smoothz) geomweight*=(zb2-o3)/smoothz;
+	    if (geomweight<0.0)  geomweight=0.0;
+
+	    // do the cost function record keeping...
+	    a=*bptr;
+	    bidx=val*b1 + b0;
+	    bcentre=(long int) (bidx);
+	    bplus = bcentre + 1;
+	    bminus = bcentre - 1;
+	    if (bcentre>=no_bins) {
+	      bcentre=no_bins-1;
+	      bplus = bcentre;
+	    }
+	    if (bcentre<0) {
+	      bcentre=0;
+	      bminus = bcentre;
+	    }
+	    if (bplus>=no_bins) { bplus = no_bins-1; }
+	    if (bminus<0) { bminus = 0; }
+	    // Fuzzy binning weights
+	    bidx = fabs(bidx - (int) bidx);  // get fractional component : [0,1]
+	    if (bidx<fuzzyfrac) {
+	      wcentre = 0.5 + 0.5*(bidx/fuzzyfrac);
+	      wminus = 1 - wcentre;
+	      wplus = 0;
+	    } else if (bidx>(1.0-fuzzyfrac)) {
+	      wcentre = 0.5 + 0.5*((1.0-bidx)/fuzzyfrac);
+	      wplus = 1 - wcentre;
+	      wminus=0;
+	    } else {
+	      wcentre = 1;
+	      wplus =0;
+	      wminus=0;
+	    }
+	    (jointhist[a*(no_bins+1) + bcentre])+=geomweight*wcentre;
+	    (marghist2[bcentre])+=geomweight*wcentre;
+	    (jointhist[a*(no_bins+1) + bplus])+=geomweight*wplus;
+	    (marghist2[bplus])+=geomweight*wplus;
+	    (jointhist[a*(no_bins+1) + bminus])+=geomweight*wminus;
+	    (marghist2[bminus])+=geomweight*wminus;
+	    (marghist1[a])+=geomweight;
+
+	    bptr++;
+	    o1 += a11;
+	    o2 += a21;
+	    o3 += a31;
+	  }
+	}
+      }
+
+      float p=0.0, n=0.0;
+      long int nvoxels = (long int) (vref.rows() * vref.columns() * 
+				     vref.slices());
+      for (long int i=0; i<((no_bins+1)*(no_bins+1)); i++) {
+	n = jointhist[i];
+	if (n>0) {
+	  p = n / ((float) nvoxels);
+	  jointentropy+= - p*log(p);
+	}
+      }
+      for (int i=0; i<=no_bins; i++) {
+	n = marghist1[i];
+	if (n>0) {
+	  p = n / ((float) nvoxels);
+	  margentropy1+= - p*log(p);
+	}
+      }
+      float noverlap=0;
+      for (int i=0; i<=no_bins; i++) {
+	n = marghist2[i];
+	if (n>0) {
+	  noverlap += n;
+	  p = n / ((float) nvoxels);
+	  margentropy2+= - p*log(p);
+	}
+      }
+
+      // correct for difference in total histogram size
+      //  that is: noverlap vs nvoxels
+      // H_1 = N_0/N_1 * H_0 + log(N_1/N_0)
+      //     = N_0/N_1 * H_0 - log(N_0/N_1)
+      if (noverlap > 0) {
+	float nratio = ((float) nvoxels) / ((float) noverlap);
+	jointentropy = nratio * jointentropy - log(nratio);
+	margentropy1 = nratio * margentropy1 - log(nratio);
+	margentropy2 = nratio * margentropy2 - log(nratio);
+      } else {
+	// Put in maximum entropy values as base cases = BAD registration
+	jointentropy = 2.0*log(no_bins);
+	margentropy1 = log(no_bins);
+	margentropy2 = log(no_bins);
+      }
+      return;
+    }
+
+
+
+  float mutual_info_smoothed(const volume& vref, const volume& vtest,
+			     int *bindex, const Matrix& aff,
+			     const float mintest, const float maxtest,
+			     const int no_bins, 
+			     float *jointhist, float *marghist1, 
+			     float *marghist2,
+			     const float smoothsize, const float fuzzyfrac)
+    {
+      float jointentropy=0.0, margentropy1=0.0, margentropy2=0.0;
+      calc_smoothed_entropy(vref,vtest,bindex,aff,mintest,maxtest,no_bins,
+			    jointhist,marghist1,marghist2,
+			    jointentropy,margentropy1,margentropy2,
+			    smoothsize,fuzzyfrac);
+      float mutualinformation = margentropy1 + margentropy2 - jointentropy;
+      return mutualinformation;
+    }
+
+
+
+  float normalised_mutual_info_smoothed(const volume& vref, const volume& vtest,
+			       int *bindex, const Matrix& aff,
+			       const float mintest, const float maxtest,
+			       const int no_bins, float *jointhist, 
+			       float *marghist1, float *marghist2,
+			       const float smoothsize, const float fuzzyfrac)
+    {
+      float jointentropy=0.0, margentropy1=0.0, margentropy2=0.0;
+      calc_smoothed_entropy(vref,vtest,bindex,aff,mintest,maxtest,no_bins,
+			    jointhist,marghist1,marghist2,
+			    jointentropy,margentropy1,margentropy2,
+			    smoothsize,fuzzyfrac);
+      float normmi;
+      if (fabs(jointentropy)<1e-9) {
+	normmi = 0.0;  // BAD registration result
+      } else {
+	normmi = (margentropy1 + margentropy2)/jointentropy;
+      }
+      return normmi;
+    }
+
+
+  ///////////////////////////////////////////////////////////////////////
+
   // Supporting interfaces
 
 
@@ -1078,6 +1419,12 @@
 		      ims->no_bins);
     }
 
+  float woods_fn_smoothed(const imagepair* ims, const Matrix& aff) 
+    {
+      return woods_fn_smoothed(ims->refvol,ims->testvol,ims->bindex,aff,
+		      ims->no_bins, ims->smoothsize);
+    }
+
 
   float corr_ratio(const imagepair* ims, const Matrix& aff) 
     {
@@ -1101,12 +1448,33 @@
     }
 
 
+  float mutual_info_smoothed(imagepair* ims, const Matrix& aff)
+    {
+      return mutual_info_smoothed(ims->refvol,ims->testvol,
+				  ims->bindex,aff,
+				  ims->testmin,ims->testmax,
+				  ims->no_bins,ims->fjointhist,
+				  ims->fmarghist1,ims->fmarghist2,
+				  ims->smoothsize, ims->fuzzyfrac);
+    }
+
+
   float normalised_mutual_info(imagepair* ims, const Matrix& aff)
     {
       return normalised_mutual_info(ims->refvol,ims->testvol,ims->bindex,aff,
 			 ims->testmin,ims->testmax,
 			 ims->no_bins,ims->plnp,ims->jointhist,
 			 ims->marghist1,ims->marghist2);
+    }
+
+  float normalised_mutual_info_smoothed(imagepair* ims, const Matrix& aff)
+    {
+      return normalised_mutual_info_smoothed(ims->refvol,ims->testvol,
+					     ims->bindex,aff,
+					     ims->testmin,ims->testmax,
+					     ims->no_bins,ims->fjointhist,
+					     ims->fmarghist1,ims->fmarghist2,
+					     ims->smoothsize, ims->fuzzyfrac);
     }
 
 
