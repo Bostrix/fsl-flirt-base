@@ -2076,8 +2076,8 @@ int main(int argc,char *argv[])
 	filled_affine_transform(newtestvol,testvol,finalmat);      
 	save_volume(newtestvol,globaloptions::get().outputfname.c_str());
       }
-      if ( (globaloptions::get.outputmatascii.size()<=0) && 
-	   (globaloptions::get.outputmatmedx.size()<=0) ) {
+      if ( (globaloptions::get().outputmatascii.size()<=0) && 
+	   (globaloptions::get().outputmatmedx.size()<=0) ) {
 	cout << endl << "Final result: " << endl << finalmat << endl;
       }
     }
