@@ -467,7 +467,7 @@ void save_global_data(const Matrix& matresult, const volume& initvol,
     safe_save_volume(globalopts.impair->refvol,"refvol");
     volume outputvol;
     outputvol = globalopts.impair->refvol;
-    affine_transform(outputvol,globalopts.impair->testvol,
+    filled_affine_transform(outputvol,globalopts.impair->testvol,
 		     matresult * globalopts.initmat);
     safe_save_volume(outputvol,globalopts.outputfname.c_str());
     save_matrix_data(matresult * globalopts.initmat,initvol,finalvol);
@@ -1884,7 +1884,7 @@ void no_optimise()
     cout << "\n\nCost = " << cost << "\n\n";
   } else {
     volume outputvol = globalopts.impair->refvol;
-    affine_transform(outputvol,globalopts.impair->testvol,globalopts.initmat);
+    filled_affine_transform(outputvol,globalopts.impair->testvol,globalopts.initmat);
     safe_save_volume(outputvol,globalopts.outputfname.c_str());
     if (globalopts.verbose>=2) {
       save_matrix_data(globalopts.initmat,globalopts.impair->testvol,
@@ -2714,7 +2714,7 @@ int main(int argc,char *argv[])
       save_matrix_data(finalmat,testvol,refvol);
       // generate the outputvolume (not safe_save st -out overrides -nosave)
       volume newtestvol = refvol;
-      affine_transform(newtestvol,testvol,finalmat);      
+      filled_affine_transform(newtestvol,testvol,finalmat);      
       save_volume(newtestvol,globalopts.outputfname.c_str());
       //save_global_data(finalmat,testvol,refvol);
     }
