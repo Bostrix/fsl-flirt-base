@@ -162,26 +162,31 @@
 	  o2 += xmin * a21;
 	  o3 += xmin * a31;
 
+	  // assume that this is always OK
 	  bptr = get_bindexptr(xmin,y,z,vref,bindex);
 
 	  for (unsigned int x=xmin; x<=xmax; x++) {
 
-  	    val = q_tri_interpolation(vtest,o1,o2,o3);
-	    wval = q_tri_interpolation(testweight,o1,o2,o3);
-
-	    // do the cost function record keeping...
-	    b=*bptr;
-	    weight=wval*refweight(x,y,z);
-	    if (o1<smoothx)  weight*=o1/smoothx;
-	    else if ((xb2-o1)<smoothx) weight*=(xb2-o1)/smoothx;
-	    if (o2<smoothy)  weight*=o2/smoothy;
-	    else if ((yb2-o2)<smoothy) weight*=(yb2-o2)/smoothy;
-	    if (o3<smoothz)  weight*=o3/smoothz;
-	    else if ((zb2-o3)<smoothz) weight*=(zb2-o3)/smoothz;
-	    if (weight<0.0)  weight=0.0;
-	    numy[b]+=weight;
-	    sumy[b]+=weight*val;
-	    sumy2[b]+=weight*val*val;
+	    if ( !((x==xmin) || (x==xmax)) 
+		 || in_interp_bounds(vtest,o1,o2,o3) )
+	      {
+		val = q_tri_interpolation(vtest,o1,o2,o3);
+		wval = q_tri_interpolation(testweight,o1,o2,o3);
+		
+		// do the cost function record keeping...
+		b=*bptr;
+		weight=wval*refweight(x,y,z);
+		if (o1<smoothx)  weight*=o1/smoothx;
+		else if ((xb2-o1)<smoothx) weight*=(xb2-o1)/smoothx;
+		if (o2<smoothy)  weight*=o2/smoothy;
+		else if ((yb2-o2)<smoothy) weight*=(yb2-o2)/smoothy;
+		if (o3<smoothz)  weight*=o3/smoothz;
+		else if ((zb2-o3)<smoothz) weight*=(zb2-o3)/smoothz;
+		if (weight<0.0)  weight=0.0;
+		numy[b]+=weight;
+		sumy[b]+=weight*val;
+		sumy2[b]+=weight*val*val;
+	      }
 
 	    bptr++;
 	    o1 += a11;
@@ -307,21 +312,25 @@
 
 	  for (unsigned int x=xmin; x<=xmax; x++) {
 
-  	    val = q_tri_interpolation(vtest,o1,o2,o3);
+	    if ( !((x==xmin) || (x==xmax)) 
+		 || in_interp_bounds(vtest,o1,o2,o3) )
+	      {
+		val = q_tri_interpolation(vtest,o1,o2,o3);
 	    
-	    // do the cost function record keeping...
-	    b=*bptr;
-	    weight=1.0;
-	    if (o1<smoothx)  weight*=o1/smoothx;
-	    else if ((xb2-o1)<smoothx) weight*=(xb2-o1)/smoothx;
-	    if (o2<smoothy)  weight*=o2/smoothy;
-	    else if ((yb2-o2)<smoothy) weight*=(yb2-o2)/smoothy;
-	    if (o3<smoothz)  weight*=o3/smoothz;
-	    else if ((zb2-o3)<smoothz) weight*=(zb2-o3)/smoothz;
-	    if (weight<0.0)  weight=0.0;
-	    numy[b]+=weight;
-	    sumy[b]+=weight*val;
-	    sumy2[b]+=weight*val*val;
+	        // do the cost function record keeping...
+		b=*bptr;
+		weight=1.0;
+		if (o1<smoothx)  weight*=o1/smoothx;
+		else if ((xb2-o1)<smoothx) weight*=(xb2-o1)/smoothx;
+		if (o2<smoothy)  weight*=o2/smoothy;
+		else if ((yb2-o2)<smoothy) weight*=(yb2-o2)/smoothy;
+		if (o3<smoothz)  weight*=o3/smoothz;
+		else if ((zb2-o3)<smoothz) weight*=(zb2-o3)/smoothz;
+		if (weight<0.0)  weight=0.0;
+		numy[b]+=weight;
+		sumy[b]+=weight*val;
+		sumy2[b]+=weight*val*val;
+	      }
 
 	    bptr++;
 	    o1 += a11;
@@ -443,13 +452,17 @@
 
 	  for (unsigned int x=xmin; x<=xmax; x++) {
 
-  	    val = q_tri_interpolation(vtest,o1,o2,o3);
-	    
-	    // do the cost function record keeping...
-	    b=*bptr;
-	    numy[b]++;
-	    sumy[b]+=val;
-	    sumy2[b]+=val*val;
+	    if ( !((x==xmin) || (x==xmax)) 
+		 || in_interp_bounds(vtest,o1,o2,o3) )
+	      {
+		val = q_tri_interpolation(vtest,o1,o2,o3);
+		
+		// do the cost function record keeping...
+		b=*bptr;
+		numy[b]++;
+		sumy[b]+=val;
+		sumy2[b]+=val*val;
+	      }
 
 	    bptr++;
 	    o1 += a11;
@@ -571,14 +584,18 @@
 
 	  for (unsigned int x=xmin; x<=xmax; x++) {
 
-  	    val = q_tri_interpolation(vtest,o1,o2,o3);
+	    if ( !((x==xmin) || (x==xmax)) 
+		 || in_interp_bounds(vtest,o1,o2,o3) )
+	      {
+		val = q_tri_interpolation(vtest,o1,o2,o3);
+		
+		// do the cost function record keeping...
+		b=*bptr;
+		num[b]++;
+		sum[b]+=val;
+		sum2[b]+=val*val;
+	      }
 	    
-	    // do the cost function record keeping...
-	    b=*bptr;
-	    num[b]++;
-	    sum[b]+=val;
-	    sum2[b]+=val*val;
-
 	    bptr++;
 	    o1 += a11;
 	    o2 += a21;
@@ -683,21 +700,25 @@
 
 	  for (unsigned int x=xmin; x<=xmax; x++) {
 
-  	    val = q_tri_interpolation(vtest,o1,o2,o3);
-	    
-	    // do the cost function record keeping...
-	    b=*bptr;
-	    weight=1.0;
-	    if (o1<smoothx)  weight*=o1/smoothx;
-	    else if ((xb2-o1)<smoothx) weight*=(xb2-o1)/smoothx;
-	    if (o2<smoothy)  weight*=o2/smoothy;
-	    else if ((yb2-o2)<smoothy) weight*=(yb2-o2)/smoothy;
-	    if (o3<smoothz)  weight*=o3/smoothz;
-	    else if ((zb2-o3)<smoothz) weight*=(zb2-o3)/smoothz;
-	    if (weight<0.0)  weight=0.0;
-	    num[b]+=weight;
-	    sum[b]+=weight*val;
-	    sum2[b]+=weight*val*val;
+	    if ( !((x==xmin) || (x==xmax)) 
+		 || in_interp_bounds(vtest,o1,o2,o3) )
+	      {
+		val = q_tri_interpolation(vtest,o1,o2,o3);
+		
+		// do the cost function record keeping...
+		b=*bptr;
+		weight=1.0;
+		if (o1<smoothx)  weight*=o1/smoothx;
+		else if ((xb2-o1)<smoothx) weight*=(xb2-o1)/smoothx;
+		if (o2<smoothy)  weight*=o2/smoothy;
+		else if ((yb2-o2)<smoothy) weight*=(yb2-o2)/smoothy;
+		if (o3<smoothz)  weight*=o3/smoothz;
+		else if ((zb2-o3)<smoothz) weight*=(zb2-o3)/smoothz;
+		if (weight<0.0)  weight=0.0;
+		num[b]+=weight;
+		sum[b]+=weight*val;
+		sum2[b]+=weight*val*val;
+	      }
 
 	    bptr++;
 	    o1 += a11;
@@ -789,17 +810,21 @@
 
 	  for (unsigned int x=xmin; x<=xmax; x++) {
 
-  	    val = q_tri_interpolation(vtest,o1,o2,o3);
-	    
-	    // do the cost function record keeping...
-	    num++;
-	    valx = vref(x,y,z);
-	    valy = val;
-	    sumx += valx;
-	    sumx2 += valx*valx;
-	    sumy += valy;
-	    sumy2 += valy*valy;
-	    sumxy += valx*valy;
+	    if ( !((x==xmin) || (x==xmax)) 
+		 || in_interp_bounds(vtest,o1,o2,o3) )
+	      {
+		val = q_tri_interpolation(vtest,o1,o2,o3);
+		
+		// do the cost function record keeping...
+		num++;
+		valx = vref(x,y,z);
+		valy = val;
+		sumx += valx;
+		sumx2 += valx*valx;
+		sumy += valy;
+		sumy2 += valy*valy;
+		sumxy += valx*valy;
+	      }
 
 	    o1 += a11;
 	    o2 += a21;
@@ -887,26 +912,30 @@
 
 	  for (unsigned int x=xmin; x<=xmax; x++) {
 
-  	    val = q_tri_interpolation(vtest,o1,o2,o3);
-	    
-	    // do the cost function record keeping...
-	    weight=1.0;
-	    if (o1<smoothx)  weight*=o1/smoothx;
-	    else if ((xb2-o1)<smoothx) weight*=(xb2-o1)/smoothx;
-	    if (o2<smoothy)  weight*=o2/smoothy;
-	    else if ((yb2-o2)<smoothy) weight*=(yb2-o2)/smoothy;
-	    if (o3<smoothz)  weight*=o3/smoothz;
-	    else if ((zb2-o3)<smoothz) weight*=(zb2-o3)/smoothz;
-	    if (weight<0.0)  weight=0.0;
-
-	    valx = vref(x,y,z);
-	    valy = val;
-	    num += weight;
-	    sumx += weight*valx;
-	    sumx2 += weight*valx*valx;
-	    sumy += weight*valy;
-	    sumy2 += weight*valy*valy;
-	    sumxy += weight*valx*valy;
+	    if ( !((x==xmin) || (x==xmax)) 
+		 || in_interp_bounds(vtest,o1,o2,o3) )
+	      {
+		val = q_tri_interpolation(vtest,o1,o2,o3);
+		
+		// do the cost function record keeping...
+		weight=1.0;
+		if (o1<smoothx)  weight*=o1/smoothx;
+		else if ((xb2-o1)<smoothx) weight*=(xb2-o1)/smoothx;
+		if (o2<smoothy)  weight*=o2/smoothy;
+		else if ((yb2-o2)<smoothy) weight*=(yb2-o2)/smoothy;
+		if (o3<smoothz)  weight*=o3/smoothz;
+		else if ((zb2-o3)<smoothz) weight*=(zb2-o3)/smoothz;
+		if (weight<0.0)  weight=0.0;
+		
+		valx = vref(x,y,z);
+		valy = val;
+		num += weight;
+		sumx += weight*valx;
+		sumx2 += weight*valx*valx;
+		sumy += weight*valy;
+		sumy2 += weight*valy*valy;
+		sumxy += weight*valx*valy;
+	      }
 
 	    o1 += a11;
 	    o2 += a21;
@@ -996,28 +1025,32 @@
 
 	  for (unsigned int x=xmin; x<=xmax; x++) {
 
-  	    val = q_tri_interpolation(vtest,o1,o2,o3);
-	    wval = q_tri_interpolation(testweight,o1,o2,o3);
-
-	    // do the cost function record keeping...
-	    weight=wval*refweight(x,y,z);
-	    if (o1<smoothx)  weight*=o1/smoothx;
-	    else if ((xb2-o1)<smoothx) weight*=(xb2-o1)/smoothx;
-	    if (o2<smoothy)  weight*=o2/smoothy;
-	    else if ((yb2-o2)<smoothy) weight*=(yb2-o2)/smoothy;
-	    if (o3<smoothz)  weight*=o3/smoothz;
-	    else if ((zb2-o3)<smoothz) weight*=(zb2-o3)/smoothz;
-	    if (weight<0.0)  weight=0.0;
-
-	    valx = vref(x,y,z);
-	    valy = val;
-	    num += weight;
-	    sumx += weight*valx;
-	    sumx2 += weight*valx*valx;
-	    sumy += weight*valy;
-	    sumy2 += weight*valy*valy;
-	    sumxy += weight*valx*valy;
-
+	    if ( !((x==xmin) || (x==xmax)) 
+		 || in_interp_bounds(vtest,o1,o2,o3) )
+	      {
+		val = q_tri_interpolation(vtest,o1,o2,o3);
+		wval = q_tri_interpolation(testweight,o1,o2,o3);
+		
+		// do the cost function record keeping...
+		weight=wval*refweight(x,y,z);
+		if (o1<smoothx)  weight*=o1/smoothx;
+		else if ((xb2-o1)<smoothx) weight*=(xb2-o1)/smoothx;
+		if (o2<smoothy)  weight*=o2/smoothy;
+		else if ((yb2-o2)<smoothy) weight*=(yb2-o2)/smoothy;
+		if (o3<smoothz)  weight*=o3/smoothz;
+		else if ((zb2-o3)<smoothz) weight*=(zb2-o3)/smoothz;
+		if (weight<0.0)  weight=0.0;
+		
+		valx = vref(x,y,z);
+		valy = val;
+		num += weight;
+		sumx += weight*valx;
+		sumx2 += weight*valx*valx;
+		sumy += weight*valy;
+		sumy2 += weight*valy*valy;
+		sumxy += weight*valx*valy;
+	      }
+	    
 	    o1 += a11;
 	    o2 += a21;
 	    o3 += a31;
@@ -1096,13 +1129,17 @@
 
 	  for (unsigned int x=xmin; x<=xmax; x++) {
 
-  	    val = q_tri_interpolation(vtest,o1,o2,o3);
-	    
-	    // do the cost function record keeping...
-	    num++;
-	    valx = vref(x,y,z);
-	    valy = val;
-	    sum += (valx-valy)*(valx-valy);
+	    if ( !((x==xmin) || (x==xmax)) 
+		 || in_interp_bounds(vtest,o1,o2,o3) )
+	      {
+		val = q_tri_interpolation(vtest,o1,o2,o3);
+		
+		// do the cost function record keeping...
+		num++;
+		valx = vref(x,y,z);
+		valy = val;
+		sum += (valx-valy)*(valx-valy);
+	      }
 
 	    o1 += a11;
 	    o2 += a21;
@@ -1184,22 +1221,26 @@
 
 	  for (unsigned int x=xmin; x<=xmax; x++) {
 
-  	    val = q_tri_interpolation(vtest,o1,o2,o3);
-	    
-	    // do the cost function record keeping...
-	    weight=1.0;
-	    if (o1<smoothx)  weight*=o1/smoothx;
-	    else if ((xb2-o1)<smoothx) weight*=(xb2-o1)/smoothx;
-	    if (o2<smoothy)  weight*=o2/smoothy;
-	    else if ((yb2-o2)<smoothy) weight*=(yb2-o2)/smoothy;
-	    if (o3<smoothz)  weight*=o3/smoothz;
-	    else if ((zb2-o3)<smoothz) weight*=(zb2-o3)/smoothz;
-	    if (weight<0.0)  weight=0.0;
-
-	    valx = vref(x,y,z);
-	    valy = val;
-	    num+=weight;
-	    sum += weight*(valx-valy)*(valx-valy);
+	    if ( !((x==xmin) || (x==xmax)) 
+		 || in_interp_bounds(vtest,o1,o2,o3) )
+	      {
+		val = q_tri_interpolation(vtest,o1,o2,o3);
+		
+		// do the cost function record keeping...
+		weight=1.0;
+		if (o1<smoothx)  weight*=o1/smoothx;
+		else if ((xb2-o1)<smoothx) weight*=(xb2-o1)/smoothx;
+		if (o2<smoothy)  weight*=o2/smoothy;
+		else if ((yb2-o2)<smoothy) weight*=(yb2-o2)/smoothy;
+		if (o3<smoothz)  weight*=o3/smoothz;
+		else if ((zb2-o3)<smoothz) weight*=(zb2-o3)/smoothz;
+		if (weight<0.0)  weight=0.0;
+		
+		valx = vref(x,y,z);
+		valy = val;
+		num+=weight;
+		sum += weight*(valx-valy)*(valx-valy);
+	      }
 
 	    o1 += a11;
 	    o2 += a21;
@@ -1286,23 +1327,27 @@
 
 	  for (unsigned int x=xmin; x<=xmax; x++) {
 
-  	    val = q_tri_interpolation(vtest,o1,o2,o3);
-	    wval = q_tri_interpolation(testweight,o1,o2,o3);
-
-	    // do the cost function record keeping...
-	    weight=wval*refweight(x,y,z);
-	    if (o1<smoothx)  weight*=o1/smoothx;
-	    else if ((xb2-o1)<smoothx) weight*=(xb2-o1)/smoothx;
-	    if (o2<smoothy)  weight*=o2/smoothy;
-	    else if ((yb2-o2)<smoothy) weight*=(yb2-o2)/smoothy;
-	    if (o3<smoothz)  weight*=o3/smoothz;
-	    else if ((zb2-o3)<smoothz) weight*=(zb2-o3)/smoothz;
-	    if (weight<0.0)  weight=0.0;
-
-	    valx = vref(x,y,z);
-	    valy = val;
-	    num+=weight;
-	    sum += weight*(valx-valy)*(valx-valy);
+	    if ( !((x==xmin) || (x==xmax)) 
+		 || in_interp_bounds(vtest,o1,o2,o3) )
+	      {
+		val = q_tri_interpolation(vtest,o1,o2,o3);
+		wval = q_tri_interpolation(testweight,o1,o2,o3);
+		
+		// do the cost function record keeping...
+		weight=wval*refweight(x,y,z);
+		if (o1<smoothx)  weight*=o1/smoothx;
+		else if ((xb2-o1)<smoothx) weight*=(xb2-o1)/smoothx;
+		if (o2<smoothy)  weight*=o2/smoothy;
+		else if ((yb2-o2)<smoothy) weight*=(yb2-o2)/smoothy;
+		if (o3<smoothz)  weight*=o3/smoothz;
+		else if ((zb2-o3)<smoothz) weight*=(zb2-o3)/smoothz;
+		if (weight<0.0)  weight=0.0;
+		
+		valx = vref(x,y,z);
+		valy = val;
+		num+=weight;
+		sum += weight*(valx-valy)*(valx-valy);
+	      }
 
 	    o1 += a11;
 	    o2 += a21;
@@ -1402,16 +1447,20 @@
 
 	  for (unsigned int x=xmin; x<=xmax; x++) {
 
-  	    val = q_tri_interpolation(vtest,o1,o2,o3);
-	    
-	    // do the cost function record keeping...
-	    a=*bptr;
-	    b=(long int) (val*b1 + b0);
-	    if (b>=no_bins) b=no_bins-1;
-	    if (b<0) b=0;
-	    (jointhist[a*(no_bins+1) + b])++;
-	    (marghist1[a])++;
-	    (marghist2[b])++;
+	    if ( !((x==xmin) || (x==xmax)) 
+		 || in_interp_bounds(vtest,o1,o2,o3) )
+	      {
+		val = q_tri_interpolation(vtest,o1,o2,o3);
+		
+		// do the cost function record keeping...
+		a=*bptr;
+		b=(long int) (val*b1 + b0);
+		if (b>=no_bins) b=no_bins-1;
+		if (b<0) b=0;
+		(jointhist[a*(no_bins+1) + b])++;
+		(marghist1[a])++;
+		(marghist2[b])++;
+	      }
 
 	    bptr++;
 	    o1 += a11;
@@ -1595,56 +1644,60 @@
 
 	  for (unsigned int x=xmin; x<=xmax; x++) {
 
-  	    val = q_tri_interpolation(vtest,o1,o2,o3);
-	    
-	    // do the cost function record keeping...
-	    geomweight=1.0;
-	    if (o1<smoothx)  geomweight*=o1/smoothx;
-	    else if ((xb2-o1)<smoothx) geomweight*=(xb2-o1)/smoothx;
-	    if (o2<smoothy)  geomweight*=o2/smoothy;
-	    else if ((yb2-o2)<smoothy) geomweight*=(yb2-o2)/smoothy;
-	    if (o3<smoothz)  geomweight*=o3/smoothz;
-	    else if ((zb2-o3)<smoothz) geomweight*=(zb2-o3)/smoothz;
-	    if (geomweight<0.0)  geomweight=0.0;
-
-	    // do the cost function record keeping...
-	    a=*bptr;
-	    bidx=val*b1 + b0;
-	    bcentre=(long int) (bidx);
-	    bplus = bcentre + 1;
-	    bminus = bcentre - 1;
-	    if (bcentre>=no_bins) {
-	      bcentre=no_bins-1;
-	      bplus = bcentre;
-	    }
-	    if (bcentre<0) {
-	      bcentre=0;
-	      bminus = bcentre;
-	    }
-	    if (bplus>=no_bins) { bplus = no_bins-1; }
-	    if (bminus<0) { bminus = 0; }
-	    // Fuzzy binning weights
-	    bidx = fabs(bidx - (int) bidx);  // get fractional component : [0,1]
-	    if (bidx<fuzzyfrac) {
-	      wcentre = 0.5 + 0.5*(bidx/fuzzyfrac);
-	      wminus = 1 - wcentre;
-	      wplus = 0;
-	    } else if (bidx>(1.0-fuzzyfrac)) {
-	      wcentre = 0.5 + 0.5*((1.0-bidx)/fuzzyfrac);
-	      wplus = 1 - wcentre;
-	      wminus=0;
-	    } else {
-	      wcentre = 1;
-	      wplus =0;
-	      wminus=0;
-	    }
-	    (jointhist[a*(no_bins+1) + bcentre])+=geomweight*wcentre;
-	    (marghist2[bcentre])+=geomweight*wcentre;
-	    (jointhist[a*(no_bins+1) + bplus])+=geomweight*wplus;
-	    (marghist2[bplus])+=geomweight*wplus;
-	    (jointhist[a*(no_bins+1) + bminus])+=geomweight*wminus;
-	    (marghist2[bminus])+=geomweight*wminus;
-	    (marghist1[a])+=geomweight;
+	    if ( !((x==xmin) || (x==xmax)) 
+		 || in_interp_bounds(vtest,o1,o2,o3) )
+	      {
+		val = q_tri_interpolation(vtest,o1,o2,o3);
+		
+		// do the cost function record keeping...
+		geomweight=1.0;
+		if (o1<smoothx)  geomweight*=o1/smoothx;
+		else if ((xb2-o1)<smoothx) geomweight*=(xb2-o1)/smoothx;
+		if (o2<smoothy)  geomweight*=o2/smoothy;
+		else if ((yb2-o2)<smoothy) geomweight*=(yb2-o2)/smoothy;
+		if (o3<smoothz)  geomweight*=o3/smoothz;
+		else if ((zb2-o3)<smoothz) geomweight*=(zb2-o3)/smoothz;
+		if (geomweight<0.0)  geomweight=0.0;
+		
+		// do the cost function record keeping...
+		a=*bptr;
+		bidx=val*b1 + b0;
+		bcentre=(long int) (bidx);
+		bplus = bcentre + 1;
+		bminus = bcentre - 1;
+		if (bcentre>=no_bins) {
+		  bcentre=no_bins-1;
+		  bplus = bcentre;
+		}
+		if (bcentre<0) {
+		  bcentre=0;
+		  bminus = bcentre;
+		}
+		if (bplus>=no_bins) { bplus = no_bins-1; }
+		if (bminus<0) { bminus = 0; }
+		// Fuzzy binning weights
+		bidx = fabs(bidx - (int) bidx);  // get fractional component : [0,1]
+		if (bidx<fuzzyfrac) {
+		  wcentre = 0.5 + 0.5*(bidx/fuzzyfrac);
+		  wminus = 1 - wcentre;
+		  wplus = 0;
+		} else if (bidx>(1.0-fuzzyfrac)) {
+		  wcentre = 0.5 + 0.5*((1.0-bidx)/fuzzyfrac);
+		  wplus = 1 - wcentre;
+		  wminus=0;
+		} else {
+		  wcentre = 1;
+		  wplus =0;
+		  wminus=0;
+		}
+		(jointhist[a*(no_bins+1) + bcentre])+=geomweight*wcentre;
+		(marghist2[bcentre])+=geomweight*wcentre;
+		(jointhist[a*(no_bins+1) + bplus])+=geomweight*wplus;
+		(marghist2[bplus])+=geomweight*wplus;
+		(jointhist[a*(no_bins+1) + bminus])+=geomweight*wminus;
+		(marghist2[bminus])+=geomweight*wminus;
+		(marghist1[a])+=geomweight;
+	      }
 
 	    bptr++;
 	    o1 += a11;
@@ -1820,57 +1873,61 @@
 
 	  for (unsigned int x=xmin; x<=xmax; x++) {
 
-  	    val = q_tri_interpolation(vtest,o1,o2,o3);
-	    wval = q_tri_interpolation(testweight,o1,o2,o3);
-
-	    // do the cost function record keeping...
-	    geomweight=wval*refweight(x,y,z);
-	    if (o1<smoothx)  geomweight*=o1/smoothx;
-	    else if ((xb2-o1)<smoothx) geomweight*=(xb2-o1)/smoothx;
-	    if (o2<smoothy)  geomweight*=o2/smoothy;
-	    else if ((yb2-o2)<smoothy) geomweight*=(yb2-o2)/smoothy;
-	    if (o3<smoothz)  geomweight*=o3/smoothz;
-	    else if ((zb2-o3)<smoothz) geomweight*=(zb2-o3)/smoothz;
-	    if (geomweight<0.0)  geomweight=0.0;
-
-	    // do the cost function record keeping...
-	    a=*bptr;
-	    bidx=val*b1 + b0;
-	    bcentre=(long int) (bidx);
-	    bplus = bcentre + 1;
-	    bminus = bcentre - 1;
-	    if (bcentre>=no_bins) {
-	      bcentre=no_bins-1;
-	      bplus = bcentre;
-	    }
-	    if (bcentre<0) {
-	      bcentre=0;
-	      bminus = bcentre;
-	    }
-	    if (bplus>=no_bins) { bplus = no_bins-1; }
-	    if (bminus<0) { bminus = 0; }
-	    // Fuzzy binning weights
-	    bidx = fabs(bidx - (int) bidx);  // get fractional component : [0,1]
-	    if (bidx<fuzzyfrac) {
-	      wcentre = 0.5 + 0.5*(bidx/fuzzyfrac);
-	      wminus = 1 - wcentre;
-	      wplus = 0;
-	    } else if (bidx>(1.0-fuzzyfrac)) {
-	      wcentre = 0.5 + 0.5*((1.0-bidx)/fuzzyfrac);
-	      wplus = 1 - wcentre;
-	      wminus=0;
-	    } else {
-	      wcentre = 1;
-	      wplus =0;
-	      wminus=0;
-	    }
-	    (jointhist[a*(no_bins+1) + bcentre])+=geomweight*wcentre;
-	    (marghist2[bcentre])+=geomweight*wcentre;
-	    (jointhist[a*(no_bins+1) + bplus])+=geomweight*wplus;
-	    (marghist2[bplus])+=geomweight*wplus;
-	    (jointhist[a*(no_bins+1) + bminus])+=geomweight*wminus;
-	    (marghist2[bminus])+=geomweight*wminus;
-	    (marghist1[a])+=geomweight;
+	    if ( !((x==xmin) || (x==xmax)) 
+		 || in_interp_bounds(vtest,o1,o2,o3) )
+	      {
+		val = q_tri_interpolation(vtest,o1,o2,o3);
+		wval = q_tri_interpolation(testweight,o1,o2,o3);
+		
+		// do the cost function record keeping...
+		geomweight=wval*refweight(x,y,z);
+		if (o1<smoothx)  geomweight*=o1/smoothx;
+		else if ((xb2-o1)<smoothx) geomweight*=(xb2-o1)/smoothx;
+		if (o2<smoothy)  geomweight*=o2/smoothy;
+		else if ((yb2-o2)<smoothy) geomweight*=(yb2-o2)/smoothy;
+		if (o3<smoothz)  geomweight*=o3/smoothz;
+		else if ((zb2-o3)<smoothz) geomweight*=(zb2-o3)/smoothz;
+		if (geomweight<0.0)  geomweight=0.0;
+		
+		// do the cost function record keeping...
+		a=*bptr;
+		bidx=val*b1 + b0;
+		bcentre=(long int) (bidx);
+		bplus = bcentre + 1;
+		bminus = bcentre - 1;
+		if (bcentre>=no_bins) {
+		  bcentre=no_bins-1;
+		  bplus = bcentre;
+		}
+		if (bcentre<0) {
+		  bcentre=0;
+		  bminus = bcentre;
+		}
+		if (bplus>=no_bins) { bplus = no_bins-1; }
+		if (bminus<0) { bminus = 0; }
+		// Fuzzy binning weights
+		bidx = fabs(bidx - (int) bidx);  // get fractional component : [0,1]
+		if (bidx<fuzzyfrac) {
+		  wcentre = 0.5 + 0.5*(bidx/fuzzyfrac);
+		  wminus = 1 - wcentre;
+		  wplus = 0;
+		} else if (bidx>(1.0-fuzzyfrac)) {
+		  wcentre = 0.5 + 0.5*((1.0-bidx)/fuzzyfrac);
+		  wplus = 1 - wcentre;
+		  wminus=0;
+		} else {
+		  wcentre = 1;
+		  wplus =0;
+		  wminus=0;
+		}
+		(jointhist[a*(no_bins+1) + bcentre])+=geomweight*wcentre;
+		(marghist2[bcentre])+=geomweight*wcentre;
+		(jointhist[a*(no_bins+1) + bplus])+=geomweight*wplus;
+		(marghist2[bplus])+=geomweight*wplus;
+		(jointhist[a*(no_bins+1) + bminus])+=geomweight*wminus;
+		(marghist2[bminus])+=geomweight*wminus;
+		(marghist1[a])+=geomweight;
+	      }
 
 	    bptr++;
 	    o1 += a11;
