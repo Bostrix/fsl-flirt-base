@@ -2,6 +2,9 @@
 #include <iostream>
 #include <fstream>
 #include <unistd.h>
+#include <time.h>
+#include <vector>
+#include <algorithm>
 #define WANT_STREAM
 #define WANT_MATH
 
@@ -16,7 +19,7 @@
 #include "mjimage.h"
 #include "costfns.h"
 #include "generalio.h"
-#include <time.h>
+#include "defaultschedule.h"
 
 #ifndef NO_NAMESPACE
  using namespace MISCMATHS;
@@ -35,8 +38,14 @@
 // GLOBAL REQUIREMENTS
 
 
-  enum costfns { Woods, CorrRatio, MutualInfo, NormCorr };
+  enum costfns { Woods, CorrRatio, MutualInfo, NormCorr, NormMI };
   enum anglereps { Euler, Quaternion };
+  typedef std::vector<RowVector> MatVec;
+  typedef MatVec* MatVecPtr;
+
+  std::vector<MatVec> globalusrmat(26);
+  MatVec globalsearchoptmat, globalpreoptsearchmat;
+
 
 // the real defaults are provided in the function parse_command_line
 
@@ -49,7 +58,9 @@ public:
   string outputmatmedx;
   string initmatfname;
   Matrix initmat;
-  
+
+  string schedulefname;
+
   imagepair *impair;
   ColumnVector refparams;
   Matrix parammask;
@@ -60,6 +71,7 @@ public:
   costfns searchcostfn;
   costfns currentcostfn;
   anglereps anglerep;
+  float min_sampling;
 
   ColumnVector searchrx;
   ColumnVector searchry;
@@ -96,6 +108,8 @@ globaloptions::globaloptions()
   outputmatmedx = "";
   initmatfname = "";
   initmat = identity(4);
+
+  schedulefname = "";
   
   impair = 0;
   refparams.ReSize(12);
@@ -110,6 +124,7 @@ globaloptions::globaloptions()
   searchcostfn = CorrRatio;
   currentcostfn = CorrRatio;
   anglerep = Euler;
+  min_sampling = 1.0;
 
   searchrx.ReSize(2);
   searchry.ReSize(2);
@@ -161,8 +176,8 @@ void print_usage(int argc, char *argv[])
        << "        -omat <matrix-filename>            (4x4 ascii format)\n"
        << "        -omedx <matrix-filename>           (MEDx format)\n"
        << "        -out, -o <outputvol>               (default is none)\n"
-       << "        -cost {mutualinfo,woods,corratio,normcorr}        (default is corratio)\n"
-       << "        -searchcost {mutualinfo,woods,corratio,normcorr}  (default is corratio)\n"
+       << "        -cost {mutualinfo,woods,corratio,normcorr,normmi}        (default is corratio)\n"
+       << "        -searchcost {mutualinfo,woods,corratio,normcorr,normmi}  (default is corratio)\n"
        << "        -anglerep {quaternion,euler}       (default is euler)\n"
        << "        -bins <number of histogram bins>   (default is "
                                         << globalopts.no_bins << ")\n"
@@ -176,9 +191,10 @@ void print_usage(int argc, char *argv[])
        << "        -searchrx <min_angle> <max_angle>  (angles in degrees: default is -90 90)\n" 
        << "        -searchry <min_angle> <max_angle>  (angles in degrees: default is -90 90)\n" 
        << "        -searchrz <min_angle> <max_angle>  (angles in degrees: default is -180 180)\n" 
+       << "        -schedule <schedule-file>          (replaces default schedule)\n"
        << "        -findplanes                        (default is xy bounding planes)\n"
-       << "        -planeref <filename>               (default is <refvol>.pln)\n"
-       << "        -planetest <filename>              (default is <testvol>.pln)\n"
+       << "        -planeref <filename>               (default is none)\n"
+       << "        -planetest <filename>              (default is none)\n"
        << "        -plotcost\n"
        << "        -verbose <num>                     (0 is least and default)\n"
        << "        -v                                 (same as -verbose 5)\n"
@@ -268,6 +284,10 @@ void parse_command_line(int argc, char* argv[])
       globalopts.initmatfname = argv[n+1];
       n+=2;
       continue;
+    } else if ( arg == "-schedule") {
+      globalopts.schedulefname = argv[n+1];
+      n+=2;
+      continue;
     } else if ( arg == "-omat") {
       globalopts.outputmatascii = argv[n+1];
       n+=2;
@@ -310,6 +330,8 @@ void parse_command_line(int argc, char* argv[])
 	  globalopts.maincostfn = Woods;
 	} else if (costarg == "normcorr") {
 	  globalopts.maincostfn = NormCorr;
+	} else if (costarg == "normmi") {
+	  globalopts.maincostfn = NormMI;
 	} else {
 	  cerr << "Unrecognised cost function type: " << costarg << endl;
 	  cerr << "Using the default (CorrRatio)\n";
@@ -328,6 +350,8 @@ void parse_command_line(int argc, char* argv[])
 	  globalopts.searchcostfn = Woods;
 	} else if (costarg == "normcorr") {
 	  globalopts.searchcostfn = NormCorr;
+	} else if (costarg == "normmi") {
+	  globalopts.searchcostfn = NormMI;
 	} else {
 	  cerr << "Unrecognised cost function type: " << costarg << endl;
 	  cerr << "Using the default (CorrRatio)\n";
@@ -695,6 +719,7 @@ void optimise(ColumnVector& params, int no_params, ColumnVector& param_tol,
 
 float costfn(const Matrix& uninitaffmat)
 {
+  Tracer tr("costfn");
   Matrix affmat = uninitaffmat * globalopts.initmat;  // apply initial matrix
   float retval = 0.0;
   switch (globalopts.currentcostfn) 
@@ -711,6 +736,9 @@ float costfn(const Matrix& uninitaffmat)
     case MutualInfo:
       retval = -mutual_info(globalopts.impair,affmat);  // MAXimise info
       break;
+    case NormMI:
+      retval = -normalised_mutual_info(globalopts.impair,affmat);  // MAXimise
+      break;
     default:
       cerr << "Invalid cost function type" << endl;
       break;
@@ -721,6 +749,7 @@ float costfn(const Matrix& uninitaffmat)
 
 float costfn(const ColumnVector& params)
 {
+  Tracer tr("costfn");
   Matrix affmat(4,4);
   vector2affine(params,globalopts.no_params,affmat);
   float retval = costfn(affmat);
@@ -730,6 +759,7 @@ float costfn(const ColumnVector& params)
 
 float costfn(float params[])
 {
+  Tracer tr("costfn");
   Matrix affmat(4,4);
   vector2affine(params,globalopts.no_params,affmat);
   float retval = costfn(affmat);
@@ -748,6 +778,7 @@ float costfn(float params[])
 void params12toN(ColumnVector& params)
 {
   // Convert the full 12 dof param vector to a small param vector
+  Tracer tr("params12toN");
   ColumnVector nparams;
   nparams = pinv(globalopts.parammask)*(params - globalopts.refparams);
   params = nparams;
@@ -757,6 +788,7 @@ void params12toN(ColumnVector& params)
 void paramsNto12(ColumnVector& params)
 {
   // Convert small param vector to full 12 dof param vector
+  Tracer tr("paramsNto12");
   ColumnVector param12;
   param12 = globalopts.parammask*params + globalopts.refparams;
   params = param12;
@@ -766,6 +798,7 @@ void paramsNto12(ColumnVector& params)
 
 float subset_costfn(const ColumnVector& params)
 {
+  Tracer tr("subset_costfn");
   ColumnVector param12;
   param12 = params;
   paramsNto12(param12);
@@ -780,6 +813,7 @@ float subset_costfn(const ColumnVector& params)
 
 float subset_costfn(float params[])
 {
+  Tracer tr("subset_costfn");
   ColumnVector newparams(globalopts.parammask.Ncols());
   for (int n=1; n<=globalopts.parammask.Ncols(); n++) {
     newparams(n) = params[n];
@@ -794,6 +828,7 @@ float subset_costfn(float params[])
 
 void costgnuplot(const ColumnVector& param0)
 {
+  Tracer tr("costgnuplot");
   volume validmask;
   int no_points = 20;
   ColumnVector dirn(12);
@@ -827,6 +862,7 @@ void costgnuplot(const ColumnVector& param0)
 
 
 void costplot(void) {
+  Tracer tr("costplot");
   int sp = globalopts.single_param;
   if (sp<=0) return;
   float scalefactor = 1.0, fans=0.0;
@@ -893,10 +929,12 @@ void costplot(void) {
 
 
 float estimate_scaling(const volume& vol) {
+  Tracer tr("estimate_scaling");
   return Min(Min(vol.getx(),vol.gety()),vol.getz());
 }
 
 float estimate_scaling() {
+  Tracer tr("estimate_scaling");
   return estimate_scaling(globalopts.impair->refvol);
 }
 
@@ -904,6 +942,7 @@ float estimate_scaling() {
 
 
 void find_cost_minima(Matrix& bestpts, const volume& cost) {
+  Tracer tr("find_cost_minima");
   volume minv(cost);
   ColumnVector bestpt(3);
   minv = 0.0;
@@ -978,11 +1017,13 @@ void find_cost_minima(Matrix& bestpts, const volume& cost) {
   
 
 int round(const float val) {
+  Tracer tr("round");
   return (int) (val + 0.5);
 }
 
 
 void set_rot_sampling(ColumnVector& rots, float lowerbound, float upperbound) {
+  Tracer tr("set_rot_sampling");
   // this function RELIES on the number of rows in the vector rots being set
   int nmax = rots.Nrows();
   if (nmax==1) { rots(1) = (upperbound + lowerbound) / 2.0;  return; }
@@ -996,6 +1037,7 @@ void set_rot_sampling(ColumnVector& rots, float lowerbound, float upperbound) {
 void set_rot_samplings(ColumnVector& rxcoarse, ColumnVector& rycoarse,
 		       ColumnVector& rzcoarse, ColumnVector& rxfine,
 		       ColumnVector& ryfine, ColumnVector& rzfine) {
+  Tracer tr("set_rot_samplings");
   //int coarsesize = 4, finesize = 11;
   float deg2rad = M_PI/180.0;
   float coarsedelta = 60.0*deg2rad;
@@ -1031,6 +1073,7 @@ void set_rot_samplings(ColumnVector& rxcoarse, ColumnVector& rycoarse,
 
 void search_cost(Matrix& paramlist, volume& costs, volume& tx, 
 		 volume& ty, volume& tz, volume& scale) {
+  Tracer tr("search_cost");
   int storedverbose = globalopts.verbose;
   anglereps useranglerep = globalopts.anglerep;
   globalopts.verbose -= 2;
@@ -1359,6 +1402,7 @@ void search_cost(Matrix& paramlist, volume& costs, volume& tx,
 int optimise_strategy1(Matrix& matresult, float& fans, int input_dof, 
 		       int max_iterations=4)
 {
+  Tracer tr("optimise_strategy1");
   // the most basic strategy - just do a single optimisation run at the
   //  specified dof
   int dof=input_dof;
@@ -1386,6 +1430,7 @@ int optimise_strategy1(Matrix& matresult, float& fans, int input_dof,
 
 void optimise_strategy2(Matrix& matresult)
 {
+  Tracer tr("optimise_strategy2");
   // initially do a 7 dof optimisation, then increase to 9 and 12 
   //  (if called for)  - this is best used on the 2x subsampled image
   int dof, no_its=0;
@@ -1410,6 +1455,7 @@ void optimise_strategy2(Matrix& matresult)
 float rms_deviation(const Matrix& affmat1, const Matrix& affmat2) 
 {
   float rmax = 80.0;
+  Tracer trcr("rms_deviation");
   Matrix adiff(3,3);
   adiff = affmat1.SubMatrix(1,3,1,3) - affmat2.SubMatrix(1,3,1,3);
   ColumnVector tr(3);
@@ -1421,6 +1467,7 @@ float rms_deviation(const Matrix& affmat1, const Matrix& affmat2)
 
 int sorted_posn(const float costval, const Matrix& opt_matrixlist)
 {
+  Tracer tr("sorted_posn");
   int n=1;
   if (opt_matrixlist.Nrows()<1) { return 1; }
   for (n=1; n<=opt_matrixlist.Nrows(); n++) {
@@ -1434,6 +1481,7 @@ int sorted_posn(const float costval, const Matrix& opt_matrixlist)
 
 void delete_row(Matrix& mat, const int row) 
 {
+  Tracer tr("delete_row");
   if ((row<1) || (row>mat.Nrows()))  return;
   int cols = mat.Ncols();
   if (cols<1) return;
@@ -1451,6 +1499,7 @@ void delete_row(Matrix& mat, const int row)
 
 void insert_row(Matrix& mat, const int row, const Matrix& rowmat)
 {
+  Tracer tr("insert_row");
   Matrix temp;
   if ((row<1) || (row>(mat.Nrows()+1)))  return;
   int cols = mat.Ncols(), nmax = mat.Nrows();
@@ -1470,6 +1519,7 @@ void insert_row(Matrix& mat, const int row, const Matrix& rowmat)
 
 int add2list(const Matrix& rowmat, Matrix& opt_matrixlist, float rms_min=1.0) 
 {
+  Tracer tr("add2list");
   if (rowmat.Nrows()!=1) {
     cerr << "WARNING (add2list): cannot add matrix with " << rowmat.Nrows() 
 	 << " to matrix\n";
@@ -1501,6 +1551,7 @@ int add2list(const Matrix& rowmat, Matrix& opt_matrixlist, float rms_min=1.0)
 
 void optimise_strategy3(Matrix& opt_matrixlist)
 {
+  Tracer tr("optimise_strategy3");
   // the basic low-level search strategy - it searches the cost function
   //  space (across rotations)  then selects the best candidates and optimises
   //  these too   : best used for the 8x subsampled (far too slow otherwise)
@@ -1556,6 +1607,7 @@ void optimise_strategy3(Matrix& opt_matrixlist)
 
 void set_perturbations(Matrix& delta, Matrix& perturbmask)
 {
+  Tracer tr("set_perturbations");
   // set the perturbations to be applied to the pre-optimised
   //  solutions (used in optimise_strategy4)
   // the perturbations are given by the elementwise product of
@@ -1609,6 +1661,7 @@ void set_perturbations(Matrix& delta, Matrix& perturbmask)
 void optimise_strategy4(Matrix& matresult, const Matrix& opt_matrixlist,
 			int max_num = 3)
 {
+  Tracer tr("optimise_strategy4");
   // takes the output of optimise_strategy4 and reoptimises the
   //  first max_num of the optimised results, including the pre-optimised
   //  positions and perturbations of these - defined in set_perturbations()
@@ -1679,6 +1732,7 @@ void optimise_strategy4(Matrix& matresult, const Matrix& opt_matrixlist,
 
 int get_testvol(volume& testvol)
 {
+  Tracer tr("get_testvol");
   read_volume(testvol,globalopts.inputfname);
   read_matrix(globalopts.initmat,globalopts.initmatfname,testvol);
   set_default_planes(testvol);
@@ -1711,6 +1765,7 @@ int get_testvol(volume& testvol)
 
 int get_refvol(volume& refvol)
 {
+  Tracer tr("get_refvol");
   read_volume(refvol,globalopts.reffname);
   set_default_planes(refvol);
   return 0;
@@ -1719,6 +1774,7 @@ int get_refvol(volume& refvol)
 
 int resample_refvol(volume& refvol, float sampling=1.0)
 {
+  Tracer tr("resample_refvol");
   float sampl=sampling;
   if (sampl<1e-4) { 
     cerr << "WARNING: sampling " << sampl << " less than 0.0001" << endl
@@ -1747,6 +1803,7 @@ int resample_refvol(volume& refvol, float sampling=1.0)
 
 void no_optimise()
 {
+  Tracer tr("no_optimise");
   volume refvol, testvol;
   // set up image pair and global pointer
   
@@ -1756,17 +1813,17 @@ void no_optimise()
   set_default_planes(testvol);
   fit_planes(testvol,globalopts.planetestfname);
   
-  float min_sampling=1.0, min_sampling_ref=1.0, min_sampling_test=1.0;
+  float min_sampling_ref=1.0, min_sampling_test=1.0;
   min_sampling_ref = Min(refvol.getx(),Min(refvol.gety(),refvol.getz()));
   min_sampling_test = Min(testvol.getx(),Min(testvol.gety(),testvol.getz()));
-  min_sampling = Max(min_sampling_ref,min_sampling_test);
+  globalopts.min_sampling = Max(min_sampling_ref,min_sampling_test);
   
   if (globalopts.iso) {
-    resample_refvol(refvol,min_sampling);
+    resample_refvol(refvol,globalopts.min_sampling);
   }
   {
     volume testvol_1;
-    blur4subsampling(testvol_1,testvol,min_sampling);
+    blur4subsampling(testvol_1,testvol,globalopts.min_sampling);
     testvol = testvol_1;
   }
 
@@ -1790,12 +1847,456 @@ void no_optimise()
 }
 
 
+////////////////////////////////////////////////////////////////////////////
+
+
+int firstelementless(const RowVector& r1, const RowVector& r2)
+{
+  Tracer tr("firstelementless");
+  return (r1(1) < r2(1));
+}
+
+
+void stripleadingspace(string& line)
+{
+  Tracer tr("stripleadingspace");
+  if (line.length()<1) return;
+  string::size_type i2=line.find_first_not_of("	 ");
+  if (i2==string::npos) {
+    return;
+  }
+  if (i2!=0) {
+    line.erase(0,i2);
+  }
+}
+
+
+int parseline(const string& inname, std::vector<string>& words) 
+{
+  Tracer tr("parseline");
+  string name = inname;
+  string::size_type i1;
+  words.clear();
+  while (name.length()>=1) {
+    stripleadingspace(name);
+    i1=name.find_first_of("	 ");
+    words.push_back(name.substr(0,i1));
+    name.erase(0,i1);
+  }
+  return 0;
+}
+
+
+
+int setmatvariable(const string& name, MatVecPtr& namedmat)
+{
+  Tracer tr("setmatvariable");
+  if (name.size()<1) return -2;
+  if (name == "S") {
+    namedmat = &globalsearchoptmat;
+    return 0;
+  } else if (name == "P") {
+    namedmat = &globalpreoptsearchmat;
+    return 0;
+  } else if (name == "U") {
+    namedmat = &(globalusrmat[0]);
+    return 0;
+  } else if (name[0] == 'U') {
+    int idx = name[1] - 'A' + 1;
+    if ((idx<1) || (idx>27)) {
+      if ((name[1]<'0') || (name[1]>'9')) {
+	cerr << "Can only accept UA to UZ, not " << name << endl;
+	return -3;
+      } else {
+	idx = 0;
+      }
+    }
+    namedmat = &(globalusrmat[idx]);
+    return 0;
+  } else {
+    cerr << "Cannot interpret " << name << " as a Matrix name" << endl;
+    return -1;
+  }
+}
+
+
+int setscalarvariable(const string& name, float& namedscalar)
+{
+  Tracer tr("setscalarvariable");
+  if (name.size()<1) return -2;
+  if (name == "MAXDOF") {
+    namedscalar = (float) globalopts.dof;
+    return 0;
+  if (name == "MINSAMPLING") {
+    namedscalar = (float) globalopts.min_sampling;
+    return 0;
+  } else if (isalpha(name[0])) {
+    cerr << "Cannot interpret " << name << " as a scalar variable name" << endl;
+    namedscalar = 0.0;
+    return -1;
+  } else {
+    namedscalar = atof(name.c_str());
+  }
+  return 0;
+}
+
+
+int setscalarvariable(const string& name, int& namedscalar)
+{
+  Tracer tr("setscalarvariable");
+  float temp=0.0;
+  int retval = setscalarvariable(name,temp);
+  if (temp>0.0) {
+    namedscalar = (int) (temp+0.5);
+  } else {
+    namedscalar = (int) (temp-0.5);
+  }
+  return retval;
+}
+
+
+int parsematname(const string& inname, MatVecPtr& usrdefmat, int& r1, int& r2) 
+{
+  Tracer tr("parsematname");
+  string name = inname;
+  stripleadingspace(name);
+  string::size_type colon, hyphen;
+  if (name.length()<1) {
+    return 0;
+  }
+  colon=name.find_first_of(":");
+  hyphen=name.find_first_of("-");
+  string basename=name, row1="", row2="";
+  if (colon!=string::npos) {
+    basename = name.substr(0,colon);
+  }
+  if ((colon!=string::npos) && (hyphen!=string::npos)) {
+    // there is a colon and a hyphen
+    row1 = name.substr(colon+1,hyphen-colon-1);
+    row2 = name.substr(hyphen+1);
+  } else {
+    if ((colon!=string::npos) && (hyphen==string::npos)) {
+      // there is a colon but no hyphen
+      row1 = name.substr(colon+1);
+      row2 = row1;
+    }
+  }
+  if (row1.length()<1) row1="1";
+  if (row2.length()<1)  row2="99999";
+
+  setmatvariable(basename, usrdefmat);
+  setscalarvariable(row1,r1);
+  setscalarvariable(row2,r2);
+  if (r1<1) r1=1;
+  if (r2<r1) r2=r1;
+  return 0;
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+
+void usrcopy(MatVecPtr usrsrcmat, MatVecPtr usrdestmat) 
+{
+  Tracer tr("usrcopy");
+  // COPY src -> dest
+  usrdestmat->erase(usrdestmat->begin(),usrdestmat->end());
+  for (unsigned int i=0; i<usrsrcmat->size(); i++) {
+    usrdestmat->push_back((*usrsrcmat)[i]);
+  }
+}
+
+
+void usrclear(MatVecPtr usrsrcmat) 
+{
+  Tracer tr("usrclear");
+  // CLEAR src
+  usrsrcmat->erase(usrsrcmat->begin(),usrsrcmat->end());
+}
+
+
+void usrprint(MatVecPtr usrsrcmat, unsigned int row1, unsigned int row2) 
+{
+  Tracer tr("usrprint");
+  // PRINT src
+  for (unsigned int r=row1; r<=Min(usrsrcmat->size(),row2); r++) {
+    cout << (*usrsrcmat)[r-1];
+  }
+}
+
+
+int usrsave(string filename, MatVecPtr usrsrcmat, 
+	     unsigned int row1, unsigned int row2) 
+{
+  Tracer tr("usrsave");
+  // SAVE src
+
+  ofstream fptr(filename.c_str());
+  if (!fptr) { 
+    cerr << "Could not open file " << filename << " for writing" << endl;
+    return -1;
+  }
+  for (unsigned int r=row1; r<=Min(usrsrcmat->size(),row2); r++) {
+    fptr << (*usrsrcmat)[r-1];
+  }
+  fptr << endl;
+  fptr.close();
+  return 0;
+}
+
+
+void usrsort(MatVecPtr usrsrcmat) 
+{
+  Tracer tr("usrsort");
+  // SORT src
+  sort(usrsrcmat->begin(),usrsrcmat->end(),firstelementless);
+}
+
+
+void usrsearch(MatVecPtr searchoptmat, MatVecPtr preoptsearchmat) 
+{
+  Tracer tr("usrsearch");
+  // SEARCH
+  Matrix opt_matrixlist;
+  optimise_strategy3(opt_matrixlist);
+  MatVec optmatsorted(0);
+  RowVector tmprow;
+  for (int i=1; i<=opt_matrixlist.Nrows(); i++) {
+    tmprow = opt_matrixlist.SubMatrix(i,i,1,34);
+    optmatsorted.push_back(tmprow);
+  }
+  sort(optmatsorted.begin(),optmatsorted.end(),firstelementless);
+  for (unsigned int i=0; i<optmatsorted.size(); i++) {
+    tmprow = optmatsorted[i].SubMatrix(1,1,1,17);
+    searchoptmat->push_back(tmprow);
+    tmprow = optmatsorted[i].SubMatrix(1,1,18,34);
+    preoptsearchmat->push_back(tmprow);
+  }
+}
+
+
+void usroptimise(MatVecPtr stdresultmat, 
+		 MatVecPtr usrmatptr, 
+		 unsigned int usrrow1, unsigned int usrrow2, int usrdof, 
+		 ColumnVector& usrperturbation, bool usrperturbrelative,
+		 int usrmaxitn)
+{
+  Tracer tr("usroptimise");
+  // OPTIMISE
+  Matrix delta, perturbmask, matresult;
+  set_perturbations(delta,perturbmask);
+  int dof = Min(globalopts.dof,usrdof);
+  ColumnVector params(12);
+  RowVector rowresult(17);
+  for (unsigned int crow=usrrow1; crow<=Min(usrrow2,usrmatptr->size()); crow++)
+    {
+      // the pre-optimised case with perturbations
+      Matrix reshaped = (*usrmatptr)[crow-1].SubMatrix(1,1,2,17);
+      reshape(matresult,reshaped,4,4);
+      affmat2vector(matresult,12,params);
+      // use the elementwise product to produce the perturbation
+      if (usrperturbrelative) {
+	params += SP(usrperturbation,delta); // rel
+      } else {
+	params += usrperturbation; // abs
+      }
+      vector2affine(params,12,matresult);
+      
+      float costval=0.0;
+      optimise_strategy1(matresult,costval,dof,usrmaxitn);
+      reshape(reshaped,matresult,1,16);
+      rowresult(1) = costval;
+      rowresult.SubMatrix(1,1,2,17) = reshaped;
+      // store result
+      stdresultmat->push_back(rowresult);
+    }
+}
+
+
+void usrsetscale(int usrscale,
+		 volume& testvol, volume& refvol, 
+		 volume& refvol_2, volume& refvol_4, 
+		 volume& refvol_8) {
+  // SETSCALE (int usrscale = 8,4,2,1)
+  // testvol must be passed in as a static storage is needed so that
+  //  the object pointed to in globalopts.impair does not go out of scope
+  Tracer tr("usrsetscale");
+  int scale = usrscale;
+  imagepair *globalpair=0;
+  if (globalopts.min_sampling<=1.25 * ((float) scale)) {
+    get_testvol(testvol);
+    volume testvolnew;
+    blur4subsampling(testvolnew,testvol,(float) scale);
+    testvol = testvolnew;
+    volume *refvolnew=0;
+    if (scale==8) {
+      refvolnew = &refvol_8;
+    } else if (scale==4) {
+      refvolnew = &refvol_4;
+    } else if (scale==2) {
+      refvolnew = &refvol_2;
+    } else if (scale==1) {
+      refvolnew = &refvol;
+    } else {
+      cerr << "Cannot set scale to " << scale << endl;
+      cerr << "Instead using unity scale" << endl;
+      scale = 1;
+      refvolnew = &refvol;
+    }
+    globalpair = new imagepair(*refvolnew,testvol);
+    globalpair->set_no_bins(globalopts.no_bins/scale);
+    globalopts.impair = globalpair;
+  }
+}
+
+
+void interpretcommand(const string& comline, bool& skip,
+		      volume& testvol, volume& refvol, 
+		      volume& refvol_2, volume& refvol_4, 
+		      volume& refvol_8)
+{
+  Tracer tr("interpretcommand");
+  std::vector<string> words(0);
+  parseline(comline,words);
+  if (words.size()<1) return;
+  if ((words[0])[0] == '#') return;  // comment line
+
+  if (skip) {
+    skip=false;
+    return;
+  }
+
+  if (words[0]=="copy") {
+    // COPY
+    if (words.size()<3) {
+      cerr << "Wrong number of arguments to COPY" << endl;
+      exit(-1);
+    }
+    MatVecPtr src, dest;
+    int d1, d2, d3, d4;
+    parsematname(words[1],src,d1,d2);
+    parsematname(words[2],dest,d3,d4);
+    usrcopy(src,dest);
+  } else if (words[0]=="clear") {
+    // CLEAR
+    if (words.size()<2) {
+      cerr << "Wrong number of arguments to CLEAR" << endl;
+      exit(-1);
+    }
+    MatVecPtr src;
+    int d1, d2;
+    parsematname(words[1],src,d1,d2);
+    usrclear(src);
+  } else if (words[0]=="print") {
+    // PRINT
+    if (words.size()<2) {
+      cerr << "Wrong number of arguments to PRINT" << endl;
+      exit(-1);
+    }
+    MatVecPtr src;
+    int d1, d2;
+    parsematname(words[1],src,d1,d2);
+    usrprint(src,d1,d2);
+  } else if (words[0]=="save") {
+    // SAVE
+    if (words.size()<3) {
+      cerr << "Wrong number of arguments to SAVE" << endl;
+      exit(-1);
+    }
+    MatVecPtr src;
+    int d1, d2;
+    parsematname(words[1],src,d1,d2);
+    usrsave(words[2],src,d1,d2);
+  } else if (words[0]=="sort") {
+    // SORT
+    if (words.size()<2) {
+      cerr << "Wrong number of arguments to SORT" << endl;
+      exit(-1);
+    }
+    MatVecPtr src;
+    int d1, d2;
+    parsematname(words[1],src,d1,d2);
+    usrsort(src);
+  } else if (words[0]=="search") {
+    // SEARCH
+    usrsearch(&globalsearchoptmat,&globalpreoptsearchmat);
+  } else if (words[0]=="optimise") {
+    // OPTIMISE
+    if (words.size()<5) {
+      cerr << "Wrong number of arguments to OPTIMISE" << endl;
+      exit(-1);
+    }
+    int usrdof=12, usrmaxitn=4, usrrow1=1, usrrow2=9999;
+    ColumnVector usrperturbation(12);
+    usrperturbation = 0.0;
+    MatVecPtr usrdefmat;
+    bool usrperturbrelative = true;
+    setscalarvariable(words[1],usrdof);
+    parsematname(words[2],usrdefmat,usrrow1,usrrow2);
+    unsigned int wordno=3;
+    float tempparam=0.0;
+    while ((wordno<words.size()) 
+	   && (words[wordno]!="rel") && (words[wordno]!="abs")) {
+      setscalarvariable(words[wordno],tempparam);
+      usrperturbation(wordno-2) = tempparam;
+      wordno++;
+    }
+    if (wordno<words.size()) {
+      if (words[wordno]=="abs")  usrperturbrelative = false;
+      wordno++;
+    }
+    if (wordno<words.size()) {
+      setscalarvariable(words[wordno],usrmaxitn);
+    }
+    usroptimise(&(globalusrmat[0]),usrdefmat,usrrow1,usrrow2,usrdof, 
+		usrperturbation,usrperturbrelative,usrmaxitn);
+  } else if (words[0]=="setscale") {
+    // SETSCALE
+    if (words.size()<2) {
+      cerr << "Wrong number of arguments to SETSCALE" << endl;
+      exit(-1);
+    }
+    int usrscale;
+    setscalarvariable(words[1],usrscale);
+    usrsetscale(usrscale,testvol,refvol,refvol_2,refvol_4,refvol_8);
+  } else if (words[0]=="if") {
+    // IF
+    if (words.size()<4) {
+      cerr << "Wrong number of arguments to IF" << endl;
+      exit(-1);
+    }
+    float arg1, arg2;
+    setscalarvariable(words[1],arg1);
+    setscalarvariable(words[3],arg2);
+    if (words[2]==">") {
+      skip = !(arg1 > arg2);
+    } else if (words[2]=="<") {
+      skip = !(arg1 < arg2);
+    } else if (words[2]=="==") {
+      skip = !(arg1 == arg2);
+    } else if (words[2]=="!=") {
+      skip = !(arg1 != arg2);
+    } else if (words[2]=="<=") {
+      skip = !(arg1 <= arg2);
+    } else if (words[2]==">=") {
+      skip = !(arg1 >= arg2);
+    } else {
+      cerr << "Cannot recognise operator " << words[2] << " in IF statement\n";
+      exit(-1);
+    }
+  } else {
+    cerr << "Unrecognised command " << words[0] << endl;
+    cerr << "Quitting." << endl;
+    exit(-1);
+  }
+}
+
 
 ////////////////////////////////////////////////////////////////////////////
 
+
 int main(int argc,char *argv[])
 {
-
+  Tracer tr("main");
   try {
 
     parse_command_line(argc, argv);
@@ -1809,10 +2310,10 @@ int main(int argc,char *argv[])
     get_refvol(refvol);
     get_testvol(testvol);
 
-    float min_sampling=1.0, min_sampling_ref=1.0, min_sampling_test=1.0;
+    float min_sampling_ref=1.0, min_sampling_test=1.0;
     min_sampling_ref = Min(refvol.getx(),Min(refvol.gety(),refvol.getz()));
     min_sampling_test = Min(testvol.getx(),Min(testvol.gety(),testvol.getz()));
-    min_sampling = Max(min_sampling_ref,min_sampling_test);
+    globalopts.min_sampling = Max(min_sampling_ref,min_sampling_test);
 
     
     if (globalopts.verbose>=3) {
@@ -1845,7 +2346,6 @@ int main(int argc,char *argv[])
 
     Matrix matresult(4,4);
     ColumnVector params_8(12), param_tol(12);
-    int dof=12;
     float costval=0.0;
 
     if (globalopts.measure_cost) {
@@ -1860,87 +2360,43 @@ int main(int argc,char *argv[])
 
     // perform the optimisation
 
-    // 8 times subsampled
-    Matrix opt_matrixlist;
-    optimise_strategy3(opt_matrixlist);
-    if (globalopts.verbose>=3) {
-      int bestidx = 1;
-      for (int n=1; n<=opt_matrixlist.Nrows(); n++) {
-	if (opt_matrixlist(n,1) < opt_matrixlist(bestidx,1)) {
-	  bestidx = n;
-	}
-	reshape(matresult,opt_matrixlist.SubMatrix(n,n,2,17),4,4);
-	affmat2vector(matresult,dof,params_8);
-	cout << "Parameters (" << n << ") - with cost " 
-	     << opt_matrixlist(n,1) << " - are:\n" << params_8.t();
-	if (globalopts.verbose>=6) {
-	  save_workspace_and_pause(matresult);
-	}
-      }
-    }
-
-
     globalopts.currentcostfn = globalopts.maincostfn;
-    // 4 times subsampled
-    imagepair *global_4=0;
-    if (min_sampling<=5.0) { 
-      get_testvol(testvol);
-      volume testvol_4;
-      blur4subsampling(testvol_4,testvol,4.0);
-      testvol = testvol_4;
-      global_4 = new imagepair(refvol_4,testvol);
-      global_4->set_no_bins(globalopts.no_bins/4);
-      globalopts.impair = global_4;
-    }  // else keep using the previously resampled volumes
-
-    optimise_strategy4(matresult,opt_matrixlist,3);
-    if (globalopts.verbose>=3) {
-      save_workspace_and_pause(matresult);
+    globalsearchoptmat.clear();
+    globalpreoptsearchmat.clear();
+    globalusrmat.clear();
+   
+    std::vector<string> schedulecoms(0);
+    string comline;
+    if (globalopts.schedulefname.length()<1) {
+      setdefaultschedule(schedulecoms);
+    } else {
+      // open the schedule file
+      ifstream schedulefile(globalopts.schedulefname.c_str());
+      if (!schedulefile) {
+	cerr << "Could not open file" << globalopts.schedulefname << endl;
+	return -1;
+      }
+      while (!schedulefile.eof()) {
+	getline(schedulefile,comline);
+	schedulecoms.push_back(comline);
+      }
+      schedulefile.close();
     }
 
-
-    // 2 times subsampled
-    imagepair *global_2;
-    if (min_sampling<=2.5) {
-      get_testvol(testvol);
-      volume testvol_2;
-      blur4subsampling(testvol_2,testvol,2.0);
-      testvol = testvol_2;
-      global_2 = new imagepair(refvol_2,testvol);
-      global_2->set_no_bins(globalopts.no_bins/2);
-      globalopts.impair = global_2;
-    }  // else keep using the previously resampled volumes
-
-    optimise_strategy2(matresult);
-    if (globalopts.verbose>=3) {
-      save_workspace_and_pause(matresult);
+    // interpret each line in the schedule command vector
+    bool skip=false;
+    for (unsigned int i=0; i<schedulecoms.size(); i++) {
+      comline = schedulecoms[i];
+      if (globalopts.verbose>0) {
+	cout << " >> " << comline << endl;
+      }
+      interpretcommand(comline,skip,testvol,refvol,refvol_2,refvol_4,refvol_8);
     }
-
-
-    // full resolution
-    { 
-      get_refvol(refvol);
-      resample_refvol(refvol,min_sampling);
-      get_testvol(testvol);
-      volume testvol_1;
-      blur4subsampling(testvol_1,testvol,min_sampling);
-      testvol = testvol_1;
-     }
-    imagepair global_1(refvol,testvol);
-    global_1.set_no_bins(globalopts.no_bins);
-    globalopts.impair = &global_1;
-
-    dof = Min(globalopts.dof,12);
-    optimise_strategy1(matresult,costval,dof,1);
-
-    costfn(matresult);      
-    if (globalopts.verbose>=1) {
-      save_global_data(matresult);
-    }
-
-
 
     // re-read the initial volume, and transform it by the optimised result
+    Matrix reshaped = (globalusrmat[0])[0].SubMatrix(1,1,2,17);
+    reshape(matresult,reshaped,4,4);
+
     Matrix finalmat = matresult * globalopts.initmat;
     read_volume(testvol,globalopts.inputfname);
     read_volume(refvol,globalopts.reffname);
@@ -1962,11 +2418,4 @@ int main(int argc,char *argv[])
   } 
   return(0);
 }
-
-
-
-
-
-
-
 
