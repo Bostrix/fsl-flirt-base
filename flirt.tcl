@@ -26,7 +26,7 @@ proc flirt { w } {
 
     # ---- Set up Frames ----
     toplevel $w
-    wm title $w "FLIRT - FMRIB's Linear Image Registration Tool - v2.2"
+    wm title $w "FLIRT - FMRIB's Linear Image Registration Tool - v3.1"
     wm iconname $w "FLIRT"
     wm iconbitmap $w @${FSLDIR}/tcl/fmrib.xbm
     tixBalloon    $w.bhelp
@@ -191,7 +191,9 @@ while { $i <= $reg($w,maxnstats) } {
 	label.anchor w
 	menubutton.width 30
     }
-    $w.f.dof add command 3D -label "         3D Models" -state disabled
+    $w.f.dof add command 2Dmenu -label "2D to 2D registration" -state disabled
+    $w.f.dof add command 2D -label "Rigid Body (3 parameter model)"
+    $w.f.dof add command 3Dmenu -label "3D to 3D registration" -state disabled
     $w.f.dof add command 6 -label "Rigid Body (6 parameter model)"
     $w.f.dof add command 7 -label "Global Rescale (7 parameter model)"
     $w.f.dof add command 9 -label "Traditional (9 parameter model)"
@@ -210,8 +212,9 @@ while { $i <= $reg($w,maxnstats) } {
     tixNoteBook $w.nb -ipadx 5 -ipady 5
 
     $w.nb add search -label "Search"
-    $w.nb add anglerep -label "Angle Rep."
     $w.nb add cost -label "Cost Function"
+    $w.nb add interp -label "Interpolation"
+    $w.nb add weights -label "Weighting Volumes"
     
     # ---- Search ----
     set lf [$w.nb subwidget search]
@@ -269,23 +272,6 @@ while { $i <= $reg($w,maxnstats) } {
     set reg($w,searchrzmax) 90
 
 
-    # ---- Angle Representation ----
-    set lf [$w.nb subwidget anglerep]
-
-    label $w.anglebanner -text "Internal Angle Representation"
-    radiobutton $w.euler -text "Euler Angles" \
-	    -variable reg($w,anglerep) -value euler
-
-    radiobutton $w.quaternion -text "Quaternions" \
-	    -variable reg($w,anglerep) -value quaternion
-
-
-    # ---- pack ----
-    pack $w.anglebanner $w.euler $w.quaternion -in $lf -side top -padx 3 -pady 3
-    set reg($w,anglerep) euler
-
-
-
     # ---- Cost Function ----
     set costlf [$w.nb subwidget cost]
 
@@ -293,18 +279,100 @@ while { $i <= $reg($w,maxnstats) } {
 	    -variable reg($w,cost) -value corratio -anchor w -command "flirt:updatecost $w $costlf"
     radiobutton $w.mutualinfo -text "Mutual Information" \
 	    -variable reg($w,cost) -value mutualinfo -anchor w -command "flirt:updatecost $w $costlf"
-    radiobutton $w.woods -text "Woods Function" \
-	    -variable reg($w,cost) -value woods -anchor w -command "flirt:updatecost $w $costlf"
+    radiobutton $w.nmi -text "Normalised Mutual Information" \
+	    -variable reg($w,cost) -value normmi -anchor w -command "flirt:updatecost $w $costlf"
     radiobutton $w.normcorr -text "Normalised Correlation" \
 	    -variable reg($w,cost) -value normcorr -anchor w -command "flirt:updatecost $w $costlf"
+    radiobutton $w.leastsq -text "Least Squares" \
+	    -variable reg($w,cost) -value leastsq -anchor w -command "flirt:updatecost $w $costlf"
 
     tixControl $w.bins -label "Number of Histogram Bins " \
 	    -variable reg($w,bins) -step 1 -min 1 -max 5000 -selectmode immediate
     set reg($w,bins) 256
     
     # ---- pack ----
-    pack $w.corratio $w.mutualinfo $w.woods $w.normcorr $w.bins -in $costlf -side top -anchor w -padx 3
+    pack $w.corratio $w.mutualinfo $w.nmi $w.normcorr $w.leastsq $w.bins -in $costlf -side top -anchor w -padx 3
     set reg($w,cost) corratio
+
+    # ---- Interpolation ----
+    set interplf [$w.nb subwidget interp]
+
+    label $w.interpbanner -text "Final Interpolation Method (Reslice Only)"
+    radiobutton $w.trilinear -text "Tri-Linear" \
+	    -variable reg($w,interp) -value trilinear -anchor w -command "flirt:updateinterp $w $interplf"
+    radiobutton $w.nearestneighbour -text "Nearest Neighbour" \
+	    -variable reg($w,interp) -value nearestneighbour -anchor w -command "flirt:updateinterp $w $interplf"
+    radiobutton $w.sinc -text "Sinc" \
+	    -variable reg($w,interp) -value sinc -anchor w -command "flirt:updateinterp $w $interplf"
+
+    tixControl $w.sincwidth -label "Width of Sinc Window " \
+	    -variable reg($w,sincwidth) -step 1 -min 1 -max 5000 -selectmode immediate
+    set reg($w,sincwidth) 7
+
+    frame $w.swinopt
+    label $w.swinbanner -text "Sinc Window Options"
+    radiobutton $w.rectangular -text "Rectangular" \
+	    -variable reg($w,sincwindow) -value rectangular -anchor w
+    radiobutton $w.hanning -text "Hanning" \
+	    -variable reg($w,sincwindow) -value hanning -anchor w
+    radiobutton $w.blackman -text "Blackman" \
+	    -variable reg($w,sincwindow) -value blackman -anchor w
+    set reg($w,sincwindow) hanning
+    
+    # ---- pack ----
+    pack $w.interpbanner $w.trilinear $w.nearestneighbour $w.sinc -in $interplf -side top -anchor w -padx 3
+    set reg($w,interp) trilinear
+
+    pack $w.swinbanner -in $w.swinopt -side top -anchor w -padx 3
+    pack $w.rectangular $w.hanning $w.blackman -in $w.swinopt -side left -anchor w -padx 3
+
+    # ---- Weightings ----
+    set weightlf [$w.nb subwidget weights]
+
+    set reg($w,refweight) ""
+    if { $INMEDX } {
+        frame $w.wgt
+        label $w.wgttxt -width 23 -text "Reference Weighting"
+        entry $w.wgtvar -textvariable reg($w,refweight) -width 30
+        button $w.wgtsel -text "Select" -command "SelectPage:Dialog $w 1 0 30 entries"
+        pack $w.wgttxt $w.wgtvar $w.wgtsel -in $w.wgt -padx 3 -pady 0 -side left
+    } else {
+	FSLFileEntry $w.wgt \
+		-variable reg($w,refweight) \
+		-pattern "*.hdr" \
+		-directory $PWD \
+		-label "Reference Weighting   " \
+		-labelwidth 18 \
+		-title "Select" \
+		-width 50 \
+		-filterhist VARS(history)
+    }
+
+    set reg($w,inweight) ""
+    if { $INMEDX } {
+        frame $w.iwgt
+        label $w.iwgttxt -width 23 -text "Input Weighting"
+        entry $w.iwgtvar -textvariable reg($w,inweight) -width 30
+        button $w.iwgtsel -text "Select" -command "SelectPage:Dialog $w 1 0 30 entries"
+        pack $w.iwgttxt $w.iwgtvar $w.iwgtsel -in $w.iwgt -padx 3 -pady 0 -side left
+    } else {
+	FSLFileEntry $w.iwgt \
+		-variable reg($w,inweight) \
+		-pattern "*.hdr" \
+		-directory $PWD \
+		-label "Input Weighting   " \
+		-labelwidth 18 \
+		-title "Select" \
+		-width 50 \
+		-filterhist VARS(history)
+    }
+
+    # ---- pack ----
+    pack $w.wgt -in $weightlf -side top -anchor w -padx 3
+    pack $w.iwgt -in $weightlf -side top -anchor w -padx 3 -pady $PADY
+
+
+    # ---- general packing (advanced options) ----
 
     frame $w.f.advopts
     pack $w.nb -in $w.f.advopts -side top
@@ -368,7 +436,7 @@ proc flirt:apply { w dialog } {
 	incr i 1
     }
 
-    set status [ flirt_proc $reg($w,mode) $entries($w,1) $entries($w,2) $entries($w,3) $reg($w,nstats) $statslist $entries($w,4) $reg($w,dof) $reg($w,bins) $reg($w,searchrxmin) $reg($w,searchrxmax) $reg($w,searchrymin) $reg($w,searchrymax) $reg($w,searchrzmin) $reg($w,searchrzmax) $reg($w,disablesearch_yn) $reg($w,anglerep) $reg($w,cost) 1 ]
+    set status [ flirt_proc $reg($w,mode) $entries($w,1) $entries($w,2) $entries($w,3) $reg($w,nstats) $statslist $entries($w,4) $reg($w,dof) $reg($w,bins) $reg($w,searchrxmin) $reg($w,searchrxmax) $reg($w,searchrymin) $reg($w,searchrymax) $reg($w,searchrzmin) $reg($w,searchrzmax) $reg($w,disablesearch_yn) $reg($w,cost) $reg($w,interp) $ref($w,sincwidth) $ref($w,sincwindow) $ref($w,refweight) $ref($w,inweight) 1 ]
 
     update idletasks
     
@@ -483,10 +551,24 @@ proc flirt:updatesearch { w dummy } {
 proc flirt:updatecost { w costlf } {
     global reg
 
-    if { [ string match $reg($w,cost) "normcorr" ] == 1 } {
+    if { [ string match $reg($w,cost) "normcorr" ] == 1  || 
+         [ string match $reg($w,cost) "leastsq" ] == 1 } {
 	pack forget $w.bins
     } else {
 	pack $w.bins -in $costlf -side top -anchor w -padx 3
+    }
+}
+
+
+proc flirt:updateinterp { w interplf } {
+    global reg
+
+    if { [ string match $reg($w,interp) "sinc" ] == 1 } {
+	pack $w.swinopt -in $interplf -side top -anchor w -padx 40
+	pack $w.sincwidth -in $interplf -side top -anchor w -padx 40
+    } else {
+	pack forget $w.swinopt
+	pack forget $w.sincwidth
     }
 }
 
