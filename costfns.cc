@@ -15,12 +15,12 @@
  namespace COSTFNS {
 #endif
 
-   inline bool quick_in_plane_bounds(const float x, const float y, 
+   inline bool quick_in_bounds(const float x, const float y, 
 				     const float z, const float xb, 
 				     const float yb, const float zb, 
 				     const volume& vol) {
-     return ( (y>=0.0) && (z>=0.0) && (y<yb) && (z<zb)
-	      && (x>=vol.validxmin(y,z)) && (x<=vol.validxmax(y,z)) );
+     return ( (y>=0.0) && (z>=0.0) && (y<=yb) && (z<=zb)
+	      && (x>=0.0) && (x<=xb) );
    }
    
    //--------------------------------------------------------------------//
@@ -43,7 +43,6 @@
       float  xb2 = ((float) vtest.columns())-1.0001,
 	yb2=((float) vtest.rows())-1.0001, zb2=((float) vtest.slices())-1.0001;
       int io1, io2, io3;
-      unsigned int x1, x2;
 
       float a11=iaff(1,1), a12=iaff(1,2), a13=iaff(1,3), a14=iaffbig(1,4),
 	a21=iaff(2,1), a22=iaff(2,2), a23=iaff(2,3), a24=iaffbig(2,4),
@@ -68,13 +67,11 @@
   //  [o1 o2 o3] = a * [x y z]  at each iteration
       for (unsigned int z=0; z<=zb1; z++) { 
 	for (unsigned int y=0; y<=yb1; y++) { 
-	  x1 = Max(vref.validxmin(y,z),(unsigned int) 0);
-	  x2 = Min(vref.validxmax(y,z),xb1);
-	  o1=x1*a11 + y*a12 + z*a13 + a14;  // x=x1
-	  o2=x1*a21 + y*a22 + z*a23 + a24;  // x=x1
-	  o3=x1*a31 + y*a32 + z*a33 + a34;  // x=x1
-	  for (unsigned int x=x1; x<=x2; x++) {
-	    if (quick_in_plane_bounds(o1,o2,o3,xb2,yb2,zb2,vtest)) {
+	  o1= y*a12 + z*a13 + a14;  // x=0
+	  o2= y*a22 + z*a23 + a24;  // x=0
+	  o3= y*a32 + z*a33 + a34;  // x=0
+	  for (unsigned int x=0; x<=xb1; x++) {
+	    if (quick_in_bounds(o1,o2,o3,xb2,yb2,zb2,vtest)) {
 	      io1=(int) o1;
 	      io2=(int) o2;
 	      io3=(int) o3;
@@ -97,7 +94,7 @@
 
       // now calculate the individual variances for each iso-set
       //  weighting them by the number of pixels from Image x that contribute
-      for (b=0; b<=no_bins; b++) {
+      for (b=0; b<no_bins; b++) {
 	numtotx += numx[b];
 	if (numy[b]>2) {
 	  numtoty += numy[b];
@@ -159,7 +156,6 @@
       float  xb2 = ((float) vtest.columns())-1.0001,
 	yb2=((float) vtest.rows())-1.0001, zb2=((float) vtest.slices())-1.0001;
       int io1, io2, io3;
-      unsigned int x1, x2;
 
       float a11=iaff(1,1), a12=iaff(1,2), a13=iaff(1,3), a14=iaffbig(1,4),
 	a21=iaff(2,1), a22=iaff(2,2), a23=iaff(2,3), a24=iaffbig(2,4),
@@ -182,13 +178,11 @@
   //  [o1 o2 o3] = a * [x y z]  at each iteration
       for (unsigned int z=0; z<=zb1; z++) { 
 	for (unsigned int y=0; y<=yb1; y++) { 
-	  x1 = Max(vref.validxmin(y,z),(unsigned int) 0);
-	  x2 = Min(vref.validxmax(y,z),xb1);
-	  o1=x1*a11 + y*a12 + z*a13 + a14;  // x=x1
-	  o2=x1*a21 + y*a22 + z*a23 + a24;  // x=x1
-	  o3=x1*a31 + y*a32 + z*a33 + a34;  // x=x1
-	  for (unsigned int x=x1; x<=x2; x++) {
-	    if (quick_in_plane_bounds(o1,o2,o3,xb2,yb2,zb2,vtest)) {
+	  o1= y*a12 + z*a13 + a14;  // x=0
+	  o2= y*a22 + z*a23 + a24;  // x=0
+	  o3= y*a32 + z*a33 + a34;  // x=0
+	  for (unsigned int x=0; x<=xb1; x++) {
+	    if (quick_in_bounds(o1,o2,o3,xb2,yb2,zb2,vtest)) {
 	      io1=(int) o1;
 	      io2=(int) o2;
 	      io3=(int) o3;
@@ -258,7 +252,6 @@
       float  xb2 = ((float) vtest.columns())-1.0001,
 	yb2=((float) vtest.rows())-1.0001, zb2=((float) vtest.slices())-1.0001;
       int io1, io2, io3;
-      unsigned int x1, x2;
 
       float a11=iaff(1,1), a12=iaff(1,2), a13=iaff(1,3), a14=iaffbig(1,4),
 	a21=iaff(2,1), a22=iaff(2,2), a23=iaff(2,3), a24=iaffbig(2,4),
@@ -275,13 +268,11 @@
       //  [o1 o2 o3] = a * [x y z]  at each iteration
       for (unsigned int z=0; z<=zb1; z++) { 
 	for (unsigned int y=0; y<=yb1; y++) { 
-	  x1 = Max(vref.validxmin(y,z),(unsigned int) 0);
-	  x2 = Min(vref.validxmax(y,z),xb1);
-	  o1=x1*a11 + y*a12 + z*a13 + a14;  // x=x1
-	  o2=x1*a21 + y*a22 + z*a23 + a24;  // x=x1
-	  o3=x1*a31 + y*a32 + z*a33 + a34;  // x=x1
-	  for (unsigned int x=x1; x<=x2; x++) {
-	    if (quick_in_plane_bounds(o1,o2,o3,xb2,yb2,zb2,vtest)) {
+	  o1= y*a12 + z*a13 + a14;  // x=x1
+	  o2= y*a22 + z*a23 + a24;  // x=x1
+	  o3= y*a32 + z*a33 + a34;  // x=x1
+	  for (unsigned int x=0; x<=xb1; x++) {
+	    if (quick_in_bounds(o1,o2,o3,xb2,yb2,zb2,vtest)) {
 	      io1=(int) o1;
 	      io2=(int) o2;
 	      io3=(int) o3;
@@ -348,7 +339,6 @@
       float  xb2 = ((float) vtest.columns())-1.0001,
 	yb2=((float) vtest.rows())-1.0001, zb2=((float) vtest.slices())-1.0001;
       int io1, io2, io3;
-      unsigned int x1, x2;
 
       float a11=iaff(1,1), a12=iaff(1,2), a13=iaff(1,3), a14=iaffbig(1,4),
 	a21=iaff(2,1), a22=iaff(2,2), a23=iaff(2,3), a24=iaffbig(2,4),
@@ -372,13 +362,11 @@
       //  [o1 o2 o3] = a * [x y z]  at each iteration
       for (unsigned int z=0; z<=zb1; z++) { 
 	for (unsigned int y=0; y<=yb1; y++) { 
-	  x1 = Max(vref.validxmin(y,z),(unsigned int) 0);
-	  x2 = Min(vref.validxmax(y,z),xb1);
-	  o1=x1*a11 + y*a12 + z*a13 + a14;  // x=x1
-	  o2=x1*a21 + y*a22 + z*a23 + a24;  // x=x1
-	  o3=x1*a31 + y*a32 + z*a33 + a34;  // x=x1
-	  for (unsigned int x=x1; x<=x2; x++) {
-	    if (quick_in_plane_bounds(o1,o2,o3,xb2,yb2,zb2,vtest)) {
+	  o1= y*a12 + z*a13 + a14;  // x=x1
+	  o2= y*a22 + z*a23 + a24;  // x=x1
+	  o3= y*a32 + z*a33 + a34;  // x=x1
+	  for (unsigned int x=0; x<=xb1; x++) {
+	    if (quick_in_bounds(o1,o2,o3,xb2,yb2,zb2,vtest)) {
 	      io1=(int) o1;
 	      io2=(int) o2;
 	      io3=(int) o3;

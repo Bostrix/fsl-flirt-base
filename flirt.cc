@@ -10,8 +10,6 @@
 
 #include "newmatap.h"
 #include "newmatio.h"
-#include "mjavwio.h"
-#include "AvwRead.h"
 #include "miscimfns.h"
 #include "miscmaths.h"
 #include "interpolation.h"
@@ -27,7 +25,6 @@
  using namespace COSTFNS;
  using namespace INTERPOLATION;
  using namespace NUMREC;
- using namespace MJAVWIO;
  using namespace NEWMAT;
  using namespace MJIMAGE;
  using namespace GENERALIO;
@@ -80,14 +77,10 @@ public:
   float coarsedelta;
   float finedelta;
 
-  string planereffname;
-  string planetestfname;
-
   int verbose;
   bool interactive;
   bool do_optimise;
   bool measure_cost;
-  int defaultplanes;
   bool nosave;
   bool iso;
 
@@ -139,13 +132,9 @@ globaloptions::globaloptions()
   coarsedelta = 60.0*M_PI/180.0;
   finedelta = 18.0*M_PI/180.0;
 
-  planereffname = "";
-  planetestfname = "";
-
   interactive = false;
   do_optimise = true;
   measure_cost = false;
-  defaultplanes = 2;
   nosave = true;
   iso = true;
 
@@ -200,10 +189,6 @@ void print_usage(int argc, char *argv[])
        << "        -coarsesearch <delta_angle>        (angle in degrees: default is 60)\n" 
        << "        -finesearch <delta_angle>          (angle in degrees: default is 18)\n" 
        << "        -schedule <schedule-file>          (replaces default schedule)\n"
-       << "        -findplanes                        (default is xy bounding planes)\n"
-       << "        -planeref <filename>               (default is none)\n"
-       << "        -planetest <filename>              (default is none)\n"
-       << "        -plotcost\n"
        << "        -verbose <num>                     (0 is least and default)\n"
        << "        -v                                 (same as -verbose 5)\n"
        << "        -i                                 (pauses at each stage: default is off)\n"
@@ -252,14 +237,6 @@ void parse_command_line(int argc, char* argv[])
       continue;
     } else if ( arg == "-measurecost" ) {
       globalopts.measure_cost = true;
-      n++;
-      continue;
-    } else if ( arg == "-plotcost") {
-      globalopts.single_param = 1;
-      n++;
-      continue;
-    } else if ( arg == "-findplanes") {
-      globalopts.defaultplanes = 0;
       n++;
       continue;
     } else if ( arg == "-i") {
@@ -330,16 +307,6 @@ void parse_command_line(int argc, char* argv[])
       continue;
     } else if ( arg == "-verbose") {
       globalopts.verbose = atoi(argv[n+1]);
-      n+=2;
-      continue;
-    } else if ( arg == "-planeref") {
-      globalopts.planereffname = argv[n+1];
-      globalopts.defaultplanes--;
-      n+=2;
-      continue;
-    } else if ( arg == "-planetest") {
-      globalopts.planetestfname = argv[n+1];
-      globalopts.defaultplanes--;
       n+=2;
       continue;
     } else if ( arg == "-cost") {
@@ -491,54 +458,6 @@ void save_workspace_and_pause(const Matrix& matresult) {
     cin >> dummy;
   }
 }
-
-//////////////////////////////////////////////////////////////////////////
-// Plane-fit stuff
-
-void set_default_planes(volume& vol)
-{
-  // the planept points should be in VOXEL coordinates
-  //  but all saved values should be in MEASUREMENT coordinates
-  ColumnVector axis1(3), planept1(3), axis2(3), planept2(3);
-  axis1 << 0.0 << 0.0 << 1.0;
-  axis2 << 0.0 << 0.0 << -1.0;
-  planept1 << 0.0 << 0.0 << -0.5;
-  planept2 << 0.0 << 0.0 << (float) vol.slices() - 0.5;
-  
-  // convert to measurement space
-  axis1 = vol.sampling_matrix().SubMatrix(1,3,1,3) * axis1;
-  axis2 = vol.sampling_matrix().SubMatrix(1,3,1,3) * axis2;
-  planept1 = vol.sampling_matrix().SubMatrix(1,3,1,3) * planept1
-    + vol.sampling_matrix().SubMatrix(1,3,4,4);
-  planept2 = vol.sampling_matrix().SubMatrix(1,3,1,3) * planept2
-    + vol.sampling_matrix().SubMatrix(1,3,4,4);
-
-  // reinforce normalisation of axes
-  axis1 = axis1/norm2(axis1);
-  axis2 = axis2/norm2(axis2);
-  vol.setplanes(axis1,planept1,axis2,planept2);
-}
-
-
-void fit_planes(volume& vol)
-{
-  // the planept points should be in VOXEL coordinates
-  //  but all saved values should be in MEASUREMENT coordinates
-  ColumnVector axis1(3), planept1(3), axis2(3), planept2(3);
-  vol.getplanes(axis1,planept1,axis2,planept2);
-
-  // reinforce normalisation of axes
-  axis1 = axis1/norm2(axis1);
-  axis2 = axis2/norm2(axis2);
-  vol.setplanes(axis1,planept1,axis2,planept2);
-  if (globalopts.verbose>=3) {
-    cout << "Plane parameters:\n axis1    = " << axis1.t()
-	 << " planept1 = " << planept1.t() 
-	 << " axis2    = " << axis2.t() 
-	 << " planept2 = " << planept2.t();
-  }
-}
-
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -810,108 +729,6 @@ float subset_costfn(float params[])
 }
 
 
-////////////////////////////////////////////////////////////////////////////
-
-// DIAGNOSTIC - plots the cost function (using gnuplot)
-
-void costgnuplot(const ColumnVector& param0)
-{
-  Tracer tr("costgnuplot");
-  volume validmask;
-  int no_points = 20;
-  ColumnVector dirn(12);
-  float dim=0.0, min=-1.0, max=1.0;
-  while (1) {
-    dim = 0.0;
-    while ((dim<1.0) || (dim>globalopts.no_params)) {
-      cout << "Enter the dimension to traverse (1 to "
-	   << globalopts.no_params << ", -1 to exit): ";
-      cin >> dim;
-      if (dim==-1.0)  return;
-    }
-    dirn = 0.0;
-    dirn((int) dim) = 1.0;
-
-    cout << "Enter minimum and maximum limits for deviations from zero: ";
-    cin >> min;
-    cin >> max;
-
-    output_costplot(param0,dirn,globalopts.no_params,min,max,no_points,costfn,
-		    "costplot.txt");
-    { 
-      ofstream fstr("plotcost");
-      fstr << "plot 'costplot.txt'" << endl << "pause -1" << endl;
-      fstr.close();
-    }
-    cout << endl << "Hit return (in this window) to continue" << endl;
-    system("gnuplot plotcost");
-  }
-}
-
-
-void costplot(void) {
-  Tracer tr("costplot");
-  int sp = globalopts.single_param;
-  if (sp<=0) return;
-  float scalefactor = 1.0, fans=0.0;
-  ColumnVector params_8(12), param_tol(12);
-  Matrix paramres(2*globalopts.no_params+2,100);
-
-  // loop while the user wants to continue
-  while (sp>0) {
-    set_param_tols(param_tol,12);
-    float numoffset = (float) (paramres.Ncols()/2);
-
-    cout << "Enter a central " <<globalopts.no_params<< "-paramater set\n";
-    for (int n=1; n<=globalopts.no_params; n++) {
-      cin >> globalopts.refparams(n);
-    }
-    cout << "Enter a scaling factor for the tolerance ";
-    cin >> scalefactor;
-
-    // calculate the cost function along each parameter axis
-    for (int single_param=1; single_param <= globalopts.no_params;
-	 single_param++) {
-      for (int num=1; num<=paramres.Ncols(); num++) {
-	params_8 = globalopts.refparams;
-	params_8(single_param) += 
-	  ((float) num-numoffset)*scalefactor*param_tol(single_param);
-	fans = costfn(params_8);
-	paramres(2*single_param-1,num) = params_8(single_param);
-	paramres(2*single_param,num) = fans;
-      }
-      cerr << "*";
-    }
-
-    // now do the joint scaling (all scales equal) case
-    for (int num=1; num<=paramres.Ncols(); num++) {
-      params_8 = globalopts.refparams;
-      params_8(7) += ((float) num-numoffset)*scalefactor*param_tol(7);
-      params_8(8) = params_8(7);
-      params_8(9) = params_8(7);
-      fans = costfn(params_8);
-      paramres(2*globalopts.no_params+1,num) = params_8(7);
-      paramres(2*globalopts.no_params+2,num) = fans;
-    }
-    cerr << endl;
-
-    // miscellaneous trace writes
-    /*
-      params_8 = globalopts.refparams;
-      fans = costfn(params_8);
-      globalopts.impair->outputvol.create_valid_mask(validmask);
-      safe_save_volume(validmask,"validmask");
-      safe_save_volume(globalopts.impair->outputvol,"t2tst");
-    */
-    cerr << "Writing results to costplot.txt" << endl;
-    write_ascii_matrix(paramres,"costplot.txt");
-
-
-    cout << "\nAnother central paramater? (enter -1 to exit) ";
-    cin >> sp;
-  }
-}
-
 
 //------------------------------------------------------------------------//
 
@@ -964,7 +781,6 @@ void find_cost_minima(Matrix& bestpts, const volume& cost) {
       }
     }
   }
-  //px=0; py=0; pz=0; 
   int idx=1;
   if (minima<=0) {
     bestpts.ReSize(1,16);
@@ -977,18 +793,6 @@ void find_cost_minima(Matrix& bestpts, const volume& cost) {
   for (int z=0; z<zb; z++) {
     for (int y=0; y<yb; y++) {
       for (int x=0; x<xb; x++) {
-	//if (fabs(minv(x,y,z) - minv(px,py,pz)) < 0.5) {
-	//if (cost(x,y,z) < cost(px,py,pz)) {
-	    // use new point if it is the same minv but lower cost
-	        //px=x; py=y; pz=z;
-	    //}
-	//}
-	//if (minv(x,y,z) < (minv(px,py,pz)-0.5)) {
-	  // always prefer a lower minv (regardless of the cost)
-	  // NB: -0.5 used to ensure that it is a lower integer
-	      //px=x; py=y; pz=z;
-	  //}
-	// trace write
 	if ( cost.in_bounds(x,y,z) && cost.in_bounds(x+1,y+1,z+1) ) {
 	  if (minv(x,y,z) < 0.5) {
 	    bestpts(idx,1) = (float) x; 
@@ -1210,62 +1014,7 @@ void search_cost(Matrix& paramlist, volume& costs, volume& tx,
     safe_save_volume(costs,"costs");
   }
 
-  // now search to find the points that are local minima
-  //globalopts.no_params = 7;
-  //int ix,iy,iz;
-  //Matrix bestpts;
-  //find_cost_minima(bestpts,costs);
 
-
-  // for each local minima found optimise the translation and scale
-  //set_param_tols(param_tol,12);
-  //param_tol = 8*param_tol;  
-  //globalopts.no_params = 12;  // temp test
-  //params12toN(param_tol);
-  /*
-  for (int n=1; n<=bestpts.Nrows(); n++) {
-    ix = (int) bestpts(n,1);
-    iy = (int) bestpts(n,2);
-    iz = (int) bestpts(n,3);
-    cerr << "Cost minima at : " << ix << "," << iy << "," << iz << endl;
-    rx = finerx(ix+1);
-    ry = finery(iy+1);
-    rz = finerz(iz+1);
-    xf = ((float) ix)*factorx;
-    yf = ((float) iy)*factory;
-    zf = ((float) iz)*factorz;
-    txv = tri_interpolation(tx,xf,yf,zf);
-    tyv = tri_interpolation(ty,xf,yf,zf);
-    tzv = tri_interpolation(tz,xf,yf,zf);
-    scv = tri_interpolation(scale,xf,yf,zf);
-    if ((scv<0.5) || (scv>2.0))  scv = 1.0;
-    if (globalopts.dof<=6) scv = 1.0;
-    params_8 = 0.0;
-    params_8(1) = rx;  params_8(2) = ry;  params_8(3) = rz;
-    params_8(4) = txv; params_8(5) = tyv; params_8(6) = tzv;
-    params_8(7) = scv; params_8(8) = scv; params_8(9) = scv;
-    globalopts.refparams = params_8;
-    params12toN(params_8);
-    optimise(params_8,globalopts.parammask.Ncols(),
-	     param_tol,&no_its,&fans,subset_costfn);
-    paramsNto12(params_8);
-    bestpts(n,4) = fans;
-    bestpts.SubMatrix(n,n,5,16) = params_8.t();
-  }
-  if (globalopts.verbose>=3) {
-    cout << "Costs (4th column) are:\n" << bestpts << endl;
-  }
-
-  // find the single best cost
-  int bestidx = 1;
-  for (int n=1; n<=bestpts.Nrows(); n++) {
-    if (bestpts(n,4) < bestpts(bestidx,4)) {
-      bestidx = n;
-    }
-  }
-  */
-
-  //int bestidx = 1;
   float costmin, costmax;
   get_min_max(costs,costmin,costmax);
   // the following assumes that costmin > 0
@@ -1280,7 +1029,6 @@ void search_cost(Matrix& paramlist, volume& costs, volume& tx,
   }
 
   // for all costs less than 150% of the best cost so far, optimise...
-  //float costthresh = bestpts(bestidx,4) * 1.5;
   int numsubcost = 0;
   for (int ix=0; ix<costs.columns(); ix++) {
     for (int iy=0; iy<costs.rows(); iy++) {
@@ -1339,21 +1087,6 @@ void search_cost(Matrix& paramlist, volume& costs, volume& tx,
     safe_save_volume(costs,"costs");
     cout << "Costs (1st column) are:\n" << bestparams << endl;
   }
-
-  // find the single best cost
-  /*
-    bestidx = 1;
-    for (int n=1; n<=bestparams.Nrows(); n++) {
-    if (bestparams(n,1) < bestparams(bestidx,1)) {
-    bestidx = n;
-    }
-    }
-
-    params = bestparams.SubMatrix(bestidx,bestidx,2,13).t();
-    if (globalopts.verbose>=3) {
-    cout << "Chosen parameter: " << params.t() << endl;
-    }
-  */
 
   // find the cost minima and return these
   Matrix bestpts;
@@ -1753,30 +1486,10 @@ int get_testvol(volume& testvol)
   Tracer tr("get_testvol");
   read_volume(testvol,globalopts.inputfname);
   read_matrix(globalopts.initmat,globalopts.initmatfname,testvol);
-  set_default_planes(testvol);
 
-  // THE FOLLOWING IS OBSOLETE
-  // use the affmat_init as an initial transform estimate for testvol
-  // if (globalopts.verbose >= 1) 
-  //    cout << "Applying initial transform" << endl;
-  //   check to see if there is any transform to do...
-  //  Matrix diffmat(4,4);
-  //  identity(diffmat);
-  //  diffmat = diffmat - globalopts.initmat;
-  //  if (diffmat.MaximumAbsoluteValue() > 1e-5) {
-  //   volume newtestvol(testvol);
-  //   affine_transform(newtestvol,testvol,globalopts.initmat);
-  //   testvol = newtestvol;
-  //  }
   if (globalopts.verbose>=2) {
     cerr << "Testvol sampling matrix =\n" << testvol.sampling_matrix() << endl;
   }
-  // calculate the plane fits
-  fit_planes(testvol);
-  //volume validmask;
-  //testvol.create_valid_mask(validmask);
-  //safe_save_volume(validmask,"validmask");
-  //safe_save_volume(testvol,"t2tst");
   return 0;
 }  
 
@@ -1785,7 +1498,6 @@ int get_refvol(volume& refvol)
 {
   Tracer tr("get_refvol");
   read_volume(refvol,globalopts.reffname);
-  set_default_planes(refvol);
   return 0;
 }
 
@@ -1810,8 +1522,6 @@ int resample_refvol(volume& refvol, float sampling=1.0)
   isotropic_rescale(refvol,tmpvol,sampl);
   if (globalopts.verbose>=2) print_volume_info(refvol,"Refvol");      
   
-  // calculate the plane fits
-  fit_planes(refvol);
   return 0;
 }
 
@@ -1828,8 +1538,6 @@ void no_optimise()
   get_refvol(refvol);
   read_volume(testvol,globalopts.inputfname);
   read_matrix(globalopts.initmat,globalopts.initmatfname,testvol);
-  set_default_planes(testvol);
-  fit_planes(testvol);
   
   float min_sampling_ref=1.0, min_sampling_test=1.0;
   min_sampling_ref = Min(refvol.getx(),Min(refvol.gety(),refvol.getz()));
@@ -2555,6 +2263,7 @@ void interpretcommand(const string& comline, bool& skip,
 
 // For random tests
 void test_proc(void) {
+
   ColumnVector angl(3), centre(3);
   Matrix rot(4,4);
   float anglx=0.0;
@@ -2633,9 +2342,6 @@ int main(int argc,char *argv[])
       cout << "\n\nCost = " << costval << "\n\n";
       return 1;
     }
-
-    // first do the cost plot (it returns directly if not requested)
-    costplot();
 
     // perform the optimisation
 
