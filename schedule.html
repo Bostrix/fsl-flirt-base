@@ -120,11 +120,13 @@ the boolean operation <I>op</I>.  There are 6 permissable values for
 <H2>Example</H2>
 The default flirt schedule file is:
 <PRE>
+# 8mm scaling search
 setscale 8
 clear S
 clear P
 search
 
+# 4mm perturbed search
 setscale 4
 clear U
 optimise 7 S:1-3  0.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 4
@@ -142,17 +144,22 @@ optimise 7 P:1-3  0.0   0.0   0.0   0.0   0.0   0.0  -2.0  rel 4
 sort U
 copy U UA
 
+# 2mm optimise (best only)
 setscale 2
 clear U
 optimise 7  UA:1  0.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 4
-optimise 9  UA:1  0.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 1
-optimise 12 UA:1  0.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 2
+if MAXDOF > 7
+ optimise 9  UA:1  0.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 1
+if MAXDOF > 9
+ optimise 12 UA:1  0.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 2
 sort U
 copy U UB
 
+# 1mm optimise
 setscale 1
 clear U
 optimise 12 UB:1  0.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 1
+sort U
 </PRE>
 
 <HR>
