@@ -1,3 +1,11 @@
+/*  globaloptions.cc
+
+    Mark Jenkinson, FMRIB Image Analysis Group
+
+    Copyright (C) 1999-2000 University of Oxford  */
+
+/*  CCOPYRIGHT  */
+
 #include "globaloptions.h"
 
 globaloptions* globaloptions::gopt = NULL;

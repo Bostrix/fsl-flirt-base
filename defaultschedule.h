@@ -1,3 +1,11 @@
+/*  defaultschedule.h
+
+    Mark Jenkinson, FMRIB Image Analysis Group
+
+    Copyright (C) 1999-2000 University of Oxford  */
+
+/*  CCOPYRIGHT  */
+
 // Set default schedule file
 //  Written by Mark Jenkinson  11/10/99
 

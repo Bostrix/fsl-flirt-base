@@ -1,3 +1,11 @@
+/*  costfns.h
+
+    Mark Jenkinson, FMRIB Image Analysis Group
+
+    Copyright (C) 1999-2000 University of Oxford  */
+
+/*  CCOPYRIGHT  */
+
 // Interpolation functions
 //  Written by Mark Jenkinson  18/2/99
 

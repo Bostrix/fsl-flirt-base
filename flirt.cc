@@ -1,3 +1,11 @@
+/*  flirt.cc
+
+    Mark Jenkinson, FMRIB Image Analysis Group
+
+    Copyright (C) 1999-2000 University of Oxford  */
+
+/*  CCOPYRIGHT  */
+
 // Put current version number here:
 #include <string>
 const string version = "2.1.2";

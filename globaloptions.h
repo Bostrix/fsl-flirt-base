@@ -1,3 +1,11 @@
+/*  globaloptions.h
+
+    Mark Jenkinson, FMRIB Image Analysis Group
+
+    Copyright (C) 1999-2000 University of Oxford  */
+
+/*  CCOPYRIGHT  */
+
 #ifndef __GLOBALOPTIONS_
 #define __GLOBALOPTIONS_
 
