@@ -1,0 +1,189 @@
+<!DOCTYPE HTMLPUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN""http://www.w3.org/TR/REC-html40/losse.dtd">
+<HTML><HEAD>
+  <TITLE>FSL User Guide - FLIRT - FMRIB's Linear Image Registration Tool</TITLE>
+</HEAD>
+ <BODY BACKGROUND="../images/fsl-bg" BGCOLOR="white">
+  <TABLE BORDER=0 WIDTH="100%"><TR>
+  <TD ALIGN=LEFT>  <a href="http://www.fmrib.ox.ac.uk/fsl"><IMG BORDER=0 SRC="../images/fsl-logo"></a>
+   <TD ALIGN=CENTER><H1>FSL User Guide - FLIRT - FMRIB's Linear Image Registration Tool</H1>
+  <TD ALIGN=RIGHT> <a href="http://www.fmrib.ox.ac.uk/"><IMG BORDER=0 SRC="../images/fmrib_crest_86.gif"></a>
+   </TR></TABLE>
+  <!-- No Table of Contents -->
+
+
+
+
+
+
+
+<A NAME="section1"></A><HR><H2>INTRODUCTION</H2>
+ 
+<P>
+FLIRT is a fully automated robust and accurate tool for linear
+(affine) intra- and inter-modal brain image registration.
+<br>
+
+
+<P>
+For more detail on FLIRT and a journal reference, see the <A HREF="http://www.fmrib.ox.ac.uk/analysis/research/flirt/">FLIRT web
+page</A>. If you use FLIRT in your research, please quote the
+journal reference listed there.
+<br>
+
+<P>
+Details for the command-line version of flirt and for
+associated utilities can be found in the flirt project <a
+href="overview.html">overview</a> page.
+
+
+ <!-- J-Back -->
+
+
+<A NAME="section2"></A><HR><H2>HOW IT WORKS</H2>
+ 
+<H3>MAIN OPTIONS</H3>
+ 
+<H4><B>Input image -> Reference image</B> Mode</H4>
+
+<P>
+In single-level registration, the reslice image is registered to the standard, and the resulting transform applied to the secondary
+image(s). Thus the transformed reslice and secondary image(s) are in alignment with the standard image. 
+<br>
+
+<H4><B>Low res image -> High res image -> Reference image</B> Mode</H4>
+
+<P>
+In two-level registration, the low-res image (e.g. functional EPI image) is registered to the hi-res image (e.g. structural image) and
+the hi-res is registered to the standard. The two resulting transforms are combined into one, and this is then applied to the low-res
+and the secondary image(s). Thus the transformed hi-res, low-res and secondary image(s) are all in alignment with the standard
+image. 
+<br>
+
+<P>
+<IMG SRC="xfmhelp.gif" ALIGN="CENTER" ALT="" BORDER=0>
+<br>
+
+
+<H3>Secondary Images</H3>
+
+The transformation estimated from the registration of the images
+specified above can be applied to a number of other/secondary images.
+This is useful for transforming images original in the input/low-res
+space (such as statistical images) to the reference space.
+
+<H3>Model/DOF</H3>
+
+This allows restrictions to be placed on the transformation, by specifying
+the allowable Degrees of Freedom.  Possible options are: Affine (12 DOF);
+Traditional (9 DOF); Global Rescale (7 DOF); Rigid Body (6 DOF) for 3D to 3D
+image registrations, and Rigid Body (3 DOF) for 2D to 2D image registrations.
+
+
+
+<H3>ADVANCED OPTIONS</H3>
+ 
+<H4>Search</H4>
+
+The first part of the global optimisation method used by FLIRT is a
+search over possible orientations of the input image.  This search can
+be restricted (or enlarged) as appropriate.
+  
+<H4>Cost Functions</H4>
+
+Five different cost functions are available: Correlation Ratio; Mutual
+Information; Normalised Mutual Information; Normalised Correlation
+and Least Squares.  For the first three options, the number of histogram
+bins used for estimating the function (in a 1x1x1 mm image) can be
+specified.
+
+<H4>Interpolation</H4>
+
+Three different interpolation schemes can be chosen for the final
+reslicing stage only (trilinear interpolation is always used for the
+estimation of the transformation).  The options for this final
+interpolation method are: Tri-Linear; Nearest Neighbour and Sinc.  If
+Sinc is chosen, further window parameters (type of windowing function
+and window width) can also be specified.
+
+<H4>Weighting Volumes</H4>
+
+For two image registration mode it is possible to weight the cost
+functions by specifying weighting images.  These images must be the
+same size as the image they are weighting (e.g. refweight and
+reference images) and the voxel values of the weighting image
+represent how much weighting that particular voxel is given in the
+cost function.  Therefore, by setting weights to zero, some areas of
+the image can be effectively ignored, which is useful in masking out
+pathologies so that they do not affect the registration.  In this way
+very accurate registrations can be made between pathological and
+``normal'' images.  This cannot be achieved by masking the images
+prior to registration, as that induces artificial boundaries which
+bias the registration.  Furthermore, some areas can be given extra
+weighting (such as the ventricles) so that the registration is most
+accurate near these structures, but still uses information from the
+rest of the image (e.g. the cortical surface) to improve the
+robustness of the registration.
+
+
+ <!-- J-Back -->
+
+
+<A NAME="section3"></A><HR><H2>SUGGESTED USAGE</H2>
+ 
+
+<H3>Reslice Image/Group -&gt; Standard Image</H3>
+  
+<P>
+<UL>
+
+<LI>To register an image to a standard template, put the name of
+    template image (as found from the Page Manager) in the <B><FONT COLOR=BROWN>Standard
+    Image</FONT></B> box and the other in the <B><FONT COLOR=BROWN>Reslice Image/Group</FONT></B> box.
+<LI>To register two images to each other (where neither is the standard),
+    put the higher resolution image in the <B><FONT COLOR=BROWN>Standard Image</FONT></B> box and the
+    other in the <B><FONT COLOR=BROWN>Reslice Image/Group</FONT></B> box.
+<LI>To do a number of different registrations (like you would in a
+    script) to a single standard image, first make a group of all the
+    images to be registered and then enter the Group page in the
+    <B><FONT COLOR=BROWN>Reslice Image/Group</FONT></B> box and the template image in the <B><FONT COLOR=BROWN>Standard Image</FONT></B> box.
+
+</UL>
+
+<br>
+
+
+
+
+
+<H3>Low Res Image/Group -&gt; High Res Image/Group -&gt; Standard Image</H3>
+  
+<P>
+<UL>
+
+<LI>To register both a functional image and its corresponding structural to the standard image, put the template image in the
+    <B><FONT COLOR=BROWN>Standard Image</FONT></B> box, the structural image in the <B><FONT COLOR=BROWN>High Res Image/Group</FONT></B> box and a single image from the functional series in
+    the <B><FONT COLOR=BROWN>Low Res Image/Group</FONT></B> box. In addition, statistical images such as Z-scores can be entered in as <B><FONT COLOR=BROWN>Secondary Images</FONT></B> which
+    will also be registered to the standard image, allowing them to be rendered on the structural image in the coordinate system of
+    the standard image.
+<LI>To do a number of registrations for different functional experiments (like you would in a script) requires that two groups of
+    images be made. The first group should contain all the structural images and the second group should be a group of single
+    functional images, one corresponding to each structural image. Note that the ordering of the images in these groups is critical
+    - the functional example images must be in the same order as the corresponding structural images. Once the groups are made,
+    enter the Group page of the structurals in the <B><FONT COLOR=BROWN>High Res Image/Group</FONT></B> box and the Group page of the functionals in the <B><FONT COLOR=BROWN>Low
+    Res Image/Group</FONT></B> box. Any statistical images can be entered in as a <B><FONT COLOR=BROWN>Secondary Group</FONT></B> but these must also be in the
+    corresponding order. 
+
+</UL>
+
+<br>
+
+
+
+
+
+
+   <HR>
+  <!-- No Footnotes -->
+  <H4>Mark Jenkinson  <BR>FMRIB Image Analysis Group
+  <BR><BR>Copyright &copy; 1999-2000, University of Oxford</H4><BR>
+</BODY></HTML>
