@@ -126,7 +126,6 @@ set entries($w,1) ${FSLDIR}/etc/standard/avg152T1_brain.hdr
     set reg($w,mode) 1
     tixOptionMenu $w.f.mode -label "Mode " \
 	    -variable reg($w,mode) \
-	    -command "flirt:updatemode $w" \
 	    -options {
 	label.anchor w
     }
@@ -281,9 +280,9 @@ while { $i <= $reg($w,maxnstats) } {
 	    -variable reg($w,cost) -value mutualinfo -anchor w -command "flirt:updatecost $w $costlf"
     radiobutton $w.nmi -text "Normalised Mutual Information" \
 	    -variable reg($w,cost) -value normmi -anchor w -command "flirt:updatecost $w $costlf"
-    radiobutton $w.normcorr -text "Normalised Correlation" \
+    radiobutton $w.normcorr -text "Normalised Correlation (intra-modal)" \
 	    -variable reg($w,cost) -value normcorr -anchor w -command "flirt:updatecost $w $costlf"
-    radiobutton $w.leastsq -text "Least Squares" \
+    radiobutton $w.leastsq -text "Least Squares (intra-modal)" \
 	    -variable reg($w,cost) -value leastsq -anchor w -command "flirt:updatecost $w $costlf"
 
     tixControl $w.bins -label "Number of Histogram Bins " \
@@ -326,6 +325,7 @@ while { $i <= $reg($w,maxnstats) } {
     pack $w.swinbanner -in $w.swinopt -side top -anchor w -padx 3
     pack $w.rectangular $w.hanning $w.blackman -in $w.swinopt -side left -anchor w -padx 3
 
+ 
     # ---- Weightings ----
     set weightlf [$w.nb subwidget weights]
 
@@ -418,6 +418,10 @@ while { $i <= $reg($w,maxnstats) } {
     pack $w.f $w.btns -expand yes -fill both
 
 #}}}
+
+    $w.f.mode configure -command "flirt:updatemode $w"
+
+
 }
 
 #{{{ flirt:apply
@@ -436,7 +440,7 @@ proc flirt:apply { w dialog } {
 	incr i 1
     }
 
-    set status [ flirt_proc $reg($w,mode) $entries($w,1) $entries($w,2) $entries($w,3) $reg($w,nstats) $statslist $entries($w,4) $reg($w,dof) $reg($w,bins) $reg($w,searchrxmin) $reg($w,searchrxmax) $reg($w,searchrymin) $reg($w,searchrymax) $reg($w,searchrzmin) $reg($w,searchrzmax) $reg($w,disablesearch_yn) $reg($w,cost) $reg($w,interp) $ref($w,sincwidth) $ref($w,sincwindow) $ref($w,refweight) $ref($w,inweight) 1 ]
+    set status [ flirt_proc $reg($w,mode) $entries($w,1) $entries($w,2) $entries($w,3) $reg($w,nstats) $statslist $entries($w,4) $reg($w,dof) $reg($w,bins) $reg($w,searchrxmin) $reg($w,searchrxmax) $reg($w,searchrymin) $reg($w,searchrymax) $reg($w,searchrzmin) $reg($w,searchrzmax) $reg($w,disablesearch_yn) $reg($w,cost) $reg($w,interp) $reg($w,sincwidth) $reg($w,sincwindow) $reg($w,refweight) $reg($w,inweight) 1 ]
 
     update idletasks
     
@@ -467,6 +471,8 @@ proc flirt:updatemode { w junk } {
 	}
 	$w.f.nstats configure -label "Number of secondary $IGS to apply transform to "
 	pack forget $w.f.test2
+	pack $w.wgt -in [$w.nb subwidget weights] -side top -anchor w -padx 3
+	pack $w.iwgt -in [$w.nb subwidget weights] -side top -anchor w -padx 3 -pady $PADY
     } else {
 	if { $INMEDX } {
 	    $w.f.testtxt configure -text "High res image/group"
@@ -475,10 +481,14 @@ proc flirt:updatemode { w junk } {
 	}
 	$w.f.nstats configure -label "Number of secondary $IGS to apply combined transform to "
 	pack $w.f.test2 -in $w.f -side top -anchor w -pady $PADY -padx 5 -after $w.f.test
+	pack forget $w.wgt
+	pack forget $w.iwgt
     }
 }
 
 #}}}
+
+
 #{{{ flirt:updatestats
 
 proc flirt:updatestats { w junk } {
