@@ -54,6 +54,46 @@ void print_vector(float x, float y, float z)
 
 //------------------------------------------------------------------------//
 
+
+int FLIRT_read_volume4D(volume4D<float>& target, const string& filename, 
+			volumeinfo& vinfo)
+{
+  // make voxels bigger if basescale is smaller than 1.0 (and vice versa)
+  int retval = read_volume4D(target,filename,vinfo);
+  // if basescale != 1.0
+  if (fabs(globaloptions::get().basescale - 1.0)>1e-5) {
+    target.setxdim(target.xdim() / globaloptions::get().basescale);
+    target.setydim(target.ydim() / globaloptions::get().basescale);
+    target.setzdim(target.zdim() / globaloptions::get().basescale);
+  }
+  return retval;
+}
+
+
+int FLIRT_read_volume(volume<float>& target, const string& filename, 
+		      volumeinfo& vinfo)
+{
+  // make voxels bigger if basescale is smaller than 1.0 (and vice versa)
+  int retval = read_volume(target,filename,vinfo);
+  // if basescale != 1.0
+  if (fabs(globaloptions::get().basescale - 1.0)>1e-5) {
+    target.setxdim(target.xdim() / globaloptions::get().basescale);
+    target.setydim(target.ydim() / globaloptions::get().basescale);
+    target.setzdim(target.zdim() / globaloptions::get().basescale);
+  }
+  return retval;
+}
+
+
+int FLIRT_read_volume(volume<float>& target, const string& filename)
+{
+  volumeinfo vinfo;
+  return FLIRT_read_volume(target,filename,vinfo);
+}
+
+
+//------------------------------------------------------------------------//
+
 void setupsinc(const volume<float>& invol)
 {
   // the following full-width is in voxels
@@ -1104,7 +1144,7 @@ void double_end_slices(volume<float>& testvol)
 int get_testvol(volume<float>& testvol)
 {
   Tracer tr("get_testvol");
-  read_volume(testvol,globaloptions::get().inputfname,
+  FLIRT_read_volume(testvol,globaloptions::get().inputfname,
 	      globaloptions::get().vinfo);
   short dtype;
   dtype = NEWIMAGE::dtype(globaloptions::get().inputfname);
@@ -1123,7 +1163,7 @@ int get_testvol(volume<float>& testvol)
 
   if (globaloptions::get().useweights) {
     if (globaloptions::get().testweightfname.length()>0) {
-      read_volume(global_testweight,globaloptions::get().testweightfname);
+      FLIRT_read_volume(global_testweight,globaloptions::get().testweightfname);
       if (global_testweight.zsize()==1) {
 	double_end_slices(global_testweight);
       }
@@ -1147,7 +1187,7 @@ int get_testvol(volume<float>& testvol)
 int get_refvol(volume<float>& refvol)
 {
   Tracer tr("get_refvol");
-  read_volume(refvol,globaloptions::get().reffname);
+  FLIRT_read_volume(refvol,globaloptions::get().reffname);
   if ((refvol.zsize()==1) && (globaloptions::get().do_optimise)) {
     double_end_slices(refvol);
   }
@@ -1159,7 +1199,7 @@ int get_refvol(volume<float>& refvol)
 
   if (globaloptions::get().useweights) {
     if (globaloptions::get().refweightfname.length()>0) {
-      read_volume(global_refweight,globaloptions::get().refweightfname);
+      FLIRT_read_volume(global_refweight,globaloptions::get().refweightfname);
       if (global_refweight.zsize()==1) { 
 	double_end_slices(global_refweight);
       }
@@ -1221,8 +1261,8 @@ void no_optimise()
   volume4D<float> testvol;
   // set up image pair and global pointer
   
-  read_volume(refvol,globaloptions::get().reffname);
-  read_volume4D(testvol,globaloptions::get().inputfname,
+  FLIRT_read_volume(refvol,globaloptions::get().reffname);
+  FLIRT_read_volume4D(testvol,globaloptions::get().inputfname,
 	      globaloptions::get().vinfo);
   short dtype;
   dtype = NEWIMAGE::dtype(globaloptions::get().inputfname);
@@ -2412,12 +2452,16 @@ int main(int argc,char *argv[])
     reshape(matresult,reshaped,4,4);
 
     Matrix finalmat = matresult * globaloptions::get().initmat;
-    read_volume(testvol,globaloptions::get().inputfname);
-    read_volume(refvol,globaloptions::get().reffname);
+    FLIRT_read_volume(testvol,globaloptions::get().inputfname);
+    FLIRT_read_volume(refvol,globaloptions::get().reffname);
     save_matrix_data(finalmat,testvol,refvol);
+  
     // generate the outputvolume (not safe_save st -out overrides -nosave)
     if (globaloptions::get().outputfname.size()>0) {
       volume<float> newtestvol = refvol;
+      float min_sampling_ref=1.0;
+      min_sampling_ref = Min(refvol.xdim(),Min(refvol.ydim(),refvol.zdim()));
+      testvol = blur(testvol,min_sampling_ref);
       final_transform(testvol,newtestvol,finalmat);      
       save_volume_dtype(newtestvol,globaloptions::get().outputfname.c_str(),
 			globaloptions::get().datatype,
