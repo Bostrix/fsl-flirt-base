@@ -2354,9 +2354,10 @@ int main(int argc,char *argv[])
   get_refvol(refvol);
   get_testvol(testvol);
   if (!same_left_right_order(refvol,testvol)) {
-    if (globaloptions::get().verbose>0) {
-      cout << "Swapping Left and Right in testvol" << endl;
-    }
+    cerr << "WARNING:: Images have different Left-Right conventions" << endl;
+    cerr << "          (one is radiological and one is neurological)" << endl;
+    cerr << "Inserting a left-right swap in the registration matrix" 
+         << endl << endl;
     globaloptions::get().initmat = globaloptions::get().initmat * testvol.swapmat(-1,2,3);
   }
 
