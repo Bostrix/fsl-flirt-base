@@ -1,4 +1,4 @@
-/*  applyxfm.cc
+/*  applyxfm4D.cc
 
     Mark Jenkinson, FMRIB Image Analysis Group
 
@@ -16,21 +16,24 @@ int main(int argc,char *argv[])
   Tracer tr("main");
   if (argc<5) { 
     cerr << "Usage: " << argv[0] << " <input volume> <ref volume>"
-	 << " <output volume> <transformation matrix file/[dir]> [-4D [-singlematrix]]\n"; 
+	 << " <output volume> <transformation matrix file/[dir]> [-singlematrix]]\n"; 
     return -1; 
   }
+  
+  // NB: a hidden option (-3D) exists (must appear after singlematrix)
+
 
   string oname = argv[3], iname = argv[1], 
     transname = argv[4], refname = argv[2];
-  bool fourd = false;
+  bool singlematrix = false;
   if (argc>=6) {
     string option = argv[5];
-    if (option == "-4D" )  fourd = true;
+    if (option == "-singlematrix" )  singlematrix = true;
   }
-  bool singlematrix = false;
+  bool fourd = true;
   if (argc>=7) {
     string option = argv[6];
-    if (option == "-singlematrix" )  singlematrix = true;
+    if (option == "-3D" )  fourd = false;
   }
 
   if (fourd) {
@@ -40,7 +43,9 @@ int main(int argc,char *argv[])
     read_volume4D(invol,iname,vinfo);
     invol.setextrapolationmethod(extraslice);
 
-    //    refvol = invol[atoi(refname.c_str())];
+    // old form used a volume number
+    //    refvol = invol[atoi(refname.c_str())];  
+
     read_volume(refvol,refname);
 
     Matrix affmat(4,4);
