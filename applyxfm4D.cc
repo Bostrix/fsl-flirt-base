@@ -40,17 +40,15 @@ int main(int argc,char *argv[])
     read_volume4D(invol,iname,vinfo);
     invol.setextrapolationmethod(extraslice);
 
-    refvol = invol[atoi(refname.c_str())];
+    //    refvol = invol[atoi(refname.c_str())];
+    read_volume(refvol,refname);
 
     Matrix affmat(4,4);
     string matname;
     for (int m=invol.mint(); m<=invol.maxt(); m++) {
 
       if (singlematrix)
-	{
 	  read_matrix(affmat,transname,invol[0]);
-	  cout << affmat << endl;
-	}
       else
 	{
 	  matname = transname + "/MAT_0";
