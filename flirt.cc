@@ -79,8 +79,11 @@ void final_transform(const volume<float>& testvol, volume<float>& newtestvol,
   } else {
     testvol.setinterpolationmethod(trilinear);
   }
-  affine_transform(testvol,newtestvol,finalmat,
-		   globaloptions::get().paddingsize);
+  float paddingsize = globaloptions::get().paddingsize;
+  if (globaloptions::get().mode2D) {
+    paddingsize = Max(1.0,paddingsize);
+  }
+  affine_transform(testvol,newtestvol,finalmat,paddingsize);
 }
 
 template <class T>
