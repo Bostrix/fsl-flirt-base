@@ -1,4 +1,4 @@
-<refguide name="Overview of the FLIRT project" section="l" rootdir="../" author="Mark Jenkinson" 
+<usrguide name="Overview of the FLIRT project" section="l" rootdir="../" author="Mark Jenkinson" 
 year="2000">
 
 <section title="Introduction">
@@ -66,4 +66,4 @@ reslice volume).
 </section>
 
 
-</refguide>
+</usrguide>
