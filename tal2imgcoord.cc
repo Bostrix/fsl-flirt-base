@@ -35,6 +35,7 @@ public:
   string coordfname;
   bool mm;
   int verbose;
+  bool medx;
 public:
   globaloptions();
   ~globaloptions() {};
@@ -51,6 +52,7 @@ globaloptions::globaloptions()
   coordfname = "";
   xfmfname = "";
   mm = true;
+  medx=true;
 }
 
 
@@ -67,6 +69,7 @@ void print_usage(int argc, char *argv[])
        << "        -xfm <IMG to Talairach transform filename>\n"
        << "        -mm                                  (outputs coordinates in mm - default)\n"
        << "        -vox                                 (outputs coordinates in voxels)\n"
+       << "        -flirt                               (use flirt, not medx, coordinate conventions)\n"    
        << "        -help\n\n"
        << " Note that the first three options are compulsory\n";
 }
@@ -104,6 +107,10 @@ void parse_command_line(int argc, char* argv[])
       continue;
     } else if ( arg == "-mm" ) {
       globalopts.mm = true;
+      n++;
+      continue;
+    } else if ( arg == "-flirt" ) {
+      globalopts.medx = false;
       n++;
       continue;
     } else if ( arg == "-v" ) {
@@ -222,10 +229,12 @@ int main(int argc,char *argv[])
   // the swap matrices convert flirt voxels to medx voxels
   Matrix swapy1(4,4), swapy2(4,4);
   Identity(swapy1);  Identity(swapy2);
-  swapy1(2,2) = -1.0;
-  swapy2(2,2) = -1.0;
-  swapy1(2,4) = talvol.ysize()-1.0;
-  swapy2(2,4) = imgvol.ysize()-1.0;
+  if (globalopts.medx) {
+    swapy1(2,2) = -1.0;
+    swapy2(2,2) = -1.0;
+    swapy1(2,4) = talvol.ysize()-1.0;
+    swapy2(2,4) = imgvol.ysize()-1.0;
+  }
 
   Matrix talvox2world, imgvox2world;
   talvox2world = vf1w1 * swapy1 * vt1vm1;
