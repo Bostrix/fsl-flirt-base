@@ -2389,10 +2389,11 @@ int main(int argc,char *argv[])
       read_volume(refvol,globalopts.reffname);
       save_matrix_data(finalmat,testvol,refvol);
       // generate the outputvolume (not safe_save st -out overrides -nosave)
-      volume newtestvol = refvol;
-      filled_affine_transform(newtestvol,testvol,finalmat);      
-      save_volume(newtestvol,globalopts.outputfname.c_str());
-      //save_global_data(finalmat,testvol,refvol);
+      if (globalopts.outputfname.size()>0) {
+	volume newtestvol = refvol;
+	filled_affine_transform(newtestvol,testvol,finalmat);      
+	save_volume(newtestvol,globalopts.outputfname.c_str());
+      }
     }
 
   }
