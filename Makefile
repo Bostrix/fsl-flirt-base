@@ -23,7 +23,7 @@ P_OBJS = pointflirt.o
 
 RUNTCLS = Flirt InvertXFM ApplyXFM
 XFILES = flirt convert_xfm avscale rmsdiff tal2imgcoord img2talcoord \
-	img2imgcoord applyxfm4D
+	img2imgcoord applyxfm4D pointflirt
 TESTXFILES = 
 HFILES =
 SCRIPTS = extracttxt pairreg fixxfm
