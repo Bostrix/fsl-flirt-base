@@ -2328,7 +2328,7 @@ void interpretcommand(const string& comline, bool& skip,
   if (words[0]=="copy") {
     // COPY
     if (words.size()<3) {
-      cerr << "Wrong number of arguments to COPY" << endl;
+      cerr << "Wrong number of args to COPY" << endl;
       exit(-1);
     }
     MatVecPtr src, dest;
@@ -2339,7 +2339,7 @@ void interpretcommand(const string& comline, bool& skip,
   } else if (words[0]=="clear") {
     // CLEAR
     if (words.size()<2) {
-      cerr << "Wrong number of arguments to CLEAR" << endl;
+      cerr << "Wrong number of args to CLEAR" << endl;
       exit(-1);
     }
     MatVecPtr src;
@@ -2349,7 +2349,7 @@ void interpretcommand(const string& comline, bool& skip,
   } else if (words[0]=="print") {
     // PRINT
     if (words.size()<2) {
-      cerr << "Wrong number of arguments to PRINT" << endl;
+      cerr << "Wrong number of args to PRINT" << endl;
       exit(-1);
     }
     MatVecPtr src;
@@ -2359,7 +2359,7 @@ void interpretcommand(const string& comline, bool& skip,
   } else if (words[0]=="save") {
     // SAVE
     if (words.size()<3) {
-      cerr << "Wrong number of arguments to SAVE" << endl;
+      cerr << "Wrong number of args to SAVE" << endl;
       exit(-1);
     }
     MatVecPtr src;
@@ -2369,7 +2369,7 @@ void interpretcommand(const string& comline, bool& skip,
   } else if (words[0]=="read") {
     // READ
     if (words.size()<3) {
-      cerr << "Wrong number of arguments to READ" << endl;
+      cerr << "Wrong number of args to READ" << endl;
       exit(-1);
     }
     MatVecPtr src;
@@ -2379,7 +2379,7 @@ void interpretcommand(const string& comline, bool& skip,
   } else if (words[0]=="printparams") {
     // PRINTPARAMS
     if (words.size()<2) {
-      cerr << "Wrong number of arguments to PRINTPARAMS" << endl;
+      cerr << "Wrong number of args to PRINTPARAMS" << endl;
       exit(-1);
     }
     MatVecPtr src;
@@ -2389,7 +2389,7 @@ void interpretcommand(const string& comline, bool& skip,
   } else if (words[0]=="saveparams") {
     // SAVEPARAMS
     if (words.size()<3) {
-      cerr << "Wrong number of arguments to SAVEPARAMS" << endl;
+      cerr << "Wrong number of args to SAVEPARAMS" << endl;
       exit(-1);
     }
     MatVecPtr src;
@@ -2399,7 +2399,7 @@ void interpretcommand(const string& comline, bool& skip,
   } else if (words[0]=="readparams") {
     // READPARAMS
     if (words.size()<3) {
-      cerr << "Wrong number of arguments to READPARAMS" << endl;
+      cerr << "Wrong number of args to READPARAMS" << endl;
       exit(-1);
     }
     MatVecPtr src;
@@ -2409,7 +2409,7 @@ void interpretcommand(const string& comline, bool& skip,
   } else if (words[0]=="sort") {
     // SORT
     if (words.size()<2) {
-      cerr << "Wrong number of arguments to SORT" << endl;
+      cerr << "Wrong number of args to SORT" << endl;
       exit(-1);
     }
     MatVecPtr src;
@@ -2422,7 +2422,7 @@ void interpretcommand(const string& comline, bool& skip,
   } else if (words[0]=="optimise") {
     // OPTIMISE
     if (words.size()<5) {
-      cerr << "Wrong number of arguments to OPTIMISE" << endl;
+      cerr << "Wrong number of args to OPTIMISE" << endl;
       exit(-1);
     }
     int usrdof=12, usrmaxitn=4, usrrow1=1, usrrow2=999999;
@@ -2452,7 +2452,7 @@ void interpretcommand(const string& comline, bool& skip,
   } else if (words[0]=="measurecost") {
     // MEASURECOST
     if (words.size()<5) {
-      cerr << "Wrong number of arguments to MEASURECOST" << endl;
+      cerr << "Wrong number of args to MEASURECOST" << endl;
       exit(-1);
     }
     int usrdof=12, usrrow1=1, usrrow2=999999;
@@ -2488,7 +2488,7 @@ void interpretcommand(const string& comline, bool& skip,
   } else if (words[0]=="if") {
     // IF
     if (words.size()<4) {
-      cerr << "Wrong number of arguments to IF" << endl;
+      cerr << "Wrong number of args to IF" << endl;
       exit(-1);
     }
     float arg1, arg2;
