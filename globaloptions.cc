@@ -302,7 +302,7 @@ void globaloptions::print_usage(int argc, char *argv[])
        << "        -applyisoxfm <scale>               (as applyxfm but forces isotropic resampling)\n"
        << "        -searchrx <min_angle> <max_angle>  (angles in degrees: default is -90 90)\n" 
        << "        -searchry <min_angle> <max_angle>  (angles in degrees: default is -90 90)\n" 
-       << "        -searchrz <min_angle> <max_angle>  (angles in degrees: default is -180 180)\n" 
+       << "        -searchrz <min_angle> <max_angle>  (angles in degrees: default is -90 90)\n" 
        << "        -coarsesearch <delta_angle>        (angle in degrees: default is 60)\n" 
        << "        -finesearch <delta_angle>          (angle in degrees: default is 18)\n" 
        << "        -schedule <schedule-file>          (replaces default schedule)\n"
