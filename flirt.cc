@@ -1288,7 +1288,9 @@ void no_optimise()
   for (int t0=testvol.mint(); t0<=testvol.maxt(); t0++) {
     int tref=t0-testvol.mint();
     outputvol.addvolume(refvol);
-    testvol[t0] = blur(testvol[t0],min_sampling_ref);
+    if (globaloptions::get().interpmethod != NearestNeighbour) {
+      testvol[t0] = blur(testvol[t0],min_sampling_ref);
+    }
     
     if (globaloptions::get().verbose>=2) { 
       print_volume_info(refvol,"refvol"); 
@@ -2463,7 +2465,9 @@ int main(int argc,char *argv[])
       volume<float> newtestvol = refvol;
       float min_sampling_ref=1.0;
       min_sampling_ref = Min(refvol.xdim(),Min(refvol.ydim(),refvol.zdim()));
-      testvol = blur(testvol,min_sampling_ref);
+      if (globaloptions::get().interpmethod != NearestNeighbour) {
+	testvol = blur(testvol,min_sampling_ref);
+      }
       final_transform(testvol,newtestvol,finalmat);      
       save_volume_dtype(newtestvol,globaloptions::get().outputfname.c_str(),
 			globaloptions::get().datatype,
