@@ -830,18 +830,6 @@ void optimise_strategy2(Matrix& matresult)
 
 //-------------------------------------------------------------------------//
 
-float rms_deviation(const Matrix& affmat1, const Matrix& affmat2) 
-{
-  float rmax = 80.0;
-  Tracer trcr("rms_deviation");
-  Matrix adiff(3,3);
-  adiff = affmat1.SubMatrix(1,3,1,3) - affmat2.SubMatrix(1,3,1,3);
-  ColumnVector tr(3);
-  tr = affmat1.SubMatrix(1,3,4,4) - affmat2.SubMatrix(1,3,4,4);
-  float rms = (tr.t() * tr).AsScalar() + rmax*rmax/5.0*Trace(adiff.t()*adiff);
-  return rms;
-}
-
 
 int sorted_posn(const float costval, const Matrix& opt_matrixlist)
 {
@@ -900,7 +888,7 @@ int add2list(const Matrix& rowmat, Matrix& opt_matrixlist, float rms_min=1.0)
   Tracer tr("add2list");
   if (rowmat.Nrows()!=1) {
     cerr << "WARNING (add2list): cannot add matrix with " << rowmat.Nrows() 
-	 << " to matrix\n";
+	 << " rows to matrix\n";
     return -1;
   }
   Matrix mat1(4,4), mat2(4,4);
