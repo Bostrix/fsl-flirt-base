@@ -258,7 +258,7 @@ void globaloptions::parse_command_line(int argc,char** argv,
       {
 	string winarg = argv[n+1];
 	if (winarg == "rectangular") {
-	  sincwindow = Rectangular;
+	  sincwindow = Rect;
 	} else if (winarg == "hanning") {
 	  sincwindow = Hanning;
 	} else if (winarg == "blackman") {
