@@ -91,7 +91,7 @@ class globaloptions {
   bool useweights;
   bool mode2D;
   interps interpmethod;
-  int sincwidth;
+  float sincwidth;
   windowtype sincwindow;
 
   int single_param;
@@ -198,7 +198,7 @@ inline globaloptions::globaloptions()
   useweights = false;
   mode2D = false;
   interpmethod = TriLinear;
-  sincwidth = 3;
+  sincwidth = 7.0; // voxels
   sincwindow = Hanning;
 
   single_param = -1;
