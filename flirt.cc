@@ -10,7 +10,7 @@
 
 // Put current version number here:
 #include <string>
-const string version = "2.2";
+const string version = "3.0";
 
 #include <iostream>
 #include <fstream>
@@ -1489,7 +1489,7 @@ int usrread(string filename, MatVecPtr usrsrcmat)
 int usrsetrow(MatVecPtr usrsrcmat,const std::vector<string> &words)
 {
   Tracer tr("usrsetrow");
-  // SETROW src
+  // SETROW mat p1 p2 .. p16
 
   RowVector currow(17);
   currow = 0.0;
@@ -1497,6 +1497,30 @@ int usrsetrow(MatVecPtr usrsrcmat,const std::vector<string> &words)
     currow(c) = atof(words[c].c_str());
   }
   usrsrcmat->push_back(currow);
+  return 0;
+}
+
+int usrsetrowparams(MatVecPtr usrsrcmat,const std::vector<string> &words)
+{
+  Tracer tr("usrsetrowparams");
+  // SETROWPARAMS mat p1 p2 ...
+
+  ColumnVector params(12);
+  Matrix affmat(4,4), reshaped(1,16);
+  RowVector rowresult(17);
+  float costval=0.0;
+
+  params = 0.0;
+  for (unsigned int c=2; c<=13; c++) {
+    params(c-1) = atof(words[c].c_str());
+  }
+
+  vector2affine(params,12,affmat);
+  reshape(reshaped,affmat,1,16);
+  rowresult(1) = costval;
+  rowresult.SubMatrix(1,1,2,17) = reshaped;
+  usrsrcmat->push_back(rowresult);
+
   return 0;
 }
 
@@ -1806,7 +1830,9 @@ void usrsetscale(int usrscale,
   int scale = usrscale;
   imagepair *globalpair=0;
   if (usrscale > 0.0) globaloptions::get().requestedscale = usrscale;
+  
   if (globaloptions::get().min_sampling<=1.25 * ((float) scale)) {
+    globaloptions::get().lastsampling = scale;
     get_testvol(testvol);
     volume testvolnew;
     blur4subsampling(testvolnew,testvol,(float) scale);
@@ -2071,6 +2097,16 @@ void interpretcommand(const string& comline, bool& skip,
     int d1, d2;
     parsematname(words[1],src,d1,d2);
     usrsetrow(src,words);
+  } else if (words[0]=="setrowparams") {
+    // SETROWPARAMS
+    if (words.size()<14) {
+      cerr << "Wrong number of args to SETROWPARAMS" << endl;
+      exit(-1);
+    }
+    MatVecPtr src;
+    int d1, d2;
+    parsematname(words[1],src,d1,d2);
+    usrsetrowparams(src,words);
   } else if (words[0]=="setoption") {
     // SETOPTION
     if (words.size()<3) {
@@ -2242,6 +2278,8 @@ int main(int argc,char *argv[])
   if (globaloptions::get().verbose>=2) print_volume_info(testvol,"TESTVOL");
 
   globaloptions::get().impair = &global_8;
+  global_refweight = global_refweight8;
+  globaloptions::get().lastsampling = 8;
 
 
   Matrix matresult(4,4);
