@@ -1203,6 +1203,13 @@ int resample_refvol(volume<float>& refvol, float sampling=1.0)
 
 ////////////////////////////////////////////////////////////////////////////
 
+void fix_output_volume(volume<float>& vol)
+{
+  // make all dimensions positive and origin zero (consistency with mjimage)
+  vol.setdims(fabs(vol.xdim()),fabs(vol.ydim()),fabs(vol.zdim()));
+  vol.setorigin(0.0,0.0,0.0);
+}
+
 
 void no_optimise()
 {
@@ -1239,6 +1246,8 @@ void no_optimise()
 
   volume<float> outputvol = refvol;
   final_transform(testvol,outputvol,globaloptions::get().initmat);
+  // make all dimensions positive and origin zero (consistency with mjimage)
+  fix_output_volume(outputvol);
   save_volume_dtype(outputvol,globaloptions::get().outputfname.c_str(),
 		    globaloptions::get().datatype,globaloptions::get().vinfo);
   if (globaloptions::get().verbose>=2) {
@@ -2393,6 +2402,8 @@ int main(int argc,char *argv[])
     if (globaloptions::get().outputfname.size()>0) {
       volume<float> newtestvol = refvol;
       final_transform(testvol,newtestvol,finalmat);      
+      // make all dimensions positive and origin zero (consistency with mjimage)
+      fix_output_volume(newtestvol);
       save_volume_dtype(newtestvol,globaloptions::get().outputfname.c_str(),
 			globaloptions::get().datatype,
 			globaloptions::get().vinfo);
