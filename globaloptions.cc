@@ -78,6 +78,10 @@ void globaloptions::parse_command_line(int argc,char** argv,
       force_scaling = true;
       n++;
       continue;
+    } else if ( arg == "-2D") {
+      mode2D = true;
+      n++;
+      continue;
     } else if ( arg == "-debugsave") {
       nosave = false;
       n++;
@@ -306,7 +310,7 @@ void globaloptions::print_usage(int argc, char *argv[])
        << "        -out, -o <outputvol>               (default is none)\n"
        << "        -datatype {char,short,int,float,double}                  (force output data type)\n"
        << "        -cost {mutualinfo,corratio,normcorr,normmi,leastsq}        (default is corratio)\n"
-       << "        -searchcost {mutualinfo,woods,corratio,normcorr,normmi,leastsq}  (default is corratio)\n"
+       << "        -searchcost {mutualinfo,corratio,normcorr,normmi,leastsq}  (default is corratio)\n"
        << "        -anglerep {quaternion,euler}       (default is euler)\n"
        << "        -bins <number of histogram bins>   (default is "
                                         << no_bins << ")\n"
@@ -327,11 +331,10 @@ void globaloptions::print_usage(int argc, char *argv[])
        << "        -schedule <schedule-file>          (replaces default schedule)\n"
        << "        -refweight <volume>                (use weights for reference volume)\n"
        << "        -inweight <volume>                 (use weights for input volume)\n"
+       << "        -2D                                (use 2D rigid body mode - ignores dof)\n"
        << "        -verbose <num>                     (0 is least and default)\n"
        << "        -v                                 (same as -verbose 1)\n"
        << "        -i                                 (pauses at each stage: default is off)\n"
-       << "        -nosave                            (do not save intermediate volumes - default)\n"
-       << "        -debugsave                         (save any intermediate volumes)\n"
        << "        -version                           (prints version number)\n"
        << "        -help\n";
 }
