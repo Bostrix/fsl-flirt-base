@@ -101,6 +101,149 @@
 
    //--------------------------------------------------------------------//
 
+   float corr_ratio_fully_weighted(const volume& vref, const volume& vtest,
+				   const volume& refweight, 
+				   const volume& testweight,
+				   int *bindex, const Matrix& aff,
+				   const int no_bins, const float smoothsize)
+    {
+      // Do everything in practice via the inverse transformation
+      // That is, for every point in vref, calculate the pre-image in
+      //  vtest to which it corresponds, and interpolate vtest to get the
+      //  value there.
+      // Also, the sampling transformations must be accounted for:
+      //     T_vox1->vox2 = (T_samp2)^-1 * T_world * T_samp1
+
+      Matrix iaffbig = vtest.sampling_matrix().i() * aff.i() *
+	                     vref.sampling_matrix();  
+      Matrix iaff=iaffbig.SubMatrix(1,3,1,3);
+      unsigned int xb1=vref.columns()-1, yb1=vref.rows()-1, zb1=vref.slices()-1;
+      float  xb2 = ((float) vtest.columns())-1.0001,
+	yb2=((float) vtest.rows())-1.0001, zb2=((float) vtest.slices())-1.0001;
+
+      float *sumy, *sumy2;
+      sumy = new float[no_bins+1];
+      sumy2 = new float[no_bins+1];
+      float *numy;
+      numy = new float[no_bins+1];
+      int b=0;
+ 
+      for (int i=0; i<=no_bins; i++) {
+	numy[i]=0.0; sumy[i]=0.0;  sumy2[i]=0.0;
+      }
+
+      float a11=iaff(1,1), a12=iaff(1,2), a13=iaff(1,3), a14=iaffbig(1,4),
+	a21=iaff(2,1), a22=iaff(2,2), a23=iaff(2,3), a24=iaffbig(2,4),
+	a31=iaff(3,1), a32=iaff(3,2), a33=iaff(3,3), a34=iaffbig(3,4);
+      float wval,val,o1,o2,o3;
+
+      float smoothx, smoothy, smoothz, weight;
+      smoothx = smoothsize / vtest.getx();
+      smoothy = smoothsize / vtest.gety();
+      smoothz = smoothsize / vtest.getz();
+
+      // The matrix algebra below has been hand-optimized from
+      //  [o1 o2 o3] = a * [x y z]  at each iteration
+
+      unsigned int xmin, xmax;
+      int *bptr;
+
+      for (unsigned int z=0; z<=zb1; z++) { 
+	for (unsigned int y=0; y<=yb1; y++) { 
+
+	  o1= y*a12 + z*a13 + a14;  // x=0
+	  o2= y*a22 + z*a23 + a24;  // x=0
+	  o3= y*a32 + z*a33 + a34;  // x=0
+	
+	  // determine range
+	  findrangex(xmin,xmax,o1,o2,o3,a11,a21,a31,xb1,yb1,zb1,xb2,yb2,zb2);
+
+	  o1 += xmin * a11;
+	  o2 += xmin * a21;
+	  o3 += xmin * a31;
+
+	  bptr = get_bindexptr(xmin,y,z,vref,bindex);
+
+	  for (unsigned int x=xmin; x<=xmax; x++) {
+
+  	    val = q_tri_interpolation(vtest,o1,o2,o3);
+	    wval = q_tri_interpolation(testweight,o1,o2,o3);
+
+	    // do the cost function record keeping...
+	    b=*bptr;
+	    weight=wval*refweight(x,y,z);
+	    if (o1<smoothx)  weight*=o1/smoothx;
+	    else if ((xb2-o1)<smoothx) weight*=(xb2-o1)/smoothx;
+	    if (o2<smoothy)  weight*=o2/smoothy;
+	    else if ((yb2-o2)<smoothy) weight*=(yb2-o2)/smoothy;
+	    if (o3<smoothz)  weight*=o3/smoothz;
+	    else if ((zb2-o3)<smoothz) weight*=(zb2-o3)/smoothz;
+	    if (weight<0.0)  weight=0.0;
+	    numy[b]+=weight;
+	    sumy[b]+=weight*val;
+	    sumy2[b]+=weight*val*val;
+
+	    bptr++;
+	    o1 += a11;
+	    o2 += a21;
+	    o3 += a31;
+	  }
+	}
+      }
+
+
+      float corr_ratio=0.0, var=0.0, totsumy=0.0, totsumy2=0.0;
+      float numtoty=0.0;
+
+      // correct for occasion lapses into the last bin
+      numy[no_bins-1] += numy[no_bins];
+      sumy[no_bins-1] += sumy[no_bins];
+      sumy2[no_bins-1] += sumy2[no_bins];
+      numy[no_bins]=0.0;
+      sumy[no_bins]=0.0;
+      sumy2[no_bins]=0.0;
+
+      // now calculate the individual variances for each iso-set
+      //  weighting them by the number of pixels from Image x that contribute
+      for (b=0; b<no_bins; b++) {
+	if (numy[b]>2.0) {
+	  numtoty += numy[b];
+	  totsumy += sumy[b];
+	  totsumy2 += sumy2[b];
+	  // the following should be the variance of the bth iso-subset
+	  var = (sumy2[b] - sumy[b]*sumy[b]/numy[b] ) / ( numy[b]-1);
+	  // cerr << "Set #" << b << " has " << numy[b] << " elements and " 
+	  //   << var << " variance" << endl;
+	  corr_ratio += var * ((float) numy[b]);
+	}
+      }
+      delete [] numy; delete [] sumy; delete [] sumy2;
+
+      // normalise the weighting of numy[]
+      if (numtoty>0)  corr_ratio/=((float) numtoty);
+      // calculate the total variance of Image y and then normalise by this
+      if (numtoty>1)
+	var = ( totsumy2 - totsumy*totsumy/numtoty ) / (numtoty - 1);
+      //cerr << "TOTALS are:" << endl 
+      //   << " numerator variance is : " << corr_ratio << endl
+      //   << " and denominator variance is: " << var << " from " << numtoty 
+      //   << " valid elements" << endl;
+      if (var>0.0)  corr_ratio/=var;
+      // the above is actually 1 - correlation ratio, so correct this now
+      if ( (numtoty<=1) || (var<=0.0) )
+	return 0.0;   // the totally uncorrelated condition
+      else
+	return (1.0 - corr_ratio);
+
+      // an alternative is to return 1.0/corr_ratio (=1/(1-correlation ratio))
+      //  which may be better at rewarding gains near the best solution
+
+      return 0;
+
+    }
+
+  ///////////////////////////////////////////////////////////////////////
+
    float corr_ratio_smoothed(const volume& vref, const volume& vtest,
 		    int *bindex, const Matrix& aff,
 		    const int no_bins, const float smoothsize)
