@@ -1,4 +1,6 @@
-/*  flirt.cc
+/*  FLIRT - FMRIB's Linear Image Registration Tool
+
+    flirt.cc
 
     Mark Jenkinson, FMRIB Image Analysis Group
 
