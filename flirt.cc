@@ -1242,6 +1242,7 @@ void no_optimise()
     resample_refvol(refvol,globaloptions::get().isoscale);
   }
 
+  volume<float> outputvol = refvol;
   for (int t0=testvol.mint(); t0<=testvol.maxt(); t0++) {
     testvol[t0] = blur(testvol[t0],min_sampling_ref);
     
@@ -1250,7 +1251,6 @@ void no_optimise()
       print_volume_info(testvol,"inputvol"); 
     }
     
-    volume<float> outputvol = refvol;
     final_transform(testvol[t0],outputvol,globaloptions::get().initmat);
     if (globaloptions::get().iso) { fix_output_volume(outputvol); }
     save_volume_dtype(outputvol,globaloptions::get().outputfname.c_str(),
