@@ -24,7 +24,7 @@ RUNTCLS = Flirt
 XFILES = flirt convert_xfm avscale rmsdiff tal2epicoord epi2talcoord img2imgcoord
 TESTXFILES = testcode
 HFILES =
-SCRIPTS = extract pairreg pairregrc1 pairregrc2 pairregrc3
+SCRIPTS = extract pairreg pairregrc1 pairregrc2 pairregrc3 fixxfm
 
 all:	${XFILES}
 
