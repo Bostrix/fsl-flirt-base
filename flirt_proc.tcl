@@ -131,7 +131,11 @@ set flirtoptions "-bins $bins -cost $cost"
 if { $dof == "2D" } {
     set flirtoptions "$flirtoptions -2D -dof 12"
 } else {
+  if { $dof == "TRANS" } {
+      set flirtoptions "$flirtoptions -dof 6 -schedule ${FSLDIR}/etc/flirtsch/xyztrans.sch"
+  } else {
     set flirtoptions "$flirtoptions -dof $dof"
+  }
 }
 if { $disablesearch_yn } {
     set flirtoptions "$flirtoptions -searchrx 0 0 -searchry 0 0 -searchrz 0 0"
