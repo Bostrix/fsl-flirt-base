@@ -45,7 +45,6 @@ const string version = "2.1.3";
 
 ////////////////////////////////////////////////////////////////////////////
 
-
 int round(const float val) {
   Tracer tr("round");
   if (val>0.0) {
@@ -1149,12 +1148,15 @@ int resample_refvol(volume& refvol, float sampling=1.0)
   if (sampl<0.1) { 
     cerr << "WARNING: under minimum sampling of 0.1" << endl;
   }
+
   if (globaloptions::get().verbose >= 2) 
-    cout << "Resampling refvol isotropically" << endl;
+    cout << "Resampling refvol isotropically: " << sampling << endl;
+
   // isotropically resample the volume
   volume tmpvol;
   blur4subsampling(tmpvol,refvol,sampl);
   isotropic_rescale(refvol,tmpvol,sampl);
+
   if (globaloptions::get().verbose>=2) print_volume_info(refvol,"Refvol");      
   
   return 0;
@@ -1173,41 +1175,32 @@ void no_optimise()
   get_refvol(refvol);
   read_volume(testvol,globaloptions::get().inputfname,
 	      globaloptions::get().datatype);
-  read_matrix(globaloptions::get().initmat,globaloptions::get().initmatfname,testvol);
+  read_matrix(globaloptions::get().initmat,
+	      globaloptions::get().initmatfname,testvol);
   if (globaloptions::get().verbose>=2) {
     cerr << "Init Matrix = \n" << globaloptions::get().initmat << endl;
   }
   
-  float min_sampling_ref=1.0, min_sampling_test=1.0, min_sampling=1.0;
+  float min_sampling_ref=1.0;
   min_sampling_ref = Min(refvol.getx(),Min(refvol.gety(),refvol.getz()));
-  min_sampling_test = Min(testvol.getx(),Min(testvol.gety(),testvol.getz()));
-  // Change behaviour so that the minimum dimension is now used if possible
-    // min_sampling = (float) ceil(Max(min_sampling_ref,min_sampling_test));
-  // No point in sampling below the minimum dimension inherent in the data
-  if (globaloptions::get().min_sampling < min_sampling) 
-    globaloptions::get().min_sampling = min_sampling;
   
   if (globaloptions::get().iso) {
     resample_refvol(refvol,globaloptions::get().isoscale);
   }
   {
     volume testvol_1;
-    blur4subsampling(testvol_1,testvol,globaloptions::get().min_sampling);
+    blur4subsampling(testvol_1,testvol,min_sampling_ref);
     testvol = testvol_1;
   }
 
-  imagepair global_1(refvol,testvol);
-  global_1.set_no_bins(globaloptions::get().no_bins);
-  global_1.smoothsize = globaloptions::get().smoothsize;
-  globaloptions::get().impair = &global_1;
-  
-  volume outputvol = globaloptions::get().impair->refvol;
-  filled_affine_transform(outputvol,globaloptions::get().impair->testvol,
-			  globaloptions::get().initmat);
+  if (globaloptions::get().verbose>=2) { print_volume_info(refvol,"refvol"); }
+
+  volume outputvol = refvol;
+  filled_affine_transform(outputvol,testvol,globaloptions::get().initmat);
   safe_save_volume(outputvol,globaloptions::get().outputfname.c_str());
   if (globaloptions::get().verbose>=2) {
-    save_matrix_data(globaloptions::get().initmat,
-		     globaloptions::get().impair->testvol, outputvol);
+    save_matrix_data(globaloptions::get().initmat, testvol, outputvol);
+    print_volume_info(outputvol,"Resampled volume");
   }
   exit(0);
 }
