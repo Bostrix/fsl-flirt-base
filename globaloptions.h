@@ -87,6 +87,7 @@ class globaloptions {
   bool iso;
   bool resample;
   bool useweights;
+  bool mode2D;
 
   int single_param;
 
@@ -190,6 +191,7 @@ inline globaloptions::globaloptions()
   iso = true;
   resample = true;
   useweights = false;
+  mode2D = false;
 
   single_param = -1;
 }
