@@ -1398,6 +1398,29 @@ void search_cost(Matrix& paramlist, volume& costs, volume& tx,
 
 ////////////////////////////////////////////////////////////////////////////
 
+float measure_cost(int input_dof)
+{
+  Tracer tr("measure_cost");
+  // the most basic strategy - just do a single optimisation run at the
+  //  specified dof
+  int dof=input_dof;
+  if (dof<6) { 
+    cerr << "Erroneous dof " << dof << " : using 6 instead\n"; 
+    dof=6; 
+  }
+  if (dof>12) {
+    cerr << "Erroneous dof " << dof << " : using 12 instead\n"; 
+    dof=12;
+  }
+
+  Matrix matresult(4,4);
+  ColumnVector params(12);
+  globalopts.no_params = dof;
+  affmat2vector(matresult,dof,params);
+  return costfn(params);
+}  
+
+////////////////////////////////////////////////////////////////////////////
 
 int optimise_strategy1(Matrix& matresult, float& fans, int input_dof, 
 		       int max_iterations=4)
@@ -1621,16 +1644,16 @@ void set_perturbations(Matrix& delta, Matrix& perturbmask)
   param_tol = param_tol * estimate_scaling();
   // set the magnitude of the variations
   float delscale, delrx, delry, delrz;
-  delscale=0.0;
   delrx = 3.0*param_tol(1); 
   delry = 3.0*param_tol(2);
   delrz = 3.0*param_tol(3);
-  if (globalopts.dof>=7) delscale = 0.1;
   if (finerx.Nrows()>1) { delrx = 0.5*(finerx(2) - finerx(1)); }
   if (finery.Nrows()>1) { delry = 0.5*(finery(2) - finery(1)); }
   if (finerz.Nrows()>1) { delrz = 0.5*(finerz(2) - finerz(1)); }
+  delscale=0.0;  
+  if (globalopts.dof>=7) delscale = 0.1;  // scale only set if allowed
   delta.ReSize(12,1);
-  delta = 0.0;
+  delta = 0.05;  // translation default
   delta(1,1) = delrx; delta(2,1) = delry;  delta(3,1) = delrz;
   delta(7,1) = delscale;  delta(8,1) = delscale;  delta(9,1) = delscale;
   // set the directions of the variations 
@@ -1982,7 +2005,7 @@ int parsematname(const string& inname, MatVecPtr& usrdefmat, int& r1, int& r2)
     }
   }
   if (row1.length()<1) row1="1";
-  if (row2.length()<1)  row2="99999";
+  if (row2.length()<1)  row2="999999";
 
   setmatvariable(basename, usrdefmat);
   setscalarvariable(row1,r1);
@@ -2097,6 +2120,121 @@ void usrsearch(MatVecPtr searchoptmat, MatVecPtr preoptsearchmat)
     tmprow = optmatsorted[i].SubMatrix(1,1,18,34);
     preoptsearchmat->push_back(tmprow);
   }
+}
+
+
+int usrreadparams(string filename, MatVecPtr usrsrcmat)
+{
+  Tracer tr("usrreadparams");
+  // READ src
+
+  ifstream fptr(filename.c_str());
+  if (!fptr) { 
+    cerr << "Could not open file " << filename << " for reading" << endl;
+    return -1;
+  }
+  usrsrcmat->clear();
+  ColumnVector params(12);
+  Matrix affmat(4,4), reshaped(1,16);
+  RowVector rowresult(17);
+  float costval;
+  while (!fptr.eof()) {
+    params = 0.0;
+    fptr >> costval;
+    for (unsigned int c=1; c<=12; c++) {
+      fptr >> params(c);
+    }
+    if (!fptr.eof()) {
+      vector2affine(params,12,affmat);
+      reshape(reshaped,affmat,1,16);
+      rowresult(1) = costval;
+      rowresult.SubMatrix(1,1,2,17) = reshaped;
+      usrsrcmat->push_back(rowresult);
+    }
+  }
+  fptr.close();
+  return 0;
+}
+
+
+int usrsaveparams(string filename, MatVecPtr usrmatptr, 
+		    unsigned int usrrow1, unsigned int usrrow2)
+{
+  Tracer tr("usrsaveparams");
+  // PRINTPARAMS
+  ofstream fptr(filename.c_str());
+  if (!fptr) { 
+    cerr << "Could not open file " << filename << " for writing" << endl;
+    return -1;
+  }
+  Matrix matresult;
+  ColumnVector params(12);
+  for (unsigned int crow=usrrow1; crow<=Min(usrrow2,usrmatptr->size()); crow++)
+    {
+      // the pre-optimised case with perturbations
+      Matrix reshaped = (*usrmatptr)[crow-1].SubMatrix(1,1,2,17);
+      reshape(matresult,reshaped,4,4);
+      affmat2vector(matresult,12,params);
+      fptr << ((*usrmatptr)[crow-1])(1) << " " << params.t() << endl;
+    }
+  fptr << endl;
+  fptr.close();
+  return 0;
+}
+
+
+void usrprintparams(MatVecPtr usrmatptr, 
+		    unsigned int usrrow1, unsigned int usrrow2)
+{
+  Tracer tr("usrprintparams");
+  // PRINTPARAMS
+  Matrix matresult;
+  ColumnVector params(12);
+  for (unsigned int crow=usrrow1; crow<=Min(usrrow2,usrmatptr->size()); crow++)
+    {
+      // the pre-optimised case with perturbations
+      Matrix reshaped = (*usrmatptr)[crow-1].SubMatrix(1,1,2,17);
+      reshape(matresult,reshaped,4,4);
+      affmat2vector(matresult,12,params);
+      cout << ((*usrmatptr)[crow-1])(1) << " " << params.t() << endl;
+    }
+}
+
+
+void usrmeasurecost(MatVecPtr stdresultmat, 
+		    MatVecPtr usrmatptr, 
+		    unsigned int usrrow1, unsigned int usrrow2, int usrdof, 
+		    ColumnVector& usrperturbation, bool usrperturbrelative)
+{
+  Tracer tr("usrmeasurecost");
+  // OPTIMISE
+  Matrix delta, perturbmask, matresult;
+  set_perturbations(delta,perturbmask);
+  int dof = Min(globalopts.dof,usrdof);
+  ColumnVector params(12);
+  RowVector rowresult(17);
+  for (unsigned int crow=usrrow1; crow<=Min(usrrow2,usrmatptr->size()); crow++)
+    {
+      // the pre-optimised case with perturbations
+      Matrix reshaped = (*usrmatptr)[crow-1].SubMatrix(1,1,2,17);
+      reshape(matresult,reshaped,4,4);
+      affmat2vector(matresult,12,params);
+      // use the elementwise product to produce the perturbation
+      if (usrperturbrelative) {
+	params += SP(usrperturbation,delta); // rel
+      } else {
+	params += usrperturbation; // abs
+      }
+      vector2affine(params,12,matresult);
+      
+      float costval=0.0;
+      costval = measure_cost(dof);
+      reshape(reshaped,matresult,1,16);
+      rowresult(1) = costval;
+      rowresult.SubMatrix(1,1,2,17) = reshaped;
+      // store result
+      stdresultmat->push_back(rowresult);
+    }
 }
 
 
@@ -2242,6 +2380,36 @@ void interpretcommand(const string& comline, bool& skip,
     int d1, d2;
     parsematname(words[1],src,d1,d2);
     usrread(words[2],src);
+  } else if (words[0]=="printparams") {
+    // PRINTPARAMS
+    if (words.size()<2) {
+      cerr << "Wrong number of arguments to PRINTPARAMS" << endl;
+      exit(-1);
+    }
+    MatVecPtr src;
+    int d1, d2;
+    parsematname(words[1],src,d1,d2);
+    usrprintparams(src,d1,d2);
+  } else if (words[0]=="saveparams") {
+    // SAVEPARAMS
+    if (words.size()<3) {
+      cerr << "Wrong number of arguments to SAVEPARAMS" << endl;
+      exit(-1);
+    }
+    MatVecPtr src;
+    int d1, d2;
+    parsematname(words[1],src,d1,d2);
+    usrsaveparams(words[2],src,d1,d2);
+  } else if (words[0]=="readparams") {
+    // READPARAMS
+    if (words.size()<3) {
+      cerr << "Wrong number of arguments to READPARAMS" << endl;
+      exit(-1);
+    }
+    MatVecPtr src;
+    int d1, d2;
+    parsematname(words[1],src,d1,d2);
+    usrreadparams(words[2],src);
   } else if (words[0]=="sort") {
     // SORT
     if (words.size()<2) {
@@ -2261,7 +2429,7 @@ void interpretcommand(const string& comline, bool& skip,
       cerr << "Wrong number of arguments to OPTIMISE" << endl;
       exit(-1);
     }
-    int usrdof=12, usrmaxitn=4, usrrow1=1, usrrow2=9999;
+    int usrdof=12, usrmaxitn=4, usrrow1=1, usrrow2=999999;
     ColumnVector usrperturbation(12);
     usrperturbation = 0.0;
     MatVecPtr usrdefmat;
@@ -2285,6 +2453,33 @@ void interpretcommand(const string& comline, bool& skip,
     }
     usroptimise(&(globalusrmat[0]),usrdefmat,usrrow1,usrrow2,usrdof, 
 		usrperturbation,usrperturbrelative,usrmaxitn);
+  } else if (words[0]=="measurecost") {
+    // MEASURECOST
+    if (words.size()<5) {
+      cerr << "Wrong number of arguments to MEASURECOST" << endl;
+      exit(-1);
+    }
+    int usrdof=12, usrrow1=1, usrrow2=999999;
+    ColumnVector usrperturbation(12);
+    usrperturbation = 0.0;
+    MatVecPtr usrdefmat;
+    bool usrperturbrelative = true;
+    setscalarvariable(words[1],usrdof);
+    parsematname(words[2],usrdefmat,usrrow1,usrrow2);
+    unsigned int wordno=3;
+    float tempparam=0.0;
+    while ((wordno<words.size()) 
+	   && (words[wordno]!="rel") && (words[wordno]!="abs")) {
+      setscalarvariable(words[wordno],tempparam);
+      usrperturbation(wordno-2) = tempparam;
+      wordno++;
+    }
+    if (wordno<words.size()) {
+      if (words[wordno]=="abs")  usrperturbrelative = false;
+      wordno++;
+    }
+    usrmeasurecost(&(globalusrmat[0]),usrdefmat,usrrow1,usrrow2,usrdof, 
+		usrperturbation,usrperturbrelative);
   } else if (words[0]=="setscale") {
     // SETSCALE
     if (words.size()<2) {
