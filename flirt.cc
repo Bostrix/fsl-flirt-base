@@ -260,17 +260,30 @@ float costfn(const Matrix& uninitaffmat)
   switch (globaloptions::get().currentcostfn) 
     {
     case NormCorr:  // MAXimise corr
-      if (globaloptions::get().smoothsize > 0.0) { 
-	retval = 1.0 - fabs(normcorr_smoothed(globaloptions::get().impair,affmat));
+      if (globaloptions::get().useweights) {
+	retval = 1.0-normcorr_fully_weighted(globaloptions::get().impair,
+					     affmat,global_refweight,
+					     global_testweight);
       } else {
-	retval = 1.0 - fabs(normcorr(globaloptions::get().impair,affmat));
+	if (globaloptions::get().smoothsize > 0.0) { 
+	  retval = 1.0 - 
+	    fabs(normcorr_smoothed(globaloptions::get().impair,affmat));
+	} else {
+	  retval = 1.0 - fabs(normcorr(globaloptions::get().impair,affmat));
+	}
       }
       break;
     case LeastSq:  // Minimise square
-      if (globaloptions::get().smoothsize > 0.0) {
-	retval = leastsquares_smoothed(globaloptions::get().impair,affmat);
+      if (globaloptions::get().useweights) {
+	retval = 1.0-leastsquares_fully_weighted(globaloptions::get().impair,
+						 affmat,global_refweight,
+						 global_testweight);
       } else {
-	retval = leastsquares(globaloptions::get().impair,affmat);
+	if (globaloptions::get().smoothsize > 0.0) {
+	  retval = leastsquares_smoothed(globaloptions::get().impair,affmat);
+	} else {
+	  retval = leastsquares(globaloptions::get().impair,affmat);
+	}
       }
       break;
     case CorrRatio:  // MAXimise corr
@@ -290,19 +303,32 @@ float costfn(const Matrix& uninitaffmat)
       retval = woods_fn(globaloptions::get().impair,affmat); 
       break;
     case MutualInfo:  // MAXimise info
-      if ((globaloptions::get().smoothsize > 0.0) || 
-	   (globaloptions::get().fuzzyfrac > 0.0)) {
-	retval = -mutual_info_smoothed(globaloptions::get().impair,affmat); 
+      if (globaloptions::get().useweights) {
+	retval = 1.0-mutual_info_fully_weighted(globaloptions::get().impair,
+						affmat,global_refweight,
+						global_testweight);
       } else {
-	retval = -mutual_info(globaloptions::get().impair,affmat); 
+	if ((globaloptions::get().smoothsize > 0.0) || 
+	    (globaloptions::get().fuzzyfrac > 0.0)) {
+	  retval = -mutual_info_smoothed(globaloptions::get().impair,affmat); 
+	} else {
+	  retval = -mutual_info(globaloptions::get().impair,affmat); 
+	}
       }
       break;
     case NormMI:  // MAXimise
-      if ((globaloptions::get().smoothsize > 0.0) || 
-	   (globaloptions::get().fuzzyfrac > 0.0)) {
-	retval = -normalised_mutual_info_smoothed(globaloptions::get().impair,affmat); 
+      if (globaloptions::get().useweights) {
+	retval = 1.0-normalised_mutual_info_fully_weighted(
+					       globaloptions::get().impair,
+					       affmat,global_refweight,
+					       global_testweight);
       } else {
-	retval = -normalised_mutual_info(globaloptions::get().impair,affmat); 
+	if ((globaloptions::get().smoothsize > 0.0) || 
+	    (globaloptions::get().fuzzyfrac > 0.0)) {
+	  retval = -normalised_mutual_info_smoothed(globaloptions::get().impair,affmat); 
+	} else {
+	  retval = -normalised_mutual_info(globaloptions::get().impair,affmat); 
+	}
       }
       break;
     default:
