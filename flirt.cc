@@ -3,7 +3,7 @@
 
 // Put current version number here:
 #include <string>
-const string version = "2.1";
+const string version = "2.1.1";
 
 #include <iostream>
 #include <fstream>
@@ -245,7 +245,11 @@ float costfn(const Matrix& uninitaffmat)
       retval = 1.0 - fabs(normcorr(globaloptions::get().impair,affmat));  // MAXimise corr
       break;
     case CorrRatio:
-      retval = 1.0 - corr_ratio_smoothed(globaloptions::get().impair,affmat);  // MAXimise corr
+      if (globaloptions::get().smoothsize > 0.0) {
+	retval = 1.0 - corr_ratio_smoothed(globaloptions::get().impair,affmat);  // MAXimise corr
+      } else {
+	retval = 1.0 - corr_ratio(globaloptions::get().impair,affmat);  // MAXimise corr
+      }
       break;
     case Woods:
       retval = woods_fn(globaloptions::get().impair,affmat);  // minimise variance/mean
@@ -1176,6 +1180,7 @@ void no_optimise()
 
   imagepair global_1(refvol,testvol);
   global_1.set_no_bins(globaloptions::get().no_bins);
+  global_1.smoothsize = globaloptions::get().smoothsize;
   globaloptions::get().impair = &global_1;
   
   if (globaloptions::get().measure_cost) {
@@ -1700,6 +1705,7 @@ void usrsetscale(int usrscale,
     }
     globalpair = new imagepair(*refvolnew,testvol);
     globalpair->set_no_bins(globaloptions::get().no_bins/scale);
+    globalpair->smoothsize = globaloptions::get().smoothsize;
     if (globaloptions::get().verbose>=3) {
       if (globaloptions::get().impair) {
 	cout << "Previous scale used " << globaloptions::get().impair->count
@@ -2042,6 +2048,7 @@ int main(int argc,char *argv[])
       // set up image pair and global pointer
     imagepair global_8(refvol_8,testvol);
     global_8.set_no_bins(globaloptions::get().no_bins/8);
+    global_8.smoothsize = globaloptions::get().smoothsize;
     if (globaloptions::get().verbose>=2) print_volume_info(testvol,"TESTVOL");
 
     globaloptions::get().impair = &global_8;
