@@ -65,6 +65,7 @@ class globaloptions {
   float requestedscale;
   bool force_scaling;
   float smoothsize;
+  float fuzzyfrac;
   ColumnVector tolerance;
   ColumnVector boundguess;
 
@@ -157,6 +158,7 @@ inline globaloptions::globaloptions()
   requestedscale = 1.0;
   force_scaling = false;
   smoothsize = 1.0;
+  fuzzyfrac = 0.5;
   tolerance.ReSize(12);
   tolerance << 0.005 << 0.005 << 0.005 << 0.2 << 0.2 << 0.2 << 0.002 
 	    << 0.002 << 0.002 << 0.001 << 0.001 << 0.001; 
