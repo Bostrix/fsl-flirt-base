@@ -105,7 +105,7 @@ proc ConcatedTalairachMedxTransform { xfmfname } {
 
 proc flirt:proc { regmode refname testname testname2 nstats statslist output dof doftwo bins searchrxmin searchrxmax searchrymin searchrymax searchrzmin searchrzmax disablesearch_yn cost interp sincwidth sincwindow refweight inweight inweight2 popups } {
 
-    global PXHOME FSLDIR USER MEDXV HOME INMEDX CLUSTERRSH
+    global PXHOME FSLDIR USER MEDXV HOME INMEDX
 
     #{{{ setup options
 
@@ -432,17 +432,20 @@ if { $interp == "sinc" } {
 set outroot [ file rootname $output ]
 
 if { $regmode == 1 } {
-    set thecommand "$CLUSTERRSH ${FSLDIR}/bin/flirt -in $testname -ref $refname -out $output -omat ${outroot}.mat $flirtoptions $dofoptions $flirtweights1 $flirtinterp"
+    set thecommand "${FSLDIR}/bin/flirt -in $testname -ref $refname -out $output -omat ${outroot}.mat $flirtoptions $dofoptions $flirtweights1 $flirtinterp"
+    set thecommand [ fsl:remote $thecommand ]
     puts $thecommand
     catch { exec sh -c $thecommand } errmsg
     puts $errmsg
 } else {
-    set thecommand "$CLUSTERRSH ${FSLDIR}/bin/flirt -in $testname -ref $refname -omat ${outroot}1.mat $flirtoptions $dofoptions $flirtweights1"
+    set thecommand "${FSLDIR}/bin/flirt -in $testname -ref $refname -omat ${outroot}1.mat $flirtoptions $dofoptions $flirtweights1"
+    set thecommand [ fsl:remote $thecommand ]
     puts $thecommand
     catch { exec sh -c $thecommand } errmsg
     puts $errmsg
 
-    set thecommand "$CLUSTERRSH ${FSLDIR}/bin/flirt -in $testname2 -ref $testname -omat ${outroot}2.mat $flirtoptions $doftwooptions $flirtweights2"
+    set thecommand "${FSLDIR}/bin/flirt -in $testname2 -ref $testname -omat ${outroot}2.mat $flirtoptions $doftwooptions $flirtweights2"
+    set thecommand [ fsl:remote $thecommand ]
     puts $thecommand
     catch { exec sh -c $thecommand } errmsg
     puts $errmsg
@@ -484,7 +487,7 @@ set returnval 0
 proc flirt:medxrun { reffile infile flirtoptions dofoptions flirtweights flirtinterp TempFileBase } {
 
     # setup vars
-    global FSLDIR MEDXV CLUSTERRSH INMEDX
+    global FSLDIR MEDXV INMEDX
     
     # save images and fix permissions
     set refptr $reffile
@@ -499,7 +502,7 @@ proc flirt:medxrun { reffile infile flirtoptions dofoptions flirtweights flirtin
     catch { exec sh -c "/bin/chmod 755 ${reffile}* ${infile}*" } junk
     
     # set up the command to be executed
-    set fullcommand "$CLUSTERRSH ${FSLDIR}/bin/flirt -ref $reffile -in $infile -omedx $xfmfilename $flirtoptions $dofoptions $flirtweights $flirtinterp"
+    set fullcommand "${FSLDIR}/bin/flirt -ref $reffile -in $infile -omedx $xfmfilename $flirtoptions $dofoptions $flirtweights $flirtinterp"
 
     # run command
     ScriptUpdate "$fullcommand"
