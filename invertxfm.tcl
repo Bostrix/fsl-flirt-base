@@ -132,7 +132,7 @@ pack $w.f.type.a $w.f.type.b -in $w.f.type -side top -anchor w
     frame $w.btns.b -relief raised -borderwidth 1
     
     button $w.go     -command "InvertXFM:go $w" \
-	    -text "Go" -width 5
+	    -text "OK" -width 5
 
     button $w.apply     -command "InvertXFM:apply $w" \
 	    -text "Apply" -width 5
