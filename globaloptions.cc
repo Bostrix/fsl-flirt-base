@@ -65,6 +65,10 @@ void globaloptions::parse_command_line(int argc,char** argv,
       resample = false;
       n++;
       continue;
+    } else if ( arg == "-forcescaling") {
+      force_scaling = true;
+      n++;
+      continue;
     } else if ( arg == "-debugsave") {
       nosave = false;
       n++;
@@ -176,6 +180,8 @@ void globaloptions::parse_command_line(int argc,char** argv,
 	  maincostfn = NormCorr;
 	} else if (costarg == "normmi") {
 	  maincostfn = NormMI;
+	} else if (costarg == "leastsq") {
+	  maincostfn = LeastSq;
 	} else {
 	  cerr << "Unrecognised cost function type: " << costarg << endl;
 	  exit(-1);
@@ -196,6 +202,8 @@ void globaloptions::parse_command_line(int argc,char** argv,
 	  searchcostfn = NormCorr;
 	} else if (costarg == "normmi") {
 	  searchcostfn = NormMI;
+	} else if (costarg == "leastsq") {
+	  searchcostfn = LeastSq;
 	} else {
 	  cerr << "Unrecognised cost function type: " << costarg << endl;
 	  exit(-1);
@@ -279,14 +287,15 @@ void globaloptions::print_usage(int argc, char *argv[])
        << "        -omedx <matrix-filename>           (MEDx format)\n"
        << "        -out, -o <outputvol>               (default is none)\n"
        << "        -datatype {char,short,int,float,double}                  (force output data type)\n"
-       << "        -cost {mutualinfo,woods,corratio,normcorr,normmi}        (default is corratio)\n"
-       << "        -searchcost {mutualinfo,woods,corratio,normcorr,normmi}  (default is corratio)\n"
+       << "        -cost {mutualinfo,woods,corratio,normcorr,normmi,leastsq}        (default is corratio)\n"
+       << "        -searchcost {mutualinfo,woods,corratio,normcorr,normmi,leastsq}  (default is corratio)\n"
        << "        -anglerep {quaternion,euler}       (default is euler)\n"
        << "        -bins <number of histogram bins>   (default is "
                                         << no_bins << ")\n"
        << "        -dof  <number of transform dofs>   (default is "
                                         << dof << ")\n"
        << "        -noresample                        (do not change input sampling)\n"
+       << "        -forcescaling                      (force rescaling even for low-res images)\n"
        << "        -minsampling <vox_dim>             (set minimum voxel dimension for sampling (in mm))\n"
        << "        -applyxfm                          (applies init - "
                                         << "no optimisation)\n"
