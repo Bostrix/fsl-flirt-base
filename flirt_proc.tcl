@@ -457,7 +457,6 @@ if { $regmode == 1 } {
     catch { exec sh -c $thecommand } errmsg
     puts $errmsg
 
-    catch { exec sh -c "${outroot}1.mat ${outroot}2.mat" }
 }
 
 for { set i 1 } { $i <= $nstats } { incr i 1 } {
