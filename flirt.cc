@@ -1292,6 +1292,13 @@ void no_optimise()
   FLIRT_read_volume(refvol,globaloptions::get().reffname);
   FLIRT_read_volume4D(testvol,globaloptions::get().inputfname,
 	      globaloptions::get().vinfo);
+
+  if ( (refvol.sform_code()!=NIFTI_XFORM_UNKNOWN) && 
+       (testvol[0].sform_code()!=NIFTI_XFORM_UNKNOWN) ) {
+    cerr << "WARNING: Both reference and input images have an sform matrix set" << endl;
+    cerr << "  The output image will use the transformed sform from the input image" << endl;
+  }
+
   short dtype;
   dtype = NEWIMAGE::dtype(globaloptions::get().inputfname);
   if (!globaloptions::get().forcedatatype)
@@ -1304,6 +1311,15 @@ void no_optimise()
       cout << "Swapping Left and Right in testvol" << endl;
     }
     globaloptions::get().initmat = globaloptions::get().initmat * testvol.swapmat(-1,2,3);
+  }
+
+  if (globaloptions::get().verbose>0) {
+    if (refvol.sform_code()!=NIFTI_XFORM_UNKNOWN) {
+      cout << "The output image will use the sform from the reference image" << endl;    
+    }
+    if (testvol[0].sform_code()!=NIFTI_XFORM_UNKNOWN) {
+      cout << "The output image will use the sform from the input image" << endl;    
+    }
   }
 
   if (globaloptions::get().verbose>=2) {
@@ -1332,6 +1348,12 @@ void no_optimise()
     
     final_transform(testvol[t0],outputvol[tref],globaloptions::get().initmat);
     //if (globaloptions::get().iso) { fix_output_volume(outputvol[tref]); }
+    if (testvol[t0].sform_code()!=NIFTI_XFORM_UNKNOWN) {
+      Matrix trans_sform;
+      trans_sform = testvol[t0].sform_mat() * testvol[t0].sampling_mat().i() *
+	globaloptions::get().initmat.i() * outputvol[tref].sampling_mat();
+      outputvol[tref].set_sform(testvol[t0].sform_code(),trans_sform);
+    }
   }
   save_volume4D_dtype(outputvol,globaloptions::get().outputfname.c_str(),
 		      globaloptions::get().datatype,globaloptions::get().vinfo);
@@ -2359,6 +2381,21 @@ int main(int argc,char *argv[])
     cerr << "Inserting a left-right swap in the registration matrix" 
          << endl << endl;
     globaloptions::get().initmat = globaloptions::get().initmat * testvol.swapmat(-1,2,3);
+  }
+
+  if ( (refvol.sform_code()!=NIFTI_XFORM_UNKNOWN) && 
+       (testvol.sform_code()!=NIFTI_XFORM_UNKNOWN) ) {
+    cerr << "WARNING: Both reference and input images have an sform matrix set" << endl;
+    cerr << "  The output image will use the sform from the reference image" << endl;
+  }
+
+  if (globaloptions::get().verbose>0) {
+    if (refvol.sform_code()!=NIFTI_XFORM_UNKNOWN) {
+      cout << "The output image will use the sform from the reference image" << endl;    
+    }
+    if (testvol.sform_code()!=NIFTI_XFORM_UNKNOWN) {
+      cout << "The output image will use the sform from the input image" << endl;    
+    }
   }
 
 
