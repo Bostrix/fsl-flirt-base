@@ -2533,8 +2533,15 @@ int main(int argc,char *argv[])
 
     FLIRT_read_volume(testvol,globaloptions::get().inputfname);
     FLIRT_read_volume(refvol,globaloptions::get().reffname);
+    if (globaloptions::get().verbose>=2) {
+      print_volume_info(testvol,"testvol");
+      print_volume_info(testvol,"refvol");
+    }
 
     Matrix finalmat = matresult * globaloptions::get().initmat;
+    if (globaloptions::get().verbose>=2) {
+      cout << "Final transform matrix is:" << endl << finalmat << endl;
+    }
     save_matrix_data(finalmat,testvol,refvol);
   
     // generate the outputvolume (not safe_save st -out overrides -nosave)
@@ -2546,6 +2553,9 @@ int main(int argc,char *argv[])
 	testvol = blur(testvol,min_sampling_ref);
       }
       final_transform(testvol,newtestvol,finalmat);      
+      if (globaloptions::get().verbose>=2) {
+	print_volume_info(newtestvol,"Transformed testvol");
+      }
       save_volume_dtype(newtestvol,globaloptions::get().outputfname.c_str(),
 			globaloptions::get().datatype,
 			globaloptions::get().vinfo);
