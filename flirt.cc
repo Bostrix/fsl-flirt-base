@@ -520,46 +520,12 @@ void set_default_planes(volume& vol)
 }
 
 
-void fit_planes(volume& vol, const string& fname)
+void fit_planes(volume& vol)
 {
   // the planept points should be in VOXEL coordinates
   //  but all saved values should be in MEASUREMENT coordinates
   ColumnVector axis1(3), planept1(3), axis2(3), planept2(3);
-  int rval=0;
-  if (fname.size()>1) {
-    Matrix planeparams(4,3);
-    rval = read_ascii_matrix(planeparams,fname);
-    if (rval>=0) {
-      axis1 = planeparams.SubMatrix(1,1,1,3).t();
-      planept1 = planeparams.SubMatrix(2,2,1,3).t();
-      axis2 = planeparams.SubMatrix(3,3,1,3).t();
-      planept2 = planeparams.SubMatrix(4,4,1,3).t();
-    }
-  } else {
-    if ((globalopts.defaultplanes>0) || (rval<0)) {
-      // do nothing as the previously set default planes account for padding
-      vol.getplanes(axis1,planept1,axis2,planept2);
-    } else {
-      // make a gradient volume
-      if (globalopts.verbose >= 1) 
-	cout << "Calculating Gradient" << endl;
-      float p90=0.0;
-      volume testgrad;
-      
-      gradient(vol,testgrad,true);      
-      if (globalopts.verbose >= 1) 
-	cout << "Calculating plane fit for vol" << endl;
-      p90=calculate_planefit(axis1,planept1,axis2,planept2,testgrad,
-			     globalopts.verbose);
-      // convert to measurement space
-      axis1 = vol.sampling_matrix().SubMatrix(1,3,1,3) * axis1;
-      axis2 = vol.sampling_matrix().SubMatrix(1,3,1,3) * axis2;
-      planept1 = vol.sampling_matrix().SubMatrix(1,3,1,3) * planept1
-	+ vol.sampling_matrix().SubMatrix(1,3,4,4);
-      planept2 = vol.sampling_matrix().SubMatrix(1,3,1,3) * planept2
-	+ vol.sampling_matrix().SubMatrix(1,3,4,4);
-    }
-  }
+  vol.getplanes(axis1,planept1,axis2,planept2);
 
   // reinforce normalisation of axes
   axis1 = axis1/norm2(axis1);
@@ -1806,7 +1772,7 @@ int get_testvol(volume& testvol)
     cerr << "Testvol sampling matrix =\n" << testvol.sampling_matrix() << endl;
   }
   // calculate the plane fits
-  fit_planes(testvol,globalopts.planetestfname);
+  fit_planes(testvol);
   //volume validmask;
   //testvol.create_valid_mask(validmask);
   //safe_save_volume(validmask,"validmask");
@@ -1845,7 +1811,7 @@ int resample_refvol(volume& refvol, float sampling=1.0)
   if (globalopts.verbose>=2) print_volume_info(refvol,"Refvol");      
   
   // calculate the plane fits
-  fit_planes(refvol,globalopts.planereffname);
+  fit_planes(refvol);
   return 0;
 }
 
@@ -1863,7 +1829,7 @@ void no_optimise()
   read_volume(testvol,globalopts.inputfname);
   read_matrix(globalopts.initmat,globalopts.initmatfname,testvol);
   set_default_planes(testvol);
-  fit_planes(testvol,globalopts.planetestfname);
+  fit_planes(testvol);
   
   float min_sampling_ref=1.0, min_sampling_test=1.0;
   min_sampling_ref = Min(refvol.getx(),Min(refvol.gety(),refvol.getz()));
