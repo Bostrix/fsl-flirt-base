@@ -10,7 +10,7 @@
 
 // Put current version number here:
 #include <string>
-const string version = "2.1.3";
+const string version = "2.2";
 
 #include <iostream>
 #include <fstream>
@@ -261,35 +261,45 @@ float costfn(const Matrix& uninitaffmat)
   float retval = 0.0;
   switch (globaloptions::get().currentcostfn) 
     {
-    case NormCorr:
-      if (globaloptions::get().smoothsize > 0.0) {  // MAXimise corr
+    case NormCorr:  // MAXimise corr
+      if (globaloptions::get().smoothsize > 0.0) { 
 	retval = 1.0 - fabs(normcorr_smoothed(globaloptions::get().impair,affmat));
       } else {
 	retval = 1.0 - fabs(normcorr(globaloptions::get().impair,affmat));
       }
       break;
-    case LeastSq:
+    case LeastSq:  // Minimise square
       if (globaloptions::get().smoothsize > 0.0) {
 	retval = leastsquares_smoothed(globaloptions::get().impair,affmat);
       } else {
 	retval = leastsquares(globaloptions::get().impair,affmat);
       }
       break;
-    case CorrRatio:
+    case CorrRatio:  // MAXimise corr
       if (globaloptions::get().smoothsize > 0.0) {
-	retval = 1.0 - corr_ratio_smoothed(globaloptions::get().impair,affmat);  // MAXimise corr
+	retval = 1.0 - corr_ratio_smoothed(globaloptions::get().impair,affmat);
       } else {
-	retval = 1.0 - corr_ratio(globaloptions::get().impair,affmat);  // MAXimise corr
+	retval = 1.0 - corr_ratio(globaloptions::get().impair,affmat); 
       }
       break;
-    case Woods:
-      retval = woods_fn(globaloptions::get().impair,affmat);  // minimise variance/mean
+    case Woods:  // minimise variance/mean
+      retval = woods_fn(globaloptions::get().impair,affmat); 
       break;
-    case MutualInfo:
-      retval = -mutual_info(globaloptions::get().impair,affmat);  // MAXimise info
+    case MutualInfo:  // MAXimise info
+      if ((globaloptions::get().smoothsize > 0.0) || 
+	   (globaloptions::get().fuzzyfrac > 0.0)) {
+	retval = -mutual_info_smoothed(globaloptions::get().impair,affmat); 
+      } else {
+	retval = -mutual_info(globaloptions::get().impair,affmat); 
+      }
       break;
-    case NormMI:
-      retval = -normalised_mutual_info(globaloptions::get().impair,affmat);  // MAXimise
+    case NormMI:  // MAXimise
+      if ((globaloptions::get().smoothsize > 0.0) || 
+	   (globaloptions::get().fuzzyfrac > 0.0)) {
+	retval = -normalised_mutual_info_smoothed(globaloptions::get().impair,affmat); 
+      } else {
+	retval = -normalised_mutual_info(globaloptions::get().impair,affmat); 
+      }
       break;
     default:
       cerr << "Invalid cost function type" << endl;
@@ -1463,7 +1473,13 @@ int usrsetoption(const std::vector<string> &words)
 
   if (option=="smoothing") {
     globaloptions::get().smoothsize = fvalues(1);
-    globaloptions::get().impair->smoothsize = globaloptions::get().smoothsize;
+    if (globaloptions::get().impair)
+      globaloptions::get().impair->smoothsize = globaloptions::get().smoothsize;
+    return 0;
+  } else if (option=="fuzzyfraction") {
+    globaloptions::get().fuzzyfrac = fvalues(1);
+    if (globaloptions::get().impair)
+      globaloptions::get().impair->fuzzyfrac = globaloptions::get().fuzzyfrac;
     return 0;
   } else if (option=="tolerance") {
     globaloptions::get().tolerance 
@@ -1753,6 +1769,7 @@ void usrsetscale(int usrscale,
     globalpair = new imagepair(*refvolnew,testvol);
     globalpair->set_no_bins(globaloptions::get().no_bins/scale);
     globalpair->smoothsize = globaloptions::get().smoothsize;
+    globalpair->fuzzyfrac = globaloptions::get().fuzzyfrac;
     if (globaloptions::get().verbose>=3) {
       if (globaloptions::get().impair) {
 	cout << "Previous scale used " << globaloptions::get().impair->count
@@ -2108,6 +2125,7 @@ int main(int argc,char *argv[])
   imagepair global_8(refvol_8,testvol);
   global_8.set_no_bins(globaloptions::get().no_bins/8);
   global_8.smoothsize = globaloptions::get().smoothsize;
+  global_8.fuzzyfrac = globaloptions::get().fuzzyfrac;
   if (globaloptions::get().verbose>=2) print_volume_info(testvol,"TESTVOL");
 
   globaloptions::get().impair = &global_8;
