@@ -297,7 +297,8 @@ void optimise(ColumnVector& params, int no_params, ColumnVector& param_tol,
 	      float (*costfunc)(const ColumnVector &), int itmax=4)
 {
   // sets up the initial parameters and calls the optimisation routine
-  if (params.MaximumAbsoluteValue() < 0.001)  initialise_params(params);
+  if ((params.MaximumAbsoluteValue() < 0.001) && (params.Nrows()>=12) )  
+    initialise_params(params);
   { 
     Matrix affmattst(4,4);
     vector2affine(params,no_params,affmattst);
@@ -449,7 +450,7 @@ void find_cost_minima(Matrix& bestpts, const volume<float>& cost) {
 	    bestpts(idx,3) = (float) z;
 	    idx++;
 	    if (globaloptions::get().verbose>=3)
-	      cerr << "COST minima at : " << x << "," << y << "," << z << endl;
+	      cout << "COST minima at : " << x << "," << y << "," << z << endl;
 	  }
 	}
       }
@@ -606,16 +607,16 @@ void search_cost(Matrix& paramlist, volume<float>& costs, volume<float>& tx,
 	  cout << " dearranged: " << params_8.t();
 	}
       }
-      if (globaloptions::get().verbose>=2) cerr << "*";
+      if (globaloptions::get().verbose>=2) cout << "*";
     }
   }
-  if (globaloptions::get().verbose>=2) cerr << endl;
+  if (globaloptions::get().verbose>=2) cout << endl;
 
   // scale = 1.0;  // for now disallow non-unity scalings
   float medianscale = scale.percentile(0.50);
   scale = medianscale;  // try a constant, median scale for all
   if (globaloptions::get().verbose>=2) 
-    { cerr << "Median scale = " << medianscale << endl; }
+    { cout << "Median scale = " << medianscale << endl; }
 
   if (globaloptions::get().verbose>=4) {
     safe_save_volume(tx,"tx");
@@ -661,10 +662,10 @@ void search_cost(Matrix& paramlist, volume<float>& costs, volume<float>& tx,
 	params_8 = globaloptions::get().refparams;
 	costs(ix,iy,iz) = costfn(params_8);
       }
-      if (globaloptions::get().verbose>=2) cerr << "*";
+      if (globaloptions::get().verbose>=2) cout << "*";
     }
   }
-  if (globaloptions::get().verbose>=2) cerr << endl;
+  if (globaloptions::get().verbose>=2) cout << endl;
 
   if (globaloptions::get().verbose>=4) {
     safe_save_volume(costs,"costs");
@@ -695,7 +696,7 @@ void search_cost(Matrix& paramlist, volume<float>& costs, volume<float>& tx,
     }
   }
   if (numsubcost<=0) {
-    cerr << "WARNING: Found 0 or less sub-threshold costs" << endl;
+    cout << "WARNING: Found 0 or less sub-threshold costs" << endl;
     numsubcost = 1;
   }
   Matrix bestparams(numsubcost,13);
@@ -754,7 +755,7 @@ void search_cost(Matrix& paramlist, volume<float>& costs, volume<float>& tx,
     iy = MISCMATHS::round(bestpts(n,2));
     iz = MISCMATHS::round(bestpts(n,3));
     if (globaloptions::get().verbose>=3) 
-      cerr << "Cost minima at : " << ix << "," << iy << "," << iz << endl;
+      cout << "Cost minima at : " << ix << "," << iy << "," << iz << endl;
     rx = finerx(ix+1);
     ry = finery(iy+1);
     rz = finerz(iz+1);
@@ -1176,10 +1177,10 @@ int get_testvol(volume<float>& testvol)
   }
 
   if (globaloptions::get().verbose>=2) {
-    cerr << "Init Matrix = \n" << globaloptions::get().initmat << endl;
-    cerr << "Testvol sampling matrix =\n" << testvol.sampling_mat() << endl;
-    cerr << "Testvol Data Type = " << dtype << endl;
-    cerr << "Testvol intensity clamped between " 
+    cout << "Init Matrix = \n" << globaloptions::get().initmat << endl;
+    cout << "Testvol sampling matrix =\n" << testvol.sampling_mat() << endl;
+    cout << "Testvol Data Type = " << dtype << endl;
+    cout << "Testvol intensity clamped between " 
 	 << minval << " and " << maxval << endl;
   }
   return 0;
@@ -1212,7 +1213,7 @@ int get_refvol(volume<float>& refvol)
   }
 
   if (globaloptions::get().verbose>=2) {
-    cerr << "Refvol intensity clamped between " 
+    cout << "Refvol intensity clamped between " 
 	 << minval << " and " << maxval << endl;
   }
   return 0;
@@ -1274,7 +1275,7 @@ void no_optimise()
 	      globaloptions::get().initmatfname,testvol[0]);
 
   if (globaloptions::get().verbose>=2) {
-    cerr << "Init Matrix = \n" << globaloptions::get().initmat << endl;
+    cout << "Init Matrix = \n" << globaloptions::get().initmat << endl;
   }
   
   float min_sampling_ref=1.0;
