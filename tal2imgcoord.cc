@@ -33,6 +33,7 @@ public:
   string imgfname;
   string xfmfname;
   string coordfname;
+  bool usetal;
   bool mm;
   int verbose;
   bool medx;
@@ -51,8 +52,10 @@ globaloptions::globaloptions()
   imgfname = "";
   coordfname = "";
   xfmfname = "";
+  verbose = 0;
+  usetal = false;
   mm = true;
-  medx=true;
+  medx = false;
 }
 
 
@@ -63,15 +66,23 @@ globaloptions::globaloptions()
 void print_usage(int argc, char *argv[])
 {
   cout << "Usage: " << argv[0] << " [options] <filename containing coordinates>\n\n"
+       << "e.g.   " << argv[0] << " -img <invol> -tal <standard image> -xfm <img2standard mat file> <coordinate file>\n"
+       << "       " << argv[0] << " -img <invol> <coordinate file>\n"
+       << "       " << argv[0] << " -img <invol> - \n\n"
        << "  Options are:\n"
        << "        -tal <Talairach volume filename>\n"
        << "        -img <example IMG volume filename>   (NB: volume, not timeseries)\n"
        << "        -xfm <IMG to Talairach transform filename>\n"
        << "        -mm                                  (outputs coordinates in mm - default)\n"
        << "        -vox                                 (outputs coordinates in voxels)\n"
-       << "        -flirt                               (use flirt, not medx, coordinate conventions)\n"    
+       << "        -flirt                               (use flirt mm coordinate conventions - default)\n"    
+       << "        -medx                                (use medx  mm coordinate conventions)\n" 
+       << "        -v                                   (verbose output)\n"
+       << "        -verbose                             (more verbose output)\n"
        << "        -help\n\n"
-       << " Note that the first three options are compulsory\n";
+       << " Notes:\n"
+       << "  (1) if '-' is used as coordinate filename then coordinates are read from standard input\n"
+       << "  (2) the -img option is compulsory\n";
 }
 
 
@@ -113,8 +124,20 @@ void parse_command_line(int argc, char* argv[])
       globalopts.medx = false;
       n++;
       continue;
+    } else if ( arg == "-medx" ) {
+      globalopts.medx = true;
+      n++;
+      continue;
     } else if ( arg == "-v" ) {
+      globalopts.verbose = 1;
+      n++;
+      continue;
+    } else if ( arg == "-verbose" ) {
       globalopts.verbose = 5;
+      n++;
+      continue;
+    } else if ( arg == "-") {
+      globalopts.coordfname = "-";
       n++;
       continue;
     }
@@ -128,6 +151,7 @@ void parse_command_line(int argc, char* argv[])
     // put options with 1 argument here
     if ( arg == "-tal") {
       globalopts.talfname = argv[n+1];
+      globalopts.usetal = true;
       n+=2;
       continue;
     } else if ( arg == "-img") {
@@ -145,15 +169,10 @@ void parse_command_line(int argc, char* argv[])
 
   }  // while (n<argc)
 
-//    if (globalopts.coordfname.size()<1) {
-//      cerr << "Input coordinate file not found\n\n";
-//      print_usage(argc,argv);
-//      exit(2);
-//    }
   if ((globalopts.imgfname.size()<1)) {
     cerr << "ERROR:: IMG volume filename not found\n\n";
   }
-  if ((globalopts.talfname.size()<1)) {
+  if ((globalopts.usetal) && (globalopts.talfname.size()<1)) {
     cerr << "ERROR:: Talairach volume filename not found\n\n";
   }
 }
@@ -180,14 +199,16 @@ int main(int argc,char *argv[])
     cerr << "Cannot read IMG volume" << endl;
     return -1;
   }
-  if (read_volume_hdr_only(talvol,globalopts.talfname)<0) {
+  if (globalopts.usetal && read_volume_hdr_only(talvol,globalopts.talfname)<0) {
     cerr << "Cannot read Talairach volume" << endl;
     return -1;
   }
     
   if (globalopts.verbose>3) {
-    print_info(talvol,"Talairach Volume");
-    cout << " origin = " << talvol.getorigin().t() << endl << endl;
+    if (globalopts.usetal) {
+      print_info(talvol,"Talairach Volume");
+      cout << " origin = " << talvol.getorigin().t() << endl << endl;
+    }
     print_info(imgvol,"IMG Volume");
     cout << " origin = " << imgvol.getorigin().t() << endl;
   }
@@ -195,11 +216,19 @@ int main(int argc,char *argv[])
   // read matrices
   Matrix affmat(4,4);
   int returnval;
-  returnval = read_matrix(affmat,globalopts.xfmfname,imgvol,talvol);
-  if (returnval<0) {
-    cerr << "Cannot read transform file" << endl;
-    return -2;
+  bool use_sform=false;
+  if (globalopts.xfmfname.length()>0) {
+    returnval = read_matrix(affmat,globalopts.xfmfname,imgvol,talvol);
+    use_sform = false;
+    if (returnval<0) {
+      cerr << "Cannot read transform file" << endl;
+      return -2;
+    }
+  } else {
+    use_sform = true;
+    affmat = Identity(4);
   }
+
     
   if (globalopts.verbose>3) {
     cout << " affmat =" << endl << affmat << endl << endl;
@@ -212,37 +241,53 @@ int main(int argc,char *argv[])
     cout << " Inverse affmat =" << endl << affmat << endl << endl;
   }
 
-  // Let Volume 2 be IMG and Volume 1 be Talairach
-  //  notate variables as (v=vox, w=world, f=flirt, m=medx, t=tal)
-  Matrix vf2w2(4,4), vf1w1(4,4), vt1vm1(4,4);
-  Identity(vf2w2);
-  vf2w2(1,1) = imgvol.xdim();
-  vf2w2(2,2) = imgvol.ydim();
-  vf2w2(3,3) = imgvol.zdim();
-  Identity(vf1w1);
-  vf1w1(1,1) = talvol.xdim();
-  vf1w1(2,2) = talvol.ydim();
-  vf1w1(3,3) = talvol.zdim();
-  get_outputusermat(globalopts.talfname,vt1vm1);
-  vt1vm1 = vt1vm1.i();
 
-  // the swap matrices convert flirt voxels to medx voxels
-  Matrix swapy1(4,4), swapy2(4,4);
-  Identity(swapy1);  Identity(swapy2);
-  swapy1(2,2) = -1.0;
-  swapy1(2,4) = talvol.ysize()-1.0;
-  if (globalopts.medx) {
-    swapy2(2,2) = -1.0;
-    swapy2(2,4) = imgvol.ysize()-1.0;
+  /////////////// SET UP MATRICES ////////////////
+
+  Matrix vox2tal(4,4);
+
+  if (use_sform) {
+
+    // set the main matrix
+    vox2tal = imgvol.sform_mat();
+
+    if (imgvol.sform_code()<=1) { 
+      if (imgvol.getorigin().MaximumAbsoluteValue()<1e-10) {
+	if (globalopts.verbose>0) {
+	  cerr << "WARNING:: Standard coordinates not set in img" << endl; 
+	}
+      }
+    }
+  } else {
+
+    // set the main matrix
+    vox2tal = talvol.sform_mat() * talvol.sampling_mat().i() * affmat * imgvol.sampling_mat();
+
+    if (talvol.sform_code()<=1) { 
+      if (talvol.getorigin().MaximumAbsoluteValue()<1e-10) {
+	if (globalopts.verbose>0) {
+	  cerr << "WARNING:: Standard coordinates not set in tal image" << endl; 
+	}
+      }
+    }
+    
+    if (globalopts.verbose>3) {
+      cout << " talvox2world =" << endl << talvol.sform_mat() << endl << endl;
+    }
+
+    // bloody medx conventions
+    if (globalopts.medx) {
+      Matrix swapy2(4,4);
+      Identity(swapy2);
+      swapy2(2,2) = -1.0;
+      swapy2(2,4) = imgvol.ysize()-1.0;
+      vox2tal = vox2tal * swapy2;
+    }
+
   }
 
-  Matrix talvox2world, imgvox2world;
-  talvox2world = vf1w1 * swapy1 * vt1vm1;
-  imgvox2world = vf2w2 * swapy2;
-  if (globalopts.verbose>3) {
-    cout << " talvox2world =" << endl << talvox2world << endl << endl;
-    cout << " imgvox2world =" << endl << imgvox2world << endl;
-  }
+
+  // initialise coordinate vectors
 
   ColumnVector imgcoord(4), talcoord(4), oldtal(4);
   imgcoord = 0;
@@ -251,49 +296,59 @@ int main(int argc,char *argv[])
   talcoord(4)=1;
   oldtal = 0;  // 4th component set to 0, so that initially oldtal -ne talcoord
 
-  if (globalopts.mm) {
-    cout << "Coordinates in IMG volume (in mm):" << endl;
-  } else {
-    cout << "Coordinates in IMG volume (in voxels):" << endl;
+
+  bool use_stdin = false;
+  if ( (globalopts.coordfname=="-") || (globalopts.coordfname.size()<1)) {
+    use_stdin = true;
   }
 
-  if (globalopts.coordfname.size()>1) {
-    ifstream matfile(globalopts.coordfname.c_str());
+  if (globalopts.verbose>0) {
+    if (globalopts.mm) {
+      cout << "Coordinates in IMG volume (in mm):" << endl;
+    } else {
+      cout << "Coordinates in IMG volume (in voxels):" << endl;
+    }
+  }
+
+
+  // set up coordinate reading (from file or stdin) //
+  ifstream matfile(globalopts.coordfname.c_str());
+
+  if (use_stdin) {
+    if (globalopts.verbose>0) {
+      cout << "Please type in Talairach coordinates :" << endl;
+    } 
+  } else {
     if (!matfile) { 
       cerr << "Could not open matrix file " << globalopts.coordfname << endl;
       return -1;
     }
-    
-    while (!matfile.eof()) {
-      for (int j=1; j<=3; j++) {
-	matfile >> talcoord(j);
-      }
-      if (globalopts.mm) {  // in mm
-	imgcoord = vf2w2 * imgvox2world.i() * affmat * talvox2world * talcoord;
-      } else { // in voxels
-	imgcoord = imgvox2world.i() * affmat * talvox2world * talcoord; 
-      }
-      cout << imgcoord(1) << "  " << imgcoord(2) << "  " << imgcoord(3) << endl;
-    }
-    
-    matfile.close();
-  } else {
-    cout << "Please type in Talairach coordinates :" << endl;
-    while (!cin.eof()) {
-      for (int j=1; j<=3; j++) {
-	cin >> talcoord(j);
-      }
+  }
+  
+  // loop around reading coordinates and displaying output
+
+
+ while ( (use_stdin && (!cin.eof())) || ((!use_stdin) && (!matfile.eof())) ) {
+    for (int j=1; j<=3; j++) {
+      if (use_stdin) { cin >> talcoord(j); }
+      else { matfile >> talcoord(j); }
+    } 
+    if  (use_stdin) {
+      // this is in case the pipe continues to input a stream of zeros
       if (oldtal == talcoord)  return 0;
       oldtal = talcoord;
-      if (globalopts.mm) {  // in mm
-	imgcoord = vf2w2 * imgvox2world.i() * affmat * talvox2world * talcoord;
-      } else { // in voxels
-	imgcoord = imgvox2world.i() * affmat * talvox2world * talcoord; 
-      }
-      cout << imgcoord(1) << "  " << imgcoord(2) << "  " << imgcoord(3) << endl;
     }
-  }
 
+    if (globalopts.mm) {  // in mm
+      imgcoord = imgvol.sampling_mat() * vox2tal.i() * talcoord;
+    } else { // in voxels
+      imgcoord = vox2tal.i() * talcoord; 
+    }
+
+    cout << imgcoord(1) << "  " << imgcoord(2) << "  " << imgcoord(3) << endl;
+  }
+  
+  if (!use_stdin) { matfile.close(); }
 
   return 0;
 }
