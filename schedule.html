@@ -119,8 +119,8 @@ of freedom (<CODE>MAXDOF</CODE>) will always be used.
 </DD>
 <DT><CODE>measurecost </CODE><I>dof</I><CODE> </CODE><I>mat</I><CODE> [</CODE><I>perturbation_vector</I><CODE> </CODE><I>rel/abs</I><CODE>]</CODE></DT>
 <DD>Measures (or re-measures) the cost function specified by the
-transformations stored in the matrix <I>mat</I>.  It replaces the 
-cost function values currently stored in this matrix.  Other syntax is
+transformations stored in the matrix <I>mat</I>.  It stores the
+results in <CODE>U</CODE>.  Other syntax is
 the same as for <CODE>optimise</CODE>.
 </DD>
 <DT><CODE>setscale </CODE><I>scale</I><CODE></CODE></DT>
