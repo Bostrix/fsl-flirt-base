@@ -46,7 +46,7 @@ Option<float> theta(string("-t,--theta"), 0.0,
 Option<std::vector<float> > axis(string("-a,--axis"), vector<float>(3),
 		  string("~<ax,ay,az>\tunnormalised axis vector (comma separated)"),
 		  false, requires_argument);
-Option<std::vector<float> > centre(string("-a,--axis"), vector<float>(3),
+Option<std::vector<float> > centre(string("-c,--centre"), vector<float>(3),
 		  string("~<cx,cy,cz>\tcentre of rotation in mm (comma separated)"),
 		  false, requires_argument);
 Option<string> covopt(string("--cov"), string(""),
@@ -118,6 +118,7 @@ int main(int argc,char *argv[])
     options.add(axis);
     options.add(covopt);
     options.add(centre);
+    options.add(outname);
     options.add(verbose);
     options.add(help);
     
