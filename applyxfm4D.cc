@@ -7,38 +7,23 @@
 /*  CCOPYRIGHT  */
 
 #include "newimageall.h"
+#include "fmribmain.h"
 
 using namespace NEWIMAGE;
 
-int main(int argc,char *argv[])
+// Globals - needed by fmrib_main
+
+string oname, iname, transname, refname;
+bool singlematrix, fourd;
+
+//////////////////////////////////////////////////////////////////////
+
+template <class T>
+int fmrib_main(int argc, char* argv[])
 {
-
-  Tracer tr("main");
-  if (argc<5) { 
-    cerr << "Usage: " << argv[0] << " <input volume> <ref volume>"
-	 << " <output volume> <transformation matrix file/[dir]> [-singlematrix]]\n"; 
-    return -1; 
-  }
-  
-  // NB: a hidden option (-3D) exists (must appear after singlematrix)
-
-
-  string oname = argv[3], iname = argv[1], 
-    transname = argv[4], refname = argv[2];
-  bool singlematrix = false;
-  if (argc>=6) {
-    string option = argv[5];
-    if (option == "-singlematrix" )  singlematrix = true;
-  }
-  bool fourd = true;
-  if (argc>=7) {
-    string option = argv[6];
-    if (option == "-3D" )  fourd = false;
-  }
-
   if (fourd) {
-    volume4D<float> invol, outvol;
-    volume<float> refvol, dummy;
+    volume4D<T> invol, outvol;
+    volume<T> refvol, dummy;
     volumeinfo vinfo;
     read_volume4D(invol,iname,vinfo);
     invol.setextrapolationmethod(extraslice);
@@ -75,7 +60,7 @@ int main(int argc,char *argv[])
     save_volume4D(outvol,oname,vinfo);
 
   } else {
-    volume<float> invol, outvol;
+    volume<T> invol, outvol;
     volumeinfo vinfo;
     
     read_volume(invol,iname,vinfo);
@@ -92,6 +77,40 @@ int main(int argc,char *argv[])
   return 0;
 }
 
+
+int main(int argc,char *argv[])
+{
+
+  Tracer tr("main");
+  if (argc<5) { 
+    cerr << "Usage: " << argv[0] << " <input volume> <ref volume>"
+	 << " <output volume> <transformation matrix file/[dir]> [-singlematrix]]\n"; 
+    return -1; 
+  }
+  
+  // NB: a hidden option (-3D) exists (must appear after singlematrix)
+
+
+  // parse the command line
+  oname = argv[3];
+  iname = argv[1];
+  transname = argv[4]; 
+  refname = argv[2];
+  singlematrix = false;
+  if (argc>=6) {
+    string option = argv[5];
+    if (option == "-singlematrix" )  singlematrix = true;
+  }
+  fourd = true;
+  if (argc>=7) {
+    string option = argv[6];
+    if (option == "-3D" )  fourd = false;
+  }
+
+  // call the templated main
+  return call_fmrib_main(dtype(iname),argc,argv);
+
+}
 
 
 
