@@ -94,7 +94,6 @@ void print_usage(int argc, char *argv[])
        << "        -middlevol <intermediary-volume-filename>\n"
        << "        -inverse                           (Reference image must be the one originally used)\n"
        << "        -matonly                           (Use no volumes or MEDx support - default)\n"
-       << "        -medx                              (Use -in and -ref)\n"
        << "        -help\n";
 }
 
