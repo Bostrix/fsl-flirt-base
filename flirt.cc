@@ -1754,6 +1754,9 @@ void interpretcommand(const string& comline, bool& skip,
     int d1, d2;
     parsematname(words[1],src,d1,d2);
     usrclear(src);
+  } else if (words[0]=="exit") {
+    // EXIT
+    exit(0);
   } else if (words[0]=="print") {
     // PRINT
     if (words.size()<2) {
