@@ -57,6 +57,15 @@ void globaloptions::parse_command_line(int argc,char** argv,
       interactive = true;
       n++;
       continue;
+    } else if ( arg == "-nosearch") {
+      searchrx(1) = 0;
+      searchrx(2) = 0;
+      searchry(1) = 0;
+      searchry(2) = 0;
+      searchrz(1) = 0;
+      searchrz(2) = 0;
+      n++;
+      continue;
     } else if ( arg == "-nosave") {
       nosave = true;
       n++;
@@ -248,7 +257,6 @@ void globaloptions::parse_command_line(int argc,char** argv,
     if ( arg == "-searchrx" ) {
       searchrx(1) = Min(atof(argv[n+1]),atof(argv[n+2]))*M_PI/180.0;
       searchrx(2) = Max(atof(argv[n+1]),atof(argv[n+2]))*M_PI/180.0;
-      
       n+=3;
       continue;
     } else if ( arg == "-searchry" ) {
@@ -297,7 +305,7 @@ void globaloptions::print_usage(int argc, char *argv[])
        << "        -omedx <matrix-filename>           (MEDx format)\n"
        << "        -out, -o <outputvol>               (default is none)\n"
        << "        -datatype {char,short,int,float,double}                  (force output data type)\n"
-       << "        -cost {mutualinfo,woods,corratio,normcorr,normmi,leastsq}        (default is corratio)\n"
+       << "        -cost {mutualinfo,corratio,normcorr,normmi,leastsq}        (default is corratio)\n"
        << "        -searchcost {mutualinfo,woods,corratio,normcorr,normmi,leastsq}  (default is corratio)\n"
        << "        -anglerep {quaternion,euler}       (default is euler)\n"
        << "        -bins <number of histogram bins>   (default is "
@@ -313,6 +321,7 @@ void globaloptions::print_usage(int argc, char *argv[])
        << "        -searchrx <min_angle> <max_angle>  (angles in degrees: default is -90 90)\n" 
        << "        -searchry <min_angle> <max_angle>  (angles in degrees: default is -90 90)\n" 
        << "        -searchrz <min_angle> <max_angle>  (angles in degrees: default is -90 90)\n" 
+       << "        -nosearch                          (sets all angular search ranges to 0 0)\n" 
        << "        -coarsesearch <delta_angle>        (angle in degrees: default is 60)\n" 
        << "        -finesearch <delta_angle>          (angle in degrees: default is 18)\n" 
        << "        -schedule <schedule-file>          (replaces default schedule)\n"
