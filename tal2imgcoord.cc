@@ -229,10 +229,10 @@ int main(int argc,char *argv[])
   // the swap matrices convert flirt voxels to medx voxels
   Matrix swapy1(4,4), swapy2(4,4);
   Identity(swapy1);  Identity(swapy2);
+  swapy1(2,2) = -1.0;
+  swapy1(2,4) = talvol.ysize()-1.0;
   if (globalopts.medx) {
-    swapy1(2,2) = -1.0;
     swapy2(2,2) = -1.0;
-    swapy1(2,4) = talvol.ysize()-1.0;
     swapy2(2,4) = imgvol.ysize()-1.0;
   }
 
