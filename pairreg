@@ -12,7 +12,7 @@ sin=$3; export sin
 sref=$4; export sref
 matf=$5; export matf
 shift 5
-args=$$ ; export args
+args=$* ; export args
 
 flirt -in $bin -ref $bref -schedule pairregrc1 -omat prgmat1 $args
 flirt -in $sin -ref $sref -init prgmat1 -schedule pairregrc2 -omat prgmat2 $args
