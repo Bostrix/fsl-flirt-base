@@ -232,11 +232,8 @@ int main(int argc,char *argv[])
     cout << " affmat =" << endl << affmat << endl << endl;
   }
 
-  // apply inverse 
-  affmat = affmat.i();
-
   if (globalopts.verbose>3) {
-    cout << " Inverse affmat =" << endl << affmat << endl << endl;
+    cout << " Inverse affmat =" << endl << affmat.i() << endl << endl;
   }
 
 
