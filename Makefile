@@ -20,7 +20,7 @@ EPI_OBJS = img2talcoord.o
 IMG_OBJS = img2imgcoord.o
 X_OBJS = applyxfm4D.o
 
-#RUNTCLS = Flirt InvertXFM
+RUNTCLS = Flirt InvertXFM
 XFILES = flirt convert_xfm avscale rmsdiff tal2imgcoord img2talcoord \
 	img2imgcoord applyxfm4D
 TESTXFILES = 
