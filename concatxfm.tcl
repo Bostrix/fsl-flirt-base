@@ -37,35 +37,50 @@ proc concatxfm { w } {
     set lfinput [ $w.f.input subwidget frame ]
     #{{{ input transform
 
-set entries($w,1) ""
+set entries($w,xfm1) ""
+set entries($w,xfm2) ""
 
 FSLFileEntry $w.f.xfm \
-	-variable entries($w,1) \
+	-variable entries($w,xfm1) \
 	-pattern "*.mat" \
 	-directory $PWD \
-	-label "Transformation File for A to B   " \
-		-labelwidth 29 \
+	-label "Transformation Matrix for A to B   " \
+		-labelwidth 34 \
 		-title "Select" \
-		-width 40 \
+		-width 50 \
 		-filterhist VARS(history)
 
+
+FSLFileEntry $w.f.xfm2 \
+	-variable entries($w,xfm2) \
+	-pattern "*.mat" \
+	-directory $PWD \
+	-label "Transformation Matrix for B to C   " \
+		-labelwidth 34 \
+		-title "Select" \
+		-width 50 \
+		-filterhist VARS(history)
+
+
 #}}}
-    pack $w.f.xfm -in $lfinput -side top -anchor w -pady 3 -padx 5
+
+    pack $w.f.xfm $w.f.xfm2 -in $lfinput -side top -anchor w -pady 3 -padx 5
 
     tixLabelFrame $w.f.output -label "Output"
     set lfoutput [ $w.f.output subwidget frame ]
-    #{{{ output filename
 
-set entries($w,4) ""
+
+    #{{{ output filename
+set entries($w,outxfm) ""
 
 FSLFileEntry $w.f.oxfm \
-	-variable entries($w,4) \
+	-variable entries($w,outxfm) \
 	-pattern "*.mat" \
 	-directory $PWD \
-	-label "Save Inverse Transform (B to A)" \
-	-labelwidth 29 \
+	-label "Save Concatenated Transform (A to C)" \
+	-labelwidth 34 \
 		-title "Select" \
-		-width 40 \
+		-width 50 \
 		-filterhist VARS(history)
 
 #}}}
@@ -114,7 +129,7 @@ proc Concatxfm:go { w } {
 proc Concatxfm:apply { w } {
     global entries
 
-    catch { concatxfm:proc $entries($w,1) $entries($w,4) }
+    catch { concatxfm:proc $entries($w,xfm1) $entries($w,xfm2) $entries($w,outxfm) }
 
     update idletasks
     puts "Done"
@@ -123,16 +138,16 @@ proc Concatxfm:apply { w } {
 #}}}
 #{{{ concatxfm:proc
 
-proc concatxfm:proc { transAB invxfmfilename } {
+proc concatxfm:proc { transAB transBC outxfmfilename } {
 
     global FSLDIR
 
-    set thecommand "${FSLDIR}/bin/convert_xfm -matonly -omat $invxfmfilename -inverse $transAB"
+    set thecommand "${FSLDIR}/bin/convert_xfm -matonly -omat $outxfmfilename -concat $transBC $transAB"
     puts $thecommand
     catch { exec sh -c $thecommand } errmsg
     puts $errmsg
 
-    if { [ file readable $invxfmfilename ] == 0 } {
+    if { [ file readable $outxfmfilename ] == 0 } {
 	puts "No transformation saved!"
 	return 4
     }
