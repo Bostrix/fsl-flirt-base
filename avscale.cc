@@ -11,10 +11,12 @@
 #include "newmatio.h"
 #include "mjimage.h"
 #include "miscmaths.h"
+#include "miscimfns.h"
 #include "generalio.h"
 
 #ifndef NO_NAMESPACE
  using namespace MISCMATHS;
+ using namespace MISCIMFNS;
  using namespace MJAVWIO;
  using namespace MJIMAGE;
  using namespace NEWMAT;
@@ -24,8 +26,55 @@
 
 ////////////////////////////////////////////////////////////////////////////
 
+
+int testfn(int argc, char *argv[]) {
+  volume gfimage;
+  if (argc > 1) {
+    read_volume(gfimage,argv[1]);
+  } else {
+    read_volume(gfimage,"gfimage.hdr");
+  }
+	cout << "Read File Successfully!" << endl;
+	cout << "Width: " << gfimage.rows() << "\tHeight: " 
+	     << gfimage.columns() << "\tDepth: " << gfimage.slices() << endl; 
+
+	//ZEnumPixelOf<float>	pixel(&gfimage);
+
+	//for(pixel.Reset(); pixel.FMore(); pixel.Next()) *pixel *= -0.5;
+
+	float max=0.0, min=0.0;
+	get_min_max(gfimage,min,max);
+	cout << "Min and Max = " << min << " & " << max << endl;
+
+	for (float val=0.3; val>-0.005; val-=0.0014) {
+	  for (int z=0; z<gfimage.zsize(); z++) {
+	    for (int y=0; y<gfimage.ysize(); y++) {
+	      for (int x=0; x<gfimage.xsize(); x++) {
+		gfimage(x,y,z) *= (1.0+val);
+	      }
+	    }
+	  }
+	  cerr << ".";
+	}
+
+	get_min_max(gfimage,min,max);
+	cout << "Min and Max = " << min << " & " << max << endl;
+
+
+	save_volume(gfimage,"result");
+
+  return -1;
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////
+
 int main(int argc,char *argv[])
 {
+
+
+  //  if (testfn(argc,argv)<0) exit(-1);
 
   try {
 
