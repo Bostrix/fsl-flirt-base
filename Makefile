@@ -1,4 +1,4 @@
-# Makefile for the MEDx version of FLIRT: by Mark Jenkinson, 21/9/99
+# Makefile for FLIRT
 
 include ${FSLCONFDIR}/default.mk
 
@@ -58,7 +58,5 @@ applyxfm4D:	${X_OBJS}
 
 pointflirt:	${P_OBJS}
 		${CXX}  ${CXXFLAGS} ${LDFLAGS} -o $@  ${P_OBJS} ${LIBS}
-
-
 
 

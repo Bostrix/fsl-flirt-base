@@ -6,8 +6,8 @@
 
 /*  CCOPYRIGHT  */
 
-#include "newmat/newmatio.h"
-#include "newmat/newmatap.h"
+#include "newmatio.h"
+#include "newmatap.h"
 #include "miscmaths/miscmaths.h"
 #include "utils/options.h"
 

@@ -18,8 +18,8 @@
 #define WANT_STREAM
 #define WANT_MATH
 
-#include "newmat/newmatap.h"
-#include "newmat/newmatio.h"
+#include "newmatap.h"
+#include "newmatio.h"
 #include "miscmaths/miscmaths.h"
 #include "miscmaths/optimise.h"
 #include "newimage/costfns.h"
