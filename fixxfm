@@ -1,5 +1,14 @@
 #!/bin/sh
 
+#   fixxfm - change xfm file to make it work in MEDx
+#
+#   Stephen Smith and Mark Jenkinson, FMRIB Image Analysis Group
+#
+#   Copyright (C) 1999-2004 University of Oxford
+#
+#   SHCOPYRIGHT
+
+
 Usage() {
     echo "Usage: fixxfm <filename>"
     exit
@@ -24,3 +33,4 @@ if \[ \$tal = 1 \] ; then
 fi
 
 echo "fixxfm: transform file fixed"
+
