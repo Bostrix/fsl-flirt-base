@@ -173,8 +173,9 @@ int main(int argc,char *argv[])
     parse_command_line(argc,argv);
 
     volume testvol, refvol;
-    if (read_volume(testvol,globalopts.testfname)<0)  return -1;
-    if (read_volume(refvol,globalopts.reffname)<0)  return -1;
+    short dtype;
+    if (read_volume(testvol,globalopts.testfname,dtype,false)<0)  return -1;
+    if (read_volume(refvol,globalopts.reffname,dtype,false)<0)  return -1;
     Matrix affmat(4,4);
     ColumnVector params(12);
     if (read_matrix(affmat,globalopts.initmatfname,testvol,refvol)<0) 
