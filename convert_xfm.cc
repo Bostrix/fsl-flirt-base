@@ -63,7 +63,7 @@ void print_usage(int argc, char *argv[])
        << "  Available options are:\n"
        << "        -ref <refvol>                      (default is "
                                         << globalopts.reffname << ")\n"
-       << "        -test <testvol>                      (no default)\n"
+       << "        -in <inputvol>                     (no default)\n"
        << "        -omat <matrix-filename>            (4x4 ascii format)\n"
        << "        -omedx <matrix-filename>           (MEDx format)\n"
     //       << "        -ominc <matrix-filename>           (MINC format)\n"
@@ -124,7 +124,7 @@ void parse_command_line(int argc, char* argv[])
       globalopts.reffname = argv[n+1];
       n+=2;
       continue;
-    } else if ( arg == "-test") {
+    } else if ( arg == "-in") {
       globalopts.testfname = argv[n+1];
       n+=2;
       continue;
@@ -160,7 +160,7 @@ void parse_command_line(int argc, char* argv[])
     exit(2);
   }
   if (globalopts.testfname.size()<1) {
-    cerr << "WARNING:: Testvol filename not found\n\n";
+    cerr << "WARNING:: Inputvol filename not found\n\n";
   }
 }
 
