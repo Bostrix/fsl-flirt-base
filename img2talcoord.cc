@@ -34,7 +34,7 @@
 class globaloptions {
 public:
   string talfname;
-  string epifname;
+  string imgfname;
   string xfmfname;
   string coordfname;
   bool mm;
@@ -51,7 +51,7 @@ globaloptions::globaloptions()
 {
   // set up defaults
   talfname = "";
-  epifname = "";
+  imgfname = "";
   coordfname = "";
   xfmfname = "";
   mm = false;
@@ -67,8 +67,8 @@ void print_usage(int argc, char *argv[])
   cout << "Usage: " << argv[0] << " [options] <filename containing coordinates>\n\n"
        << "  Options are:\n"
        << "        -tal <Talairach volume filename>\n"
-       << "        -epi <example EPI volume filename>   (NB: volume, not timeseries)\n"
-       << "        -xfm <EPI to Talairach transform filename>\n"
+       << "        -img <example IMG volume filename>   (NB: volume, not timeseries)\n"
+       << "        -xfm <IMG to Talairach transform filename>\n"
        << "        -vox                                 (input coordinates in voxels - default)\n"
        << "        -mm                                  (input coordinates in mm)\n"
        << "        -help\n\n"
@@ -127,8 +127,8 @@ void parse_command_line(int argc, char* argv[])
       globalopts.talfname = argv[n+1];
       n+=2;
       continue;
-    } else if ( arg == "-epi") {
-      globalopts.epifname = argv[n+1];
+    } else if ( arg == "-img") {
+      globalopts.imgfname = argv[n+1];
       n+=2;
       continue;
     } else if ( arg == "-xfm") {
@@ -147,8 +147,8 @@ void parse_command_line(int argc, char* argv[])
 //      print_usage(argc,argv);
 //      exit(2);
 //    }
-  if ((globalopts.epifname.size()<1)) {
-    cerr << "ERROR:: EPI volume filename not found\n\n";
+  if ((globalopts.imgfname.size()<1)) {
+    cerr << "ERROR:: IMG volume filename not found\n\n";
   }
   if ((globalopts.talfname.size()<1)) {
     cerr << "ERROR:: Talairach volume filename not found\n\n";
@@ -171,10 +171,10 @@ int main(int argc,char *argv[])
   parse_command_line(argc,argv);
 
 
-  volume epivol, talvol;
+  volume imgvol, talvol;
     // read volumes
-  if (read_volume_hdr_only(epivol,globalopts.epifname)<0) {
-    cerr << "Cannot read EPI volume" << endl;
+  if (read_volume_hdr_only(imgvol,globalopts.imgfname)<0) {
+    cerr << "Cannot read IMG volume" << endl;
     return -1;
   }
   if (read_volume_hdr_only(talvol,globalopts.talfname)<0) {
@@ -185,14 +185,14 @@ int main(int argc,char *argv[])
   if (globalopts.verbose>3) {
     print_info(talvol,"Talairach Volume");
     cout << " origin = " << talvol.avw_origin.t() << endl << endl;
-    print_info(epivol,"EPI Volume");
-    cout << " origin = " << epivol.avw_origin.t() << endl;
+    print_info(imgvol,"IMG Volume");
+    cout << " origin = " << imgvol.avw_origin.t() << endl;
   }
 
   // read matrices
   Matrix affmat(4,4);
   int returnval;
-  returnval = read_matrix(affmat,globalopts.xfmfname,epivol,talvol);
+  returnval = read_matrix(affmat,globalopts.xfmfname,imgvol,talvol);
   if (returnval<0) {
     cerr << "Cannot read transform file" << endl;
     return -2;
@@ -202,13 +202,13 @@ int main(int argc,char *argv[])
     cout << " affmat =" << endl << affmat << endl << endl;
   }
 
-  // Let Volume 2 be EPI and Volume 1 be Talairach
+  // Let Volume 2 be IMG and Volume 1 be Talairach
   //  notate variables as (v=vox, w=world, f=flirt, m=medx, t=tal)
   Matrix vf2w2(4,4), vf1w1(4,4), vt1vm1(4,4);
   Identity(vf2w2);
-  vf2w2(1,1) = epivol.getx();
-  vf2w2(2,2) = epivol.gety();
-  vf2w2(3,3) = epivol.getz();
+  vf2w2(1,1) = imgvol.getx();
+  vf2w2(2,2) = imgvol.gety();
+  vf2w2(3,3) = imgvol.getz();
   Identity(vf1w1);
   vf1w1(1,1) = talvol.getx();
   vf1w1(2,2) = talvol.gety();
@@ -222,22 +222,22 @@ int main(int argc,char *argv[])
   swapy1(2,2) = -1.0;
   swapy2(2,2) = -1.0;
   swapy1(2,4) = talvol.ysize()-1.0;
-  swapy2(2,4) = epivol.ysize()-1.0;
+  swapy2(2,4) = imgvol.ysize()-1.0;
 
-  Matrix talvox2world, epivox2world;
+  Matrix talvox2world, imgvox2world;
   talvox2world = vf1w1 * swapy1 * vt1vm1;
-  epivox2world = vf2w2 * swapy2;
+  imgvox2world = vf2w2 * swapy2;
   if (globalopts.verbose>3) {
     cout << " talvox2world =" << endl << talvox2world << endl << endl;
-    cout << " epivox2world =" << endl << epivox2world << endl;
+    cout << " imgvox2world =" << endl << imgvox2world << endl;
   }
 
-  ColumnVector epicoord(4), talcoord(4), oldepi(4);
-  epicoord = 0;
+  ColumnVector imgcoord(4), talcoord(4), oldimg(4);
+  imgcoord = 0;
   talcoord = 0;
-  epicoord(4)=1;
+  imgcoord(4)=1;
   talcoord(4)=1;
-  oldepi = 0;  // 4th component set to 0, so that initially oldepi -ne epicoord
+  oldimg = 0;  // 4th component set to 0, so that initially oldimg -ne imgcoord
 
   cout << "Coordinates in Talairach volume (in mm):" << endl;
 
@@ -250,19 +250,19 @@ int main(int argc,char *argv[])
     
     while (!matfile.eof()) {
       for (int j=1; j<=3; j++) {
-	matfile >> epicoord(j);
+	matfile >> imgcoord(j);
       }
       if (globalopts.mm) {  // in mm
-	talcoord = talvox2world.i() * affmat * epivox2world * vf2w2.i() * epicoord;
+	talcoord = talvox2world.i() * affmat * imgvox2world * vf2w2.i() * imgcoord;
       } else { // in voxels
-	talcoord = talvox2world.i() * affmat * epivox2world * epicoord; 
+	talcoord = talvox2world.i() * affmat * imgvox2world * imgcoord; 
       }
       cout << talcoord(1) << "  " << talcoord(2) << "  " << talcoord(3) << endl;
     }
     
     matfile.close();
   } else {
-    cout << "Please type in EPI coordinates";
+    cout << "Please type in IMG coordinates";
     if (globalopts.mm) { 
       cout << " (in mm) :" << endl;
     } else { 
@@ -270,14 +270,14 @@ int main(int argc,char *argv[])
     }
     while (!cin.eof()) {
       for (int j=1; j<=3; j++) {
-	cin >> epicoord(j);
+	cin >> imgcoord(j);
       }
-      if (oldepi == epicoord)  return 0;
-      oldepi = epicoord;
+      if (oldimg == imgcoord)  return 0;
+      oldimg = imgcoord;
       if (globalopts.mm) {  // in mm
-	talcoord = talvox2world.i() * affmat * epivox2world * vf2w2.i() * epicoord;
+	talcoord = talvox2world.i() * affmat * imgvox2world * vf2w2.i() * imgcoord;
       } else { // in voxels
-	talcoord = talvox2world.i() * affmat * epivox2world * epicoord; 
+	talcoord = talvox2world.i() * affmat * imgvox2world * imgcoord; 
       }
       cout << talcoord(1) << "  " << talcoord(2) << "  " << talcoord(3) << endl;
     }
