@@ -53,6 +53,7 @@ class globaloptions {
   Matrix parammask;
   int no_params;
   int dof;
+  bool usrsubset;
   int searchdof;
   int no_bins;
   costfns maincostfn;
@@ -144,6 +145,7 @@ inline globaloptions::globaloptions()
   Identity(parammask);
   no_params = 12;
   dof = 12;
+  usrsubset = false;
   searchdof = 12;
   no_bins = 256;
   maincostfn = CorrRatio;
