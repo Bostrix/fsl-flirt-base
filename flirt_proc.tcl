@@ -102,14 +102,19 @@ proc ConcatedTalairachMedxTransform { xfmfname } {
 #}}}
 #{{{ flirt_proc
 
-proc flirt_proc { regmode refname testname testname2 nstats statslist output dof bins searchrxmin searchrxmax searchrymin searchrymax searchrzmin searchrzmax disablesearch_yn anglerep cost popups } {
+proc flirt_proc { regmode refname testname testname2 nstats statslist output dof bins searchrxmin searchrxmax searchrymin searchrymax searchrzmin searchrzmax disablesearch_yn cost interp sincwidth sincwindow refweight inweight popups } {
 
     global PXHOME FSLDIR USER MEDXV HOME INMEDX CLUSTERRSH
 
     #{{{ setup options
 
     # set up the command to be executed
-    set flirtoptions "-dof $dof -bins $bins -cost $cost -anglerep $anglerep -nosave"
+    set flirtoptions "-bins $bins -cost $cost -nosave"
+    if { $dof == "2D" } {
+	set flirtoptions "$flirtoptions -2D -dof 12"
+    } else {
+	set flirtoptions "$flirtoptions -dof $dof"
+    }
 
     if { $disablesearch_yn } {
 	set flirtoptions "$flirtoptions -searchrx 0 0 -searchry 0 0 -searchrz 0 0"
@@ -117,6 +122,18 @@ proc flirt_proc { regmode refname testname testname2 nstats statslist output dof
 	set flirtoptions "$flirtoptions -searchrx $searchrxmin $searchrxmax"
 	set flirtoptions "$flirtoptions -searchry $searchrymin $searchrymax"
 	set flirtoptions "$flirtoptions -searchrz $searchrzmin $searchrzmax"
+    }
+
+    set flirtoptions "$flirtoptions -interp $interp -sincwidth $sincwidth -sincwindow $sincwindow"
+
+    # temporary stuff for refweight and inweight (need to do sanity checking...)
+
+    if { "X${refweight}X" != "XX" } {
+	set flirtoptions "$flirtoptions -refweight $refweight"
+    }
+
+    if { "X${inweight}X" != "XX" } {
+	set flirtoptions "$flirtoptions -inweight $inweight"
     }
 
 #}}}
