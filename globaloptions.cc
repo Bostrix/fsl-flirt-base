@@ -49,10 +49,6 @@ void globaloptions::parse_command_line(int argc,char** argv,
       nosave = false;
       n++;
       continue;
-    } else if ( arg == "-measurecost" ) {
-      measure_cost = true;
-      n++;
-      continue;
     } else if ( arg == "-i") {
       interactive = true;
       n++;
@@ -120,7 +116,8 @@ void globaloptions::parse_command_line(int argc,char** argv,
       n+=2;
       continue;
     } else if ( arg == "-minsampling") {
-      min_sampling = (float) ceil(atof(argv[n+1]));
+      //min_sampling = (float) ceil(atof(argv[n+1]));
+      min_sampling = atof(argv[n+1]);
       n+=2;
       continue;
     } else if ( arg == "-coarsesearch") {
@@ -257,8 +254,6 @@ void globaloptions::print_usage(int argc, char *argv[])
        << "        -applyxfm                          (applies init - "
                                         << "no optimisation)\n"
        << "        -applynonisoxfm                    (as applyxfm but no isotropic resampling)\n"
-       << "        -measurecost                       (calculates cost function"
-                                        << " - no optimisation)\n"
        << "        -searchrx <min_angle> <max_angle>  (angles in degrees: default is -90 90)\n" 
        << "        -searchry <min_angle> <max_angle>  (angles in degrees: default is -90 90)\n" 
        << "        -searchrz <min_angle> <max_angle>  (angles in degrees: default is -180 180)\n" 
