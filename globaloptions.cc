@@ -121,6 +121,7 @@ void globaloptions::parse_command_line(int argc,char** argv,
     } else if ( arg == "-applyisoxfm" ) {
       isoscale = atof(argv[n+1]);
       do_optimise = false;
+      iso = true;
       nosave = false;
       n++;
       continue;
@@ -230,7 +231,13 @@ void globaloptions::parse_command_line(int argc,char** argv,
   }  // while (n<argc)
 
   if (inputfname.size()<1) {
-    cerr << "Input filename not found\n\n";
+    cerr << "ERROR:: Input volume filename not found\n\n";
+    print_usage(argc,argv);
+    exit(2);
+  }
+
+  if (reffname.size()<1) {
+    cerr << "ERROR:: Reference volume filename not found\n\n";
     print_usage(argc,argv);
     exit(2);
   }

@@ -10,7 +10,7 @@
 
 // Put current version number here:
 #include <string>
-const string version = "2.1.2";
+const string version = "2.1.3";
 
 #include <iostream>
 #include <fstream>
@@ -27,7 +27,6 @@ const string version = "2.1.2";
 #include "miscmaths.h"
 #include "optimise.h"
 #include "interpolation.h"
-#include "nrcode.h"
 #include "mjimage.h"
 #include "costfns.h"
 #include "generalio.h"
@@ -39,13 +38,22 @@ const string version = "2.1.2";
  using namespace MISCIMFNS;
  using namespace COSTFNS;
  using namespace INTERPOLATION;
- using namespace NUMREC;
  using namespace NEWMAT;
  using namespace MJIMAGE;
  using namespace GENERALIO;
 #endif
 
 ////////////////////////////////////////////////////////////////////////////
+
+
+int round(const float val) {
+  Tracer tr("round");
+  if (val>0.0) {
+    return (int) (val + 0.5);
+  } else {
+    return (int) (val - 0.5);
+  }
+}
 
 //------------------------------------------------------------------------//
 // Some interfaces to generalio
@@ -212,14 +220,11 @@ void initialise_params(ColumnVector& params)
 }
 
 
-//  void powell_opt(ColumnVector& params, int no_params, ColumnVector& param_tol, 
-//  		int *no_its, float *fans, float (*costfunc)(float []), 
-//  		int itmax)
-void powell_opt(ColumnVector& params, int no_params, ColumnVector& param_tol, 
-		int &no_its, float *fans, float (*costfunc)(const ColumnVector &), 
-		int itmax)
+void optimise(ColumnVector& params, int no_params, ColumnVector& param_tol, 
+	      int &no_its, float *fans, 
+	      float (*costfunc)(const ColumnVector &), int itmax=4)
 {
-  // sets up the initial parameters and calls the powell optimisation routine
+  // sets up the initial parameters and calls the optimisation routine
   if (params.MaximumAbsoluteValue() < 0.001)  initialise_params(params);
   { 
     Matrix affmattst(4,4);
@@ -233,22 +238,10 @@ void powell_opt(ColumnVector& params, int no_params, ColumnVector& param_tol,
   float ptol[13];
   for (int i=1; i<=no_params; i++) { ptol[i] = param_tol(i); }
   
-  // the optimisation call
-  //powell(params,parambasis,no_params,ptol,no_its, fans, costfunc, itmax);
   *fans = MISCMATHS::optimise(params,no_params,param_tol,costfunc,no_its,itmax,
 			      globaloptions::get().boundguess);
 }
 
-
-//  void optimise(ColumnVector& params, int no_params, ColumnVector& param_tol, 
-//  	      int *no_its, float *fans, float (*costfunc)(float []), 
-//  	      int itmax=4)
-void optimise(ColumnVector& params, int no_params, ColumnVector& param_tol, 
-	      int &no_its, float *fans, float (*costfunc)(const ColumnVector &), 
-	      int itmax=4)
-{
-  powell_opt(params,no_params,param_tol,no_its,fans,costfunc,itmax);
-}
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -394,7 +387,8 @@ void find_cost_minima(Matrix& bestpts, const volume& cost) {
 	  }
 	}
 	if (cost.in_bounds(x,y,z)) {
-	  if (cost(x,y,z) < cost((int)bestpt(1),(int)bestpt(2),(int)bestpt(3)))
+	  if (cost(x,y,z) < 
+	        cost(round(bestpt(1)),round(bestpt(2)),round(bestpt(3))))
 	    {
 	      bestpt(1) = (float) x;
 	      bestpt(2) = (float) y;
@@ -433,16 +427,6 @@ void find_cost_minima(Matrix& bestpts, const volume& cost) {
   }
 }
   
-
-int round(const float val) {
-  Tracer tr("round");
-  if (val>0.0) {
-    return (int) (val + 0.5);
-  } else {
-    return (int) (val - 0.5);
-  }
-}
-
 
 void set_rot_sampling(ColumnVector& rots, float lowerbound, float upperbound) {
   Tracer tr("set_rot_sampling");
@@ -737,9 +721,9 @@ void search_cost(Matrix& paramlist, volume& costs, volume& tx,
   paramlist.ReSize(bestpts.Nrows(),12);
   int ix,iy,iz;
   for (int n=1; n<=paramlist.Nrows(); n++) {
-    ix = (int) bestpts(n,1);
-    iy = (int) bestpts(n,2);
-    iz = (int) bestpts(n,3);
+    ix = round(bestpts(n,1));
+    iy = round(bestpts(n,2));
+    iz = round(bestpts(n,3));
     if (globaloptions::get().verbose>=3) 
       cerr << "Cost minima at : " << ix << "," << iy << "," << iz << endl;
     rx = finerx(ix+1);
@@ -1204,7 +1188,7 @@ void no_optimise()
     globaloptions::get().min_sampling = min_sampling;
   
   if (globaloptions::get().iso) {
-    resample_refvol(refvol,globaloptions::get().min_sampling);
+    resample_refvol(refvol,globaloptions::get().isoscale);
   }
   {
     volume testvol_1;
@@ -2035,8 +2019,9 @@ void interpretcommand(const string& comline, bool& skip,
     }
   } else {
     cerr << "Unrecognised command " << words[0] << endl;
-    cerr << "Quitting." << endl;
-    exit(-1);
+    cerr << " ... ignoring" << endl;
+    //cerr << "Quitting." << endl;
+    //exit(-1);
   }
 }
 
@@ -2065,146 +2050,135 @@ void test_proc(void) {
 int main(int argc,char *argv[])
 {
   Tracer tr("main");
-  try {
 
-    //test_proc();  // only used for some debugging
+  //test_proc();  // only used for some debugging
 
-    globaloptions::get().parse_command_line(argc, argv,version);
+  globaloptions::get().parse_command_line(argc, argv,version);
 
-    if (!globaloptions::get().do_optimise) {   
-      no_optimise();
-    }
+  if (!globaloptions::get().do_optimise) {   
+    no_optimise();
+  }
     
-    // read in the volumes
-    volume refvol, testvol;
-    get_refvol(refvol);
-    get_testvol(testvol);
+  // read in the volumes
+  volume refvol, testvol;
+  get_refvol(refvol);
+  get_testvol(testvol);
 
-    float min_sampling_ref=1.0, min_sampling_test=1.0, min_sampling=1.0;
-    min_sampling_ref = Min(refvol.getx(),Min(refvol.gety(),refvol.getz()));
-    min_sampling_test = Min(testvol.getx(),Min(testvol.gety(),testvol.getz()));
-    min_sampling = (float) ceil(Max(min_sampling_ref,min_sampling_test));
-    if (globaloptions::get().min_sampling < min_sampling) 
-      globaloptions::get().min_sampling = min_sampling;
+  float min_sampling_ref=1.0, min_sampling_test=1.0, min_sampling=1.0;
+  min_sampling_ref = Min(refvol.getx(),Min(refvol.gety(),refvol.getz()));
+  min_sampling_test = Min(testvol.getx(),Min(testvol.gety(),testvol.getz()));
+  min_sampling = (float) ceil(Max(min_sampling_ref,min_sampling_test));
+  if (globaloptions::get().min_sampling < min_sampling) 
+    globaloptions::get().min_sampling = min_sampling;
 
     
-    if (globaloptions::get().verbose>=3) {
-      cout << "CoG for refvol is:  " << refvol.cog().t();
-      cout << "CoG for testvol is:  " << testvol.cog().t();
-    }
+  if (globaloptions::get().verbose>=3) {
+    cout << "CoG for refvol is:  " << refvol.cog().t();
+    cout << "CoG for testvol is:  " << testvol.cog().t();
+  }
   
-    volume refvol_2, refvol_4, refvol_8;
-    if (globaloptions::get().resample) {
-      // set up subsampled volumes by factors of 2, 4 and 8
-      if (globaloptions::get().verbose >= 2) 
-	cout << "Subsampling the volumes" << endl;
+  volume refvol_2, refvol_4, refvol_8;
+  if (globaloptions::get().resample) {
+    // set up subsampled volumes by factors of 2, 4 and 8
+    if (globaloptions::get().verbose >= 2) 
+      cout << "Subsampling the volumes" << endl;
       
-      resample_refvol(refvol,globaloptions::get().min_sampling);
-      if (globaloptions::get().min_sampling < 1.9) {
-	subsample_by2(refvol,refvol_2);
-      } else {
-	refvol_2 = refvol;
-      }
-      if (globaloptions::get().min_sampling < 3.9) {
-	subsample_by2(refvol_2,refvol_4);
-      } else {
-	refvol_4 = refvol_2;
-      }
-      if (globaloptions::get().min_sampling < 7.9) {
-	subsample_by2(refvol_4,refvol_8);
-      } else {
-	refvol_8 = refvol_4;
-      }
-      
-      {
-	volume testvol_8;
-	blur4subsampling(testvol_8,testvol,8.0);
-	testvol = testvol_8;
-      }
+    resample_refvol(refvol,globaloptions::get().min_sampling);
+    if (globaloptions::get().min_sampling < 1.9) {
+      subsample_by2(refvol,refvol_2);
     } else {
-      // if no resampling chosen, then refvol is simply copied
-      refvol_8 = refvol;
-      refvol_4 = refvol;
       refvol_2 = refvol;
     }
+    if (globaloptions::get().min_sampling < 3.9) {
+      subsample_by2(refvol_2,refvol_4);
+    } else {
+      refvol_4 = refvol_2;
+    }
+    if (globaloptions::get().min_sampling < 7.9) {
+      subsample_by2(refvol_4,refvol_8);
+    } else {
+      refvol_8 = refvol_4;
+    }
+      
+    {
+      volume testvol_8;
+      blur4subsampling(testvol_8,testvol,8.0);
+      testvol = testvol_8;
+    }
+  } else {
+    // if no resampling chosen, then refvol is simply copied
+    refvol_8 = refvol;
+    refvol_4 = refvol;
+    refvol_2 = refvol;
+  }
 
-      // set up image pair and global pointer
-    imagepair global_8(refvol_8,testvol);
-    global_8.set_no_bins(globaloptions::get().no_bins/8);
-    global_8.smoothsize = globaloptions::get().smoothsize;
-    if (globaloptions::get().verbose>=2) print_volume_info(testvol,"TESTVOL");
+  // set up image pair and global pointer
+  imagepair global_8(refvol_8,testvol);
+  global_8.set_no_bins(globaloptions::get().no_bins/8);
+  global_8.smoothsize = globaloptions::get().smoothsize;
+  if (globaloptions::get().verbose>=2) print_volume_info(testvol,"TESTVOL");
 
-    globaloptions::get().impair = &global_8;
+  globaloptions::get().impair = &global_8;
 
 
-    Matrix matresult(4,4);
-    ColumnVector params_8(12), param_tol(12);
-    float costval=0.0;
+  Matrix matresult(4,4);
+  ColumnVector params_8(12), param_tol(12);
 
     // perform the optimisation
 
-    globaloptions::get().currentcostfn = globaloptions::get().maincostfn;
+  globaloptions::get().currentcostfn = globaloptions::get().maincostfn;
    
-    std::vector<string> schedulecoms(0);
-    string comline;
-    if (globaloptions::get().schedulefname.length()<1) {
-      setdefaultschedule(schedulecoms);
-    } else {
-      // open the schedule file
-      ifstream schedulefile(globaloptions::get().schedulefname.c_str());
-      if (!schedulefile) {
-	cerr << "Could not open file" << globaloptions::get().schedulefname << endl;
-	return -1;
-      }
-      while (!schedulefile.eof()) {
-	getline(schedulefile,comline);
-	schedulecoms.push_back(comline);
-      }
-      schedulefile.close();
+  std::vector<string> schedulecoms(0);
+  string comline;
+  if (globaloptions::get().schedulefname.length()<1) {
+    setdefaultschedule(schedulecoms);
+  } else {
+    // open the schedule file
+    ifstream schedulefile(globaloptions::get().schedulefname.c_str());
+    if (!schedulefile) {
+      cerr << "Could not open file" << globaloptions::get().schedulefname << endl;
+      return -1;
     }
-
-    // interpret each line in the schedule command vector
-    bool skip=false;
-    for (unsigned int i=0; i<schedulecoms.size(); i++) {
-      comline = schedulecoms[i];
-      if (globaloptions::get().verbose>=1) {
-	cout << " >> " << comline << endl;
-      }
-      interpretcommand(comline,skip,testvol,refvol,refvol_2,refvol_4,refvol_8);
+    while (!schedulefile.eof()) {
+      getline(schedulefile,comline);
+      schedulecoms.push_back(comline);
     }
-
-    // re-read the initial volume, and transform it by the optimised result
-    Matrix reshaped;
-    if (globaloptions::get().usrmat[0].size()>0) {
-      reshaped = (globaloptions::get().usrmat[0])[0].SubMatrix(1,1,2,17);
-      reshape(matresult,reshaped,4,4);
-
-      Matrix finalmat = matresult * globaloptions::get().initmat;
-      read_volume(testvol,globaloptions::get().inputfname);
-      read_volume(refvol,globaloptions::get().reffname);
-      save_matrix_data(finalmat,testvol,refvol);
-      // generate the outputvolume (not safe_save st -out overrides -nosave)
-      if (globaloptions::get().outputfname.size()>0) {
-	volume newtestvol = refvol;
-	filled_affine_transform(newtestvol,testvol,finalmat);      
-	save_volume(newtestvol,globaloptions::get().outputfname.c_str(),
-		    globaloptions::get().datatype);
-      }
-      if ( (globaloptions::get().outputmatascii.size()<=0) && 
-	   (globaloptions::get().outputmatmedx.size()<=0) ) {
-	cout << endl << "Final result: " << endl << finalmat << endl;
-      }
-    }
-
+    schedulefile.close();
   }
-  catch(Exception exc) {
-    cerr << exc.what() << endl;
-    throw;
+
+  // interpret each line in the schedule command vector
+  bool skip=false;
+  for (unsigned int i=0; i<schedulecoms.size(); i++) {
+    comline = schedulecoms[i];
+    if (globaloptions::get().verbose>=1) {
+      cout << " >> " << comline << endl;
+    }
+    interpretcommand(comline,skip,testvol,refvol,refvol_2,refvol_4,refvol_8);
   }
-  catch(...) {
-    cerr << "Image error" << endl;
-    throw;
-  } 
+
+  // re-read the initial volume, and transform it by the optimised result
+  Matrix reshaped;
+  if (globaloptions::get().usrmat[0].size()>0) {
+    reshaped = (globaloptions::get().usrmat[0])[0].SubMatrix(1,1,2,17);
+    reshape(matresult,reshaped,4,4);
+
+    Matrix finalmat = matresult * globaloptions::get().initmat;
+    read_volume(testvol,globaloptions::get().inputfname);
+    read_volume(refvol,globaloptions::get().reffname);
+    save_matrix_data(finalmat,testvol,refvol);
+    // generate the outputvolume (not safe_save st -out overrides -nosave)
+    if (globaloptions::get().outputfname.size()>0) {
+      volume newtestvol = refvol;
+      filled_affine_transform(newtestvol,testvol,finalmat);      
+      save_volume(newtestvol,globaloptions::get().outputfname.c_str(),
+		  globaloptions::get().datatype);
+    }
+    if ( (globaloptions::get().outputmatascii.size()<=0) && 
+	 (globaloptions::get().outputmatmedx.size()<=0) ) {
+      cout << endl << "Final result: " << endl << finalmat << endl;
+    }
+  }
+
   return(0);
 }
 
