@@ -39,6 +39,7 @@ public:
   string outputmatmedx;
   string initmatfname;
   string concatfname;
+  string fixfname;
   string intervolfname;
   string xfm_type;
   int verbose;
@@ -62,6 +63,7 @@ globaloptions::globaloptions()
   outputmatmedx = "";
   initmatfname = "";
   concatfname = "";
+  fixfname = "";
   intervolfname = "";
   xfm_type = "a";
   inverse = false;
@@ -89,6 +91,7 @@ void print_usage(int argc, char *argv[])
        << "                      s   = ShadowTransform\n"
        << "                      t   = IntoTalairachSpace\n"
        << "        -concat <second-matrix-filename>\n"
+       << "        -fixscaleskew <second-matrix-filename>\n"
        << "        -middlevol <intermediary-volume-filename>\n"
        << "        -inverse\n"
        << "        -matonly                           (Use no volumes or MEDx/MINC support)\n"
@@ -155,6 +158,10 @@ void parse_command_line(int argc, char* argv[])
       globalopts.concatfname = argv[n+1];
       n+=2;
       continue;
+    } else if ( arg == "-fixscaleskew") {
+      globalopts.fixfname = argv[n+1];
+      n+=2;
+      continue;
     } else if ( arg == "-middlevol") {
       globalopts.intervolfname = argv[n+1];
       n+=2;
@@ -194,6 +201,29 @@ void parse_command_line(int argc, char* argv[])
     cerr << "ERROR:: Reference volume filename not found\n\n";
   }
 }
+
+////////////////////////////////////////////////////////////////////////////
+
+int vector2affine(const ColumnVector& params, Matrix& aff)
+{
+  // order of parameters is 3 rotation + 3 translation + 3 scales + 3 skews
+  // angles are in radians
+
+  ColumnVector centre(3);
+  centre = 0;
+  compose_aff(params,12,centre,aff,construct_rotmat_euler);
+  return 0;
+}  
+
+
+int affmat2vector(const Matrix& aff, ColumnVector& params)
+{
+  ColumnVector centre(3);
+  centre = 0;
+  decompose_aff(params,aff,centre,rotmat2euler);
+  return 0;
+}
+
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -242,6 +272,33 @@ int main(int argc,char *argv[])
     return -2;
   }
     
+
+  if (globalopts.fixfname.size() >= 1) {
+    Matrix fixmat(4,4);
+    if (globalopts.matonly)
+      returnval = read_ascii_matrix(fixmat,globalopts.fixfname);
+    else 
+      returnval = read_matrix(fixmat,globalopts.fixfname,intervol,refvol);
+    
+    if (returnval<0) {
+      cerr << "Cannot read fixscaleskew-matrix" << endl;
+      return -3;
+    } else {
+      if (globalopts.verbose>2) {
+	cout << "Initial matrix:" << endl << affmat << endl;
+	cout << "Fix Scale-Skew matrix:" << endl << fixmat << endl;
+      }
+      // do the work of combining scale/skew from fix and rest from init
+      ColumnVector initp(12), fixp(12), combp(12);
+      affmat2vector(affmat,initp);
+      affmat2vector(fixmat,fixp);
+      combp.SubMatrix(1,6,1,1) = initp.SubMatrix(1,6,1,1);
+      combp.SubMatrix(7,12,1,1) = fixp.SubMatrix(7,12,1,1);
+      vector2affine(combp,affmat);
+    }
+  }
+
+  
   if (globalopts.concatfname.size() >= 1) {
     Matrix concatmat(4,4);
     if (globalopts.matonly)
