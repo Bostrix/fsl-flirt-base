@@ -83,6 +83,16 @@ named by <I>filename</I>.</DD>
 <DT><CODE>read </CODE><I>mat</I><CODE> </CODE><I>filename</I><CODE></CODE></DT>
 <DD>Reads an ascii file (<I>filename</I>) and stores 
 the contents in matrix <I>mat</I>.</DD>
+<DT><CODE>printparams </CODE><I>mat</I><CODE></CODE></DT>
+<DD>Prints the contents of matrix <I>mat</I> to the screen as parameter 
+values (rather than reshaped 4 by 4 affine matrices).</DD>
+<DT><CODE>saveparams </CODE><I>mat</I><CODE> </CODE><I>filename</I><CODE></CODE></DT>
+<DD>Saves an ascii copy of the contents of matrix <I>mat</I>, as parameter 
+values, to the file named by <I>filename</I>.</DD>
+<DT><CODE>readparams </CODE><I>mat</I><CODE> </CODE><I>filename</I><CODE></CODE></DT>
+<DD>Reads an ascii file (<I>filename</I>), treating the values as parameter 
+values, converts them to reshaped affine matrices and stores 
+the contents in matrix <I>mat</I>.</DD>
 <DT><CODE>sort </CODE><I>mat</I><CODE></CODE></DT>
 <DD>Sorts the rows of matrix <I>mat</I> into <em>ascending</em> order
 based on the first column entries of each row (the cost function values).</DD>
@@ -105,6 +115,12 @@ The final parameter (which must follow either <I>rel</I> or <I>abs</I>)
 is the maximum number of iterations that the optimisation is allowed.
 <BR>Note that the minimum of <I>dof</I> and the user-defined maximum degrees
 of freedom (<CODE>MAXDOF</CODE>) will always be used.
+</DD>
+<DT><CODE>measurecost </CODE><I>dof</I><CODE> </CODE><I>mat</I><CODE> [</CODE><I>perturbation_vector</I><CODE> </CODE><I>rel/abs</I><CODE>]</CODE></DT>
+<DD>Measures (or re-measures) the cost function specified by the
+transformations stored in the matrix <I>mat</I>.  It replaces the 
+cost function values currently stored in this matrix.  Other syntax is
+the same as for <CODE>optimise</CODE>.
 </DD>
 <DT><CODE>setscale </CODE><I>scale</I><CODE></CODE></DT>
 <DD>Sets the scaling (subsampling) of the current image pair.  Permissable
