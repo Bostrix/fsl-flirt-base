@@ -34,7 +34,7 @@
 #endif
 
 // Put current version number here:
-const string version = "5.1";
+const string version = "5.2";
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -53,6 +53,27 @@ void print_vector(float x, float y, float z)
 
 
 //------------------------------------------------------------------------//
+
+
+void set_basescale(const string& filenameA, const string& filenameB)
+{
+  if ((globaloptions::get().basescale - 1.0)<1e-5) { 
+    // only reset if originally left at default of 1.0
+    volume<float> volA, volB;
+    read_volume_hdr_only(volA,filenameA);
+    read_volume_hdr_only(volB,filenameB);
+    float maxdimA = Max(Max(volA.xdim(),volA.ydim()),volA.zdim());
+    float maxdimB = Max(Max(volB.xdim(),volB.ydim()),volB.zdim());
+    if (Max(maxdimA,maxdimB)>16) {  // twice the largest scale
+      globaloptions::get().basescale = Max(maxdimA,maxdimB)/8;
+    }
+    float mindimA = Min(Min(volA.xdim(),volA.ydim()),volA.zdim());
+    float mindimB = Min(Min(volB.xdim(),volB.ydim()),volB.zdim());
+    if (Min(mindimA,mindimB)<0.5) { // half the smallest scale
+      globaloptions::get().basescale = Min(mindimA,mindimB);
+    }
+  }
+}
 
 
 int FLIRT_read_volume4D(volume4D<float>& target, const string& filename, 
@@ -1262,6 +1283,10 @@ void no_optimise()
   Tracer tr("no_optimise");
   volume<float> refvol;
   volume4D<float> testvol;
+
+  // want unity basescale for transformed output
+  globaloptions::get().basescale = 1.0;
+
   // set up image pair and global pointer
   
   FLIRT_read_volume(refvol,globaloptions::get().reffname);
@@ -1273,6 +1298,13 @@ void no_optimise()
     globaloptions::get().datatype = dtype;
   read_matrix(globaloptions::get().initmat,
 	      globaloptions::get().initmatfname,testvol[0]);
+
+  if (!same_left_right_order(refvol,testvol)) {
+    if (globaloptions::get().verbose>0) {
+      cout << "Swapping Left and Right in testvol" << endl;
+    }
+    globaloptions::get().initmat = globaloptions::get().initmat * testvol.swapmat(-1,2,3);
+  }
 
   if (globaloptions::get().verbose>=2) {
     cout << "Init Matrix = \n" << globaloptions::get().initmat << endl;
@@ -1948,6 +1980,13 @@ void usrsetscale(float usrscale,
     globaloptions::get().lastsampling = scale;
     // blur test volume to correct scale
     get_testvol(testvol);
+    if (!same_left_right_order(refvol,testvol)) {
+      if (globaloptions::get().verbose>0) {
+	cout << "Swapping Left and Right in testvol" << endl;
+      }
+      globaloptions::get().initmat = globaloptions::get().initmat * testvol.swapmat(-1,2,3);
+    }
+
     volume<float> testvolnew;
     testvolnew = blur(testvol,scale);
     if (globaloptions::get().useweights) {
@@ -2306,10 +2345,21 @@ int main(int argc,char *argv[])
     no_optimise();
   }
     
+  // reset the basescale for images where voxels are quite different from the
+  //   usual human brain size
+  set_basescale(globaloptions::get().reffname,globaloptions::get().inputfname);
+
   // read in the volumes
   volume<float> refvol, testvol;
   get_refvol(refvol);
   get_testvol(testvol);
+  if (!same_left_right_order(refvol,testvol)) {
+    if (globaloptions::get().verbose>0) {
+      cout << "Swapping Left and Right in testvol" << endl;
+    }
+    globaloptions::get().initmat = globaloptions::get().initmat * testvol.swapmat(-1,2,3);
+  }
+
 
   float min_sampling_ref=1.0, min_sampling_test=1.0, min_sampling=1.0;
   min_sampling_ref = Min(refvol.xdim(),Min(refvol.ydim(),refvol.zdim()));
@@ -2456,9 +2506,13 @@ int main(int argc,char *argv[])
     reshaped = (globaloptions::get().usrmat[0])[0].SubMatrix(1,1,2,17);
     reshape(matresult,reshaped,4,4);
 
-    Matrix finalmat = matresult * globaloptions::get().initmat;
+    // want unity basescale for transformed output
+    globaloptions::get().basescale = 1.0;
+
     FLIRT_read_volume(testvol,globaloptions::get().inputfname);
     FLIRT_read_volume(refvol,globaloptions::get().reffname);
+
+    Matrix finalmat = matresult * globaloptions::get().initmat;
     save_matrix_data(finalmat,testvol,refvol);
   
     // generate the outputvolume (not safe_save st -out overrides -nosave)
