@@ -142,11 +142,11 @@ void parse_command_line(int argc, char* argv[])
 
   }  // while (n<argc)
 
-  if (globalopts.coordfname.size()<1) {
-    cerr << "Input coordinate file not found\n\n";
-    print_usage(argc,argv);
-    exit(2);
-  }
+//    if (globalopts.coordfname.size()<1) {
+//      cerr << "Input coordinate file not found\n\n";
+//      print_usage(argc,argv);
+//      exit(2);
+//    }
   if ((globalopts.epifname.size()<1)) {
     cerr << "ERROR:: EPI volume filename not found\n\n";
   }
@@ -242,25 +242,41 @@ int main(int argc,char *argv[])
     cout << "Coordinates in EPI volume (in voxels):" << endl;
   }
 
-  ifstream matfile(globalopts.coordfname.c_str());
-  if (!matfile) { 
-    cerr << "Could not open matrix file " << globalopts.coordfname << endl;
-    return -1;
+  if (globalopts.coordfname.size()>1) {
+    ifstream matfile(globalopts.coordfname.c_str());
+    if (!matfile) { 
+      cerr << "Could not open matrix file " << globalopts.coordfname << endl;
+      return -1;
+    }
+    
+    while (!matfile.eof()) {
+      for (int j=1; j<=3; j++) {
+	matfile >> talcoord(j);
+      }
+      if (globalopts.mm) {  // in mm
+	epicoord = vf2w2 * epivox2world.i() * affmat * talvox2world * talcoord;
+      } else { // in voxels
+	epicoord = epivox2world.i() * affmat * talvox2world * talcoord; 
+      }
+      cout << epicoord(1) << "  " << epicoord(2) << "  " << epicoord(3) << endl;
+    }
+    
+    matfile.close();
+  } else {
+    cout << "Please type in Talairach coordinates :" << endl;
+    while (!cin.eof()) {
+      for (int j=1; j<=3; j++) {
+	cin >> talcoord(j);
+      }
+      if (globalopts.mm) {  // in mm
+	epicoord = vf2w2 * epivox2world.i() * affmat * talvox2world * talcoord;
+      } else { // in voxels
+	epicoord = epivox2world.i() * affmat * talvox2world * talcoord; 
+      }
+      cout << epicoord(1) << "  " << epicoord(2) << "  " << epicoord(3) << endl;
+    }
   }
 
-  while (!matfile.eof()) {
-    for (int j=1; j<=3; j++) {
-      matfile >> talcoord(j);
-    }
-    if (globalopts.mm) {  // in mm
-      epicoord = vf2w2 * epivox2world.i() * affmat * talvox2world * talcoord;
-    } else { // in voxels
-      epicoord = epivox2world.i() * affmat * talvox2world * talcoord; 
-    }
-    cout << epicoord(1) << "  " << epicoord(2) << "  " << epicoord(3) << endl;
-  }
-
-  matfile.close();
 
   return 0;
 }
