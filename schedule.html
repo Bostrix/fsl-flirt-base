@@ -108,7 +108,8 @@ image pair.  Number of degrees of freedom are specified by <I>dof</I>
 and initial parameter values are taken from <I>mat</I>.  In addition
 a perturbation vector can be applied to the parameters, using either
 relative <I>rel</I> or absolute <I>abs</I> addition (relative is in terms
-of the parameter tolerance values).  The perturbation vector may be of
+of specially chosen parameter perturbations so that a 1 unit relative change
+should be a small but measurable change).  The perturbation vector may be of
 any length, terminated by either <I>rel</I> or <I>abs</I> - if the vector
 is longer than the number of parameters, extra values are ignored.
 The final parameter (which must follow either <I>rel</I> or <I>abs</I>)
