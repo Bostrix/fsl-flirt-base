@@ -128,9 +128,9 @@
       float val,o1,o2,o3,weight;
 
       float smoothx, smoothy, smoothz;
-      smoothx = smoothsize / vref.getx();
-      smoothy = smoothsize / vref.gety();
-      smoothz = smoothsize / vref.getz();
+      smoothx = smoothsize / vtest.getx();
+      smoothy = smoothsize / vtest.gety();
+      smoothz = smoothsize / vtest.getz();
 
       // The matrix algebra below has been hand-optimized from
       //  [o1 o2 o3] = a * [x y z]  at each iteration
