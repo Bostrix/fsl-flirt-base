@@ -1121,6 +1121,8 @@ int get_testvol(volume& testvol)
     cerr << "Init Matrix = \n" << globaloptions::get().initmat << endl;
     cerr << "Testvol sampling matrix =\n" << testvol.sampling_matrix() << endl;
     cerr << "Testvol Data Type = " << dtype << endl;
+    cerr << "Testvol intensity clamped between " 
+	 << minval << " and " << maxval << endl;
   }
   return 0;
 }  
@@ -1136,6 +1138,10 @@ int get_refvol(volume& refvol)
   find_robust_limits(refvol,globaloptions::get().no_bins,hist,minval,maxval);
   clamp(refvol,minval,maxval);
 
+  if (globaloptions::get().verbose>=2) {
+    cerr << "Refvol intensity clamped between " 
+	 << minval << " and " << maxval << endl;
+  }
   return 0;
 }
 
@@ -1184,7 +1190,9 @@ void no_optimise()
   float min_sampling_ref=1.0, min_sampling_test=1.0, min_sampling=1.0;
   min_sampling_ref = Min(refvol.getx(),Min(refvol.gety(),refvol.getz()));
   min_sampling_test = Min(testvol.getx(),Min(testvol.gety(),testvol.getz()));
-  min_sampling = (float) ceil(Max(min_sampling_ref,min_sampling_test));
+  // Change behaviour so that the minimum dimension is now used if possible
+    // min_sampling = (float) ceil(Max(min_sampling_ref,min_sampling_test));
+  // No point in sampling below the minimum dimension inherent in the data
   if (globaloptions::get().min_sampling < min_sampling) 
     globaloptions::get().min_sampling = min_sampling;
   
@@ -1202,17 +1210,13 @@ void no_optimise()
   global_1.smoothsize = globaloptions::get().smoothsize;
   globaloptions::get().impair = &global_1;
   
-  if (globaloptions::get().measure_cost) {
-    float cost = costfn(globaloptions::get().initmat);
-    cout << "\n\nCost = " << cost << "\n\n";
-  } else {
-    volume outputvol = globaloptions::get().impair->refvol;
-    filled_affine_transform(outputvol,globaloptions::get().impair->testvol,globaloptions::get().initmat);
-    safe_save_volume(outputvol,globaloptions::get().outputfname.c_str());
-    if (globaloptions::get().verbose>=2) {
-      save_matrix_data(globaloptions::get().initmat,globaloptions::get().impair->testvol,
-		       outputvol);
-    }
+  volume outputvol = globaloptions::get().impair->refvol;
+  filled_affine_transform(outputvol,globaloptions::get().impair->testvol,
+			  globaloptions::get().initmat);
+  safe_save_volume(outputvol,globaloptions::get().outputfname.c_str());
+  if (globaloptions::get().verbose>=2) {
+    save_matrix_data(globaloptions::get().initmat,
+		     globaloptions::get().impair->testvol, outputvol);
   }
   exit(0);
 }
@@ -2129,13 +2133,6 @@ int main(int argc,char *argv[])
     Matrix matresult(4,4);
     ColumnVector params_8(12), param_tol(12);
     float costval=0.0;
-
-    if (globaloptions::get().measure_cost) {
-      Identity(matresult);
-      costval = costfn(matresult);
-      cout << "\n\nCost = " << costval << "\n\n";
-      return 1;
-    }
 
     // perform the optimisation
 
