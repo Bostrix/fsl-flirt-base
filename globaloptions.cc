@@ -161,6 +161,10 @@ void globaloptions::parse_command_line(int argc,char** argv,
       nosave = false;
       n+=2;
       continue;
+    } else if ( arg == "-basescale") {
+      basescale = atof(argv[n+1]);
+      n+=2;
+      continue;
     } else if ( arg == "-minsampling") {
       min_sampling = atof(argv[n+1]);
       n+=2;
@@ -364,6 +368,7 @@ void globaloptions::print_usage(int argc, char *argv[])
        << "        -noresample                        (do not change input sampling)\n"
        << "        -forcescaling                      (force rescaling even for low-res images)\n"
        << "        -minsampling <vox_dim>             (set minimum voxel dimension for sampling (in mm))\n"
+       << "        -basescale <scale>                 (sets the scaling for the final scaling - default is 1.0)\n"
        << "        -applyxfm                          (applies transform (no optimisation) - requires -init)\n"
        << "        -applyisoxfm <scale>               (as applyxfm but forces isotropic resampling)\n"
        << "        -paddingsize <number of voxels>    (for applyxfm: interpolates outside image by size)\n"

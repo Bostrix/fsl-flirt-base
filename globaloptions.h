@@ -68,6 +68,7 @@ class globaloptions {
   float min_sampling;
   float lastsampling;
   float requestedscale;
+  float basescale;
   bool force_scaling;
   float smoothsize;
   float fuzzyfrac;
@@ -171,6 +172,7 @@ inline globaloptions::globaloptions()
   min_sampling = 1.0;
   lastsampling = 8;
   requestedscale = 1.0;
+  basescale = 1.0;
   force_scaling = false;
   smoothsize = 1.0;
   fuzzyfrac = 0.5;
