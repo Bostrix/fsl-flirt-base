@@ -93,6 +93,10 @@ values, to the file named by <I>filename</I>.</DD>
 <DD>Reads an ascii file (<I>filename</I>) where each line represents 
 1 cost value followed by 12 parameter values.  It then converts these parameters
 to reshaped affine matrices and stores the contents in matrix <I>mat</I>.</DD>
+<DT><CODE>setrow </CODE><I>mat</I><CODE> </CODE><I>v1 v2 ... v16</I><CODE></CODE></DT>
+<DD>Adds a row to the end of matrix <I>mat</I> with the value given by the 
+reshaped matrix: <I>v1 v2 ... v16</I>.  Note that only the 16 matrix values 
+are used, not the cost value (which is initialised to 0).</DD>
 <DT><CODE>sort </CODE><I>mat</I><CODE></CODE></DT>
 <DD>Sorts the rows of matrix <I>mat</I> into <em>ascending</em> order
 based on the first column entries of each row (the cost function values).</DD>
