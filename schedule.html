@@ -100,12 +100,14 @@ are used, not the cost value (which is initialised to 0).</DD>
 <DT><CODE>sort </CODE><I>mat</I><CODE></CODE></DT>
 <DD>Sorts the rows of matrix <I>mat</I> into <em>ascending</em> order
 based on the first column entries of each row (the cost function values).</DD>
-<DT><CODE>search</CODE></DT>
+<DT><CODE>search [</CODE><I>dof</I><CODE>]</CODE></DT>
 <DD>Performs the 8mm search algorithm on the currently defined image pair.
 The result is returned in matrices <CODE>S</CODE> and <CODE>P</CODE> where
 <CODE>S</CODE> contains the optimised values (which are sorted), 
 and <CODE>P</CODE> the pre-optimised values from the search grid.  
-The rows of the two matrices correspond to each other.</DD>
+The rows of the two matrices correspond to each other.  The optional argument
+<I>dof</I> specifies the number of degrees of freedom for the search (only 6 
+or 7 are currently sensible).</DD>
 <DT><CODE>optimise </CODE><I>dof</I><CODE> </CODE><I>mat</I><CODE> [</CODE><I>perturbation_vector</I><CODE> </CODE><I>rel/abs</I><CODE> </CODE><I>max_iterations</I><CODE>]</CODE></DT>
 <DD>Performs a single optimisation (of Powell) on the currently defined
 image pair.  Number of degrees of freedom are specified by <I>dof</I>
