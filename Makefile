@@ -2,12 +2,12 @@
 
 include ${FSLCONFDIR}/default.mk
 
-DBGFLAGS = -g
-
 PROJNAME = flirt
 
+USRINCFLAGS = -I${INC_NEWMAT}
+USRLDFLAGS = -L${LIB_NEWMAT}
+
 LIBS = -lnewimage -lmiscmaths -lavwio -lnewmat -lutils -lm 
-INHERITVARS = "USRLDFLAGS=${USRLDFLAGS}" "USRINCFLAGS=${USRINCFLAGS}"
 
 FL_OBJS = globaloptions.o flirt.o 
 C_OBJS = convert_xfm.o
