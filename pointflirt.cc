@@ -10,6 +10,7 @@
 #include "newmatap.h"
 #include "miscmaths/miscmaths.h"
 #include "utils/options.h"
+#include "newimage/newimageall.h"
 
 #define _GNU_SOURCE 1
 #define POSIX_SOURCE 1
@@ -17,19 +18,23 @@
 using namespace Utilities;
 using namespace NEWMAT;
 using namespace MISCMATHS;
+using namespace NEWIMAGE;
 
 ////////////////////////////////////////////////////////////////////////////
 
 // COMMAND LINE OPTIONS
 
-string title="procrustes (Version 1.0)\nCopyright(c) 2001, University of Oxford (Mark Jenkinson)";
-string examples="procrustes -i <invol coords>  -r <refvol coords> -o <output matrix>";
+string title="pointflirt (Version 1.1)\nCopyright(c) 2001, University of Oxford (Mark Jenkinson)";
+string examples="pointflirt -i <invol coords>  -r <refvol coords> -o <output matrix>\npointflirt -i <invol coords>  -r <refvol coords> -o <output matrix> --vox --invol=<input vol> --refvol=<ref vol>";
 
 Option<bool> verbose(string("-v,--verbose"), false, 
 		     string("switch on diagnostic messages"), 
 		     false, no_argument);
 Option<bool> help(string("-h,--help"), false,
 		  string("display this message"),
+		  false, no_argument);
+Option<bool> voxcoord(string("--vox"), false,
+		  string("use voxel coordinates, not mm, for input"),
 		  false, no_argument);
 Option<string> omatname(string("-o,--out"), string(""),
 			  string("filename of affine matrix output"),
@@ -40,6 +45,12 @@ Option<string> incoord(string("-i"), string(""),
 Option<string> refcoord(string("-r"), string(""),
 			  string("filename of reference volume coordinates"),
 			  true, requires_argument);
+Option<string> invol(string("--invol"), string(""),
+			  string("filename of input volume (needed for --vox option)"),
+			  false, requires_argument);
+Option<string> refvol(string("--refvol"), string(""),
+			  string("filename of reference volume (needed for --vox option)"),
+			  false, requires_argument);
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -60,6 +71,26 @@ int procrustes()
     cerr << "ERROR: Different number of coordinates in the two files" << endl;
     exit(-1);
   }
+
+  if (voxcoord.value()) {
+    // convert coords from voxels to mm
+    if (invol.unset() || refvol.unset()) {
+      cerr << "ERROR: need to specify --invol and --refvol to use --vox" << endl;
+      exit(2);
+    }
+    volume<float> inv,refv;
+    read_volume_hdr_only(inv,invol.value());
+    read_volume_hdr_only(refv,refvol.value());
+    for (int m=1; m<=n; m++) {
+	x(1,m) = x(1,m)*inv.xdim();
+	x(2,m) = x(2,m)*inv.ydim();
+	x(3,m) = x(3,m)*inv.zdim();
+	y(1,m) = y(1,m)*refv.xdim();
+	y(2,m) = y(2,m)*refv.ydim();
+	y(3,m) = y(3,m)*refv.zdim();
+    }
+  }
+
 
   s=x*x.t();
   xbar = mean(x,2);
@@ -136,6 +167,9 @@ int main(int argc, char* argv[])
     options.add(incoord);
     options.add(refcoord);
     options.add(omatname);
+    options.add(voxcoord);
+    options.add(invol);
+    options.add(refvol);
     options.add(verbose);
     options.add(help);
     
