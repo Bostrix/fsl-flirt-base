@@ -146,6 +146,10 @@ void globaloptions::parse_command_line(int argc,char** argv,
       dof = atoi(argv[n+1]);
       n+=2;
       continue;
+    } else if ( arg == "-sincwidth") {
+      sincwidth = atoi(argv[n+1]);
+      n+=2;
+      continue;
     } else if ( arg == "-applyisoxfm" ) {
       isoscale = atof(argv[n+1]);
       do_optimise = false;
@@ -250,6 +254,22 @@ void globaloptions::parse_command_line(int argc,char** argv,
       }
       n+=2;
       continue;
+    } else if ( arg == "-sincwindow") {
+      {
+	string winarg = argv[n+1];
+	if (winarg == "rectangular") {
+	  sincwindow = Rectangular;
+	} else if (winarg == "hanning") {
+	  sincwindow = Hanning;
+	} else if (winarg == "blackman") {
+	  sincwindow = Blackman;
+	} else {
+	  cerr << "Unrecognised sinc window: " << winarg << endl;
+	  exit(-1);
+	}
+      }
+      n+=2;
+      continue;
     } else if ( arg == "-anglerep" ) {
       {
 	string anglearg = argv[n+1];
@@ -329,6 +349,8 @@ void globaloptions::print_usage(int argc, char *argv[])
        << "        -searchcost {mutualinfo,corratio,normcorr,normmi,leastsq}  (default is corratio)\n"
        << "        -anglerep {quaternion,euler}       (default is euler)\n"
        << "        -interp {trilinear,nearestneighbour,sinc}  (final interpolation: def - trilinear)\n"
+       << "        -sincwidth <full-width in pixels>  (default is 7)\n"
+       << "        -sincwindow {rectangular,hanning,blackman}\n"
        << "        -bins <number of histogram bins>   (default is "
                                         << no_bins << ")\n"
        << "        -dof  <number of transform dofs>   (default is "

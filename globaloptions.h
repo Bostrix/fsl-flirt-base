@@ -21,6 +21,7 @@ using namespace COSTFNS;
 
   enum anglereps { Euler, Quaternion };
   enum interps { TriLinear, NearestNeighbour, Sinc };
+  enum windowtype { Rectangular, Hanning, Blackman };
 
   typedef std::vector<RowVector> MatVec;
   typedef MatVec* MatVecPtr;
@@ -90,6 +91,8 @@ class globaloptions {
   bool useweights;
   bool mode2D;
   interps interpmethod;
+  int sincwidth;
+  windowtype sincwindow;
 
   int single_param;
 
@@ -195,6 +198,8 @@ inline globaloptions::globaloptions()
   useweights = false;
   mode2D = false;
   interpmethod = TriLinear;
+  sincwidth = 3;
+  sincwindow = Hanning;
 
   single_param = -1;
 }
