@@ -1535,6 +1535,10 @@ int usrsetoption(const std::vector<string> &words)
     // Note: division by requestedscale used so that the absolute
     //       tolerance used at this scale is that specified by the user
     return 0;
+  } else if (option=="rescaletolerance") {
+    globaloptions::get().tolerance *= fvalues;
+    // Note: this will apply for all scales hereon
+    return 0;
   } else if (option=="boundguess") {
     globaloptions::get().boundguess = fvalues;
     return 0;

@@ -114,7 +114,7 @@ are used, not the cost value (which is initialised to 0).</item>
 <break></break>Sets the value of certain defined options.  The name of the option is
 specified as the first parameter, then all remaining parameters are treated
 as a vector of scalars.  Note that no matrix arguments can be used here.
-At present the available options are <em>smoothing, fuzzyfraction, tolerance</em>
+At present the available options are <em>smoothing, fuzzyfraction, tolerance, rescaletolerance</em>
 and <em>boundguess</em>.</item>
 
 <item><function>sort</function> <param-out>mat</param-out>
