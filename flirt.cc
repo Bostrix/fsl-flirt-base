@@ -70,6 +70,7 @@ void setupsinc(const volume<float>& invol)
 void final_transform(const volume<float>& testvol, volume<float>& newtestvol,
 		     const Matrix& finalmat) 
 {
+  testvol.setpadvalue(testvol.backgroundval());
   testvol.setextrapolationmethod(extraslice);
   if (globaloptions::get().interpmethod == NearestNeighbour) {
     testvol.setinterpolationmethod(nearestneighbour);
