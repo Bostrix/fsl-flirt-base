@@ -7,9 +7,9 @@ DBGFLAGS = -g
 PROJNAME = flirt
 
 USRINCFLAGS =  -I${INCDIR}/newmat -I${INCDIR}/avwio -I${INCDIR}/mjimage_dev \
-		-I${INCDIR}/miscmaths -I${INCDIR}/newimage
+		-I${INCDIR}/miscmaths -I${INCDIR}/newimage_dev
 LIBS = -lmjimage_dev -lmiscmaths -lavwio -lnewmat -lm 
-XLIBS = -lnewimage -lmiscmaths -lavwio -lnewmat -lm 
+XLIBS = -lnewimage_dev -lmiscmaths -lavwio -lnewmat -lm 
 INHERITVARS = "USRLDFLAGS=${USRLDFLAGS}" "USRINCFLAGS=${USRINCFLAGS}"
 
 FL_OBJS = globaloptions.o costfns.o flirt.o 
