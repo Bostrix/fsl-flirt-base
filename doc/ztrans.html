@@ -1,165 +1,100 @@
 <!DOCTYPE HTMLPUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN""http://www.w3.org/TR/REC-html40/losse.dtd">
 <HTML><HEAD>
-  <TITLE>flirt Command-line Program and Utilities</TITLE>
+  <TITLE>Using FLIRT to Register a Few FMRI Slices</TITLE>
 </HEAD>
  <BODY BACKGROUND="../images/flirt-bg" BGCOLOR="white">
 <hr>  <TABLE BORDER=0 WIDTH="100%"><TR>
   <TD ALIGN=LEFT>  <a href="../index.html"><IMG BORDER=0 SRC="../images/fsl-logo"></a>
-   <TD ALIGN=CENTER><H1>flirt Command-line Program and Utilities</H1>
+   <TD ALIGN=CENTER><H1>Using FLIRT to Register a Few FMRI Slices</H1>
   <TD ALIGN=RIGHT> <a href="http://www.fmrib.ox.ac.uk/"><IMG BORDER=0 SRC="../images/fmrib_crest_86.gif"></a>
    </TR></TABLE>
   <!-- No Table of Contents -->
 
 <A NAME="section1"></A><HR><H2>INTRODUCTION</H2>
  
-This document gives a brief description of the various command line
-programs available in the FLIRT component of FSL.  A description of
-the <a href="gui.html">GUI interface</a> is also available.
+<p>If you need to take an FMRI data set where you only have a few slices (ie
+the field-of-view - FOV - is small in Z) then it is very hard to get a
+good registration with either the subject's structural or directly to
+a standard space image. This page describes our recommendations in
+such cases.
 
-<P>
-For each of the programs described here, a usage message which describes
-the full list of available options can be obtained by running the
-program with no options.
-<br>
+<UL>
 
- <!-- J-Back -->
+<LI>Take your FMRI data, with only a few slices. We will refer to an
+example volume from this time series as <b>example_func</b>.
 
-<A NAME="section2"></A><HR><H2>flirt</H2>
- 
-<B>flirt</B> is the main program that performs affine registration.  It takes
-an input (<FONT COLOR=PURPLE>-in</FONT>) and a reference
-(<FONT COLOR=PURPLE>-ref</FONT>) volume, and then calculates the affine
-transformation that registers the input to the reference.  The
-transformation can be saved as a 4x4 affine matrix
-(<FONT COLOR=PURPLE>-omat</FONT>) or as a MEDx transform
-(<FONT COLOR=PURPLE>-omedx</FONT>). The transform can be applied to
-the input volume to create an output (<FONT COLOR=PURPLE>-out</FONT>)
-which will be in alignment with the reference volume.
+<LI>Take a single whole-brain "functional" image (let's call this
+<b>whole_func</b>). This will normally be the same kind of image as
+<b>example_func</b> (eg EPI), but will cover the whole brain. It
+should contain, as a subset of its slices, the same slices as in
+<b>example_func</b>. In general there should be no rotation between
+<b>func</b> and <b>whole_func</b>.
 
-<P>
-In addition, FLIRT can also be used to apply a saved transformation to
-a volume (<FONT COLOR=PURPLE>-applyxfm</FONT> and <FONT COLOR=PURPLE>-out</FONT>).  For
-this usage the reference volume must still be specified as this sets
-the voxel and image dimensions of the resulting volume.
-<br>
+<LI>Now (optionally) take a high-resolution structural image,
+e.g. T1-weighted (let's call this <b>highres</b>).
 
-<P>
-<FONT COLOR="#c00000">New Features:</FONT><br>
-<DL>
-<DT> <I>Cost Function Weighting</I></DT>
-<DD> Weighting volumes can be specified
-using <FONT COLOR=PURPLE>-refweight</FONT>, <FONT
-COLOR=PURPLE>-inweight</FONT> (or both).  This allows the cost
-function to have a different weighting at each voxel, which is useful
-for excluding areas (weight=0) of no interest, or increasing the
-weighting around important structures such as the ventricles.  Note
-that this is different from masking the original images, as masking introduces
-artificial boundaries whereas weighting does not.
-</DD>
-<DT> <I>Different Interpolation Methods</I></DT>
-<DD> This includes Nearest Neighbour and
-a family of Sinc-based methods (three window types - rectangular, Hanning and
-Blackman) with configurable window width.  The interpolation is only used
-for the final transformation (and in applyxfm), not in the registration
-calculations.
-</DD>
-<DT> <I>2D Rigid-Body Mode</I></DT>
-<DD> This allows 2D to 2D registrations to be performed.
-This is selected with the <FONT COLOR=PURPLE>-2D</FONT> option.  Note that
-it does not perform any search in this mode, and cannot deal with 2D to 3D
-registrations.</DD>
+<LI>Finally, identify your standard space image (let's call this
+<b>standard</b>).
+
 </UL>
 
- <!-- J-Back -->
+Now you are ready to register these all together.
 
-<A NAME="section3"></A><HR><H2>convert_xfm</H2>
- 
-<B>convert_xfm</B> is a utility that is used to convert between different
-transformation file formats.  It can read and write ascii 4x4 matrices
-and MEDx transforms as well as reading MINC transform files.  In
-addition, it can be used to concatenate two transforms (using
-<FONT COLOR=PURPLE>-concat</FONT> with the second transform) or to find the
-inverse transformation (using <FONT COLOR=PURPLE>-inverse</FONT>).
+<A NAME="section2"></A><HR><H2>Registration</H2>
 
-<P>
-As MEDx transformations require voxel dimensions, the input and
-reference volume corresponding to the transformation must be specified
-when using this command.  However, if only ascii files are used, the
-<FONT COLOR=PURPLE>-matonly</FONT> option can be used, in which case no volumes
-need to be specified.
-<br>
+<UL>
 
- <!-- J-Back -->
+<LI>First, register <b>example_func</b> to <b>whole_func</b>:<br>
+flirt -ref whole_func -in example_func -schedule
+${FSLDIR}/etc/flirtsch/ztransonly.sch \<br>
+&nbsp; &nbsp; &nbsp;  -out example_func2whole_func -omat example_func2whole_func.mat<br>
+The custom FLIRT schedule file ztransonly.sch allows only translations
+in Z (in order for the registration to be robust), so there must be no
+rotation or within-slice translation between these images.
 
-<A NAME="section7"></A><HR><H2>img2imgcoord</h2>
- 
-<B>img2imgcoord</B> is a utility that calculates the corresponding
-coordinate positions (in voxels or mm) within a destination volume
-given the original coordinates in the source volume and the transformation
-from the source to the destination volume.  This is useful for finding
-corresponding anatomical/functional locations.  Note that the source
-coordinates need to be stored in a file as three numbers per line, space
-separated.
+<LI>Now register <b>whole_func</b> to <b>highres</b>:<br>
+flirt -ref highres -in whole_func -out whole_func2highres -omat
+whole_func2highres.mat
 
- <!-- J-Back -->
+<LI>Now register <b>highres</b> to <b>standard</b>:<br>
+flirt -ref standard -in highres -out highres2standard -omat highres2standard.mat
 
-<A NAME="section8"></A><HR><H2>img2talcoord</H2>
- 
-<B>img2talcoord</B> is a similar utility to <B>img2imgcoord</B>
-except that the destination volume coordinates are treated as Talairach
-space coordinates.  This requires the Talairach volume to have the
-origin coordinates and voxel dimensions entered in the correct analyse
-header fields.  (Note that this has only been tested with the standard
-images contained in fsl/etc/standard - there is no guarantee with other
-images, as the origin is not a standard analyse header field)
+<LI>Now combine the transforms:<br>
+convert_xfm -matonly -concat whole_func2highres.mat -omat example_func2highres.mat example_func2whole_func.mat<br>
+convert_xfm -matonly -concat highres2standard.mat -omat example_func2standard.mat example_func2highres.mat
 
- <!-- J-Back -->
+<LI>Now you could use these to transform stats images (eg produced by
+FEAT) in the space of the original <b>func</b> data into standard
+space:<br>
+flirt -ref standard -in thresh_zstat1 -applyxfm -init example_func2standard.mat -out thresh_zstat12standard
 
-<A NAME="section9"></A><HR><H2>tal2imgcoord</H2>
- 
-<B>tal2imgcoord</B> is the complementary utility to <B>img2talcoord</B>.
-It works the same way but transfers coordinates from Talairach space to
-the other image (IMG) space.
+</UL>
 
- <!-- J-Back -->
+<A NAME="section2"></A><HR><H2>Using with FEAT</H2>
 
-<A NAME="section6"></A><HR><H2>applyxfm4d</H2>
- 
-<B>applyxfm4D</B> is a utility that transforms a 4D time series by
-applying known affine transformations to them.  It can be used with a
-single transformation applied to all, or using a directory of
-transformation files in the form MAT_XXXX (where XXXX stands for the
-volume number, starting with 0000).  Note that it always uses
-trilinear interpolation, while appropriate options (-applyxfm and
--init) to FLIRT can be used to apply transformations to single volumes
-with other interpolation methods.  A reference volume is required in
-order to determine the matrix size and FOV for the final volume.
+If you want to put these transforms into a FEAT directory so that
+running group stats with FEAT will work well, then do the following
+(instead of using the simple default registration carried out by
+FEAT):<UL>
 
- <!-- J-Back -->
+<LI>Run a first level FEAT analysis without registration - this
+creates an output FEAT directory.
 
-<A NAME="section4"></A><HR><H2>rmsdiff</H2>
- 
-<B>rmsdiff</B> is a utility that calculates the Root Mean Square deviation
-(in millimetres) between two transformations.  That is, it compares
-two transformations (normally two possible registrations of the same
-volume pair) to see how much they differ.  This is useful to compare
-alternative registrations.  Note that this cannot be used with MEDx 
-transformations.
+<LI>Place in your FEAT directory appropriate images called
+<b>whole_func.hdr/.img</b>, <b>highres.hdr/.img</b> and
+<b>standard.hdr/.img</b>. (<b>highres</b> should probably have been
+brain-extracted already using BET, and <b>standard</b> should probably
+be ${FSLDIR}/usr/local/etc/standard/avg152T1_brain)
 
- <!-- J-Back -->
+<LI>Carry out the above <b>flirt</b> and <b>convert_xfm</b> commands
+exactly as written.
 
-<A NAME="section5"></A><HR><H2>avscale</H2>
- 
-<B>avscale</B> is a utility that displays the decomposed elements of an
-affine matrix.  It displays the rotation/translation matrix, the
-individual axis scalings, the individual skews, the average scaling,
-and the forward and backward halfway transformations.  In order to set
-the centre of rotation it requires the input volume (also called the
-reslice volume).
+<LI>This should leave you with correctly named transform files which
+FEAT will automatically use when carrying out group statistics.
 
- <!-- J-Back -->
+</UL>
 
    <HR>
   <!-- No Footnotes -->
-  <H4>Mark Jenkinson  <BR><BR>Copyright &copy; 2000-2001, University of Oxford</H4><BR>
+  <H4>Stephen Smith and Mark Jenkinson  <BR><BR>Copyright &copy; 2000-2001, University of Oxford</H4><BR>
 </BODY></HTML>
