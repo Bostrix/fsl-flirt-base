@@ -1,0 +1,6 @@
+#!/usr/local/bin/bash
+
+flirt -in $1 -ref $2 -schedule pairregrc1 -omat prgmat1
+flirt -in $3 -ref $4 -init prgmat1 -schedule pairregrc2 -omat prgmat2
+convert_xfm -matonly -fixscaleskew prgmat2 prgmat1 -omat prgmat3
+flirt -in $1 -ref $2 -init prgmat3 -schedule pairregrc3 -omat $5
