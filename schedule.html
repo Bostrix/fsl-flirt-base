@@ -90,9 +90,9 @@ values (rather than reshaped 4 by 4 affine matrices).</DD>
 <DD>Saves an ascii copy of the contents of matrix <I>mat</I>, as parameter 
 values, to the file named by <I>filename</I>.</DD>
 <DT><CODE>readparams </CODE><I>mat</I><CODE> </CODE><I>filename</I><CODE></CODE></DT>
-<DD>Reads an ascii file (<I>filename</I>), treating the values as parameter 
-values, converts them to reshaped affine matrices and stores 
-the contents in matrix <I>mat</I>.</DD>
+<DD>Reads an ascii file (<I>filename</I>) where each line represents 
+1 cost value followed by 12 parameter values.  It then converts these parameters
+to reshaped affine matrices and stores the contents in matrix <I>mat</I>.</DD>
 <DT><CODE>sort </CODE><I>mat</I><CODE></CODE></DT>
 <DD>Sorts the rows of matrix <I>mat</I> into <em>ascending</em> order
 based on the first column entries of each row (the cost function values).</DD>
