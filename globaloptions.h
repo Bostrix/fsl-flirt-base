@@ -24,6 +24,8 @@ class globaloptions {
   static globaloptions& get();
   ~globaloptions() { delete gopt; }
   
+  string version;
+  
   std::vector<MatVec> usrmat;
   MatVec searchoptmat;
   MatVec preoptsearchmat;
@@ -68,7 +70,7 @@ class globaloptions {
   int single_param;
 
 
-  void parse_command_line(int argc, char** argv);
+  void parse_command_line(int argc, char** argv, const string &);
 
  private:
   globaloptions();
@@ -78,7 +80,8 @@ class globaloptions {
       
   static globaloptions* gopt;
 
-  void print_usage(int argc, char *argv[]);
+  void print_usage(int argc, char *argv[]);  
+  void print_version();
   
 };
 
@@ -97,6 +100,9 @@ inline globaloptions& globaloptions::get(){
 inline globaloptions::globaloptions()
 {
   // set up defaults
+
+  version = "";
+
   searchoptmat.clear();
   preoptsearchmat.clear();
   usrmat.resize(26);

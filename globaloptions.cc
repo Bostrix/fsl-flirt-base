@@ -2,8 +2,11 @@
 
 globaloptions* globaloptions::gopt = NULL;
 
-void globaloptions::parse_command_line(int argc,char** argv)
+void globaloptions::parse_command_line(int argc,char** argv,
+				       const string &p_version)
 {
+  version = p_version;
+
   if(argc<2){
     print_usage(argc,argv);
     exit(1);
@@ -27,6 +30,9 @@ void globaloptions::parse_command_line(int argc,char** argv)
     // put options without arguments here
     if ( arg == "-help" ) {
       print_usage(argc,argv);
+      exit(0);
+    } else if ( arg == "-version") {
+      print_version();
       exit(0);
     } else if ( arg == "-applyxfm" ) {
       do_optimise = false;
@@ -59,7 +65,7 @@ void globaloptions::parse_command_line(int argc,char** argv)
       nosave = false;
       n++;
       continue;
-    } else if ( arg == "-v" ) {
+   } else if ( arg == "-v" ) {
       verbose = 5;
       n++;
       continue;
@@ -219,6 +225,8 @@ void globaloptions::parse_command_line(int argc,char** argv)
 
 void globaloptions::print_usage(int argc, char *argv[])
 {
+  print_version();
+  cout << endl;
   cout << "Usage: " << argv[0] << " [options] <testvol>\n\n"
        << "  Available options are:\n"
        << "        -ref <refvol>                      (default is "
@@ -253,5 +261,14 @@ void globaloptions::print_usage(int argc, char *argv[])
        << "        -i                                 (pauses at each stage: default is off)\n"
        << "        -nosave                            (do not save intermediate volumes - default)\n"
        << "        -debugsave                         (save any intermediate volumes)\n"
+       << "        -version                           (prints version number)\n"
        << "        -help\n";
 }
+
+
+void globaloptions::print_version()
+{
+  cout << "FLIRT version " << version << endl;
+}
+
+
