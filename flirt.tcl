@@ -23,7 +23,7 @@ proc flirt { w } {
 
     #{{{ setup main window etc
 
-    global reg entries USER FSLDIR INMEDX argc argv PWD PADY IGS VERSION
+    global reg entries USER FSLDIR INMEDX argc argv PWD PADY IGS VERSION gui_ext
 
     set reg($w,maxnstats) 20
 
@@ -436,7 +436,7 @@ menubutton $w.utils -text "Utils" -menu $w.utils.menu -relief raised
 
 menu $w.utils.menu
 
-$w.utils.menu add command -label "Invert FLIRT transform" -command { catch { exec sh -ce "${FSLDIR}/bin/InvertXFM" & } }
+$w.utils.menu add command -label "Invert FLIRT transform" -command { exec ${FSLDIR}/bin/InvertXFM$gui_ext & }
 
 #}}}
 
