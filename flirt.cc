@@ -1246,7 +1246,7 @@ void no_optimise()
 
   volume<float> outputvol = refvol;
   final_transform(testvol,outputvol,globaloptions::get().initmat);
-  if (globaloptions::get().iso) { fix_output_volume(testvol); }
+  if (globaloptions::get().iso) { fix_output_volume(outputvol); }
   save_volume_dtype(outputvol,globaloptions::get().outputfname.c_str(),
 		    globaloptions::get().datatype,globaloptions::get().vinfo);
   if (globaloptions::get().verbose>=2) {
