@@ -6,16 +6,16 @@
 #define WANT_MATH
 
 #include "newmatap.h"
-#include <avwio.h>
+#include "mjavwio.h"
 #include "AvwRead.h"
 #include "newmatio.h"
-#include "myimage.h"
+#include "mjimage.h"
 #include "miscmaths.h"
 #include "generalio.h"
 
 #ifndef NO_NAMESPACE
  using namespace MISCMATHS;
- using namespace AVWIO;
+ using namespace MJAVWIO;
  using namespace MJIMAGE;
  using namespace NEWMAT;
  using namespace GENERALIO;
