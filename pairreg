@@ -3,14 +3,14 @@
 if [ $# -lt 5 ] ; then
  echo "Usage: $0 brain1 brain2 skull1 skull2 outputmatrix [extra flirt args]"
  echo
- echo "  NB: brain2 and skull2 are used as -ref arguments internally"
+ echo "  NB: brain1 and skull1 are used as -ref arguments internally"
  exit 1
 fi
 
-bin=$1; export bin
-bref=$2; export bref
-sin=$3; export sin
-sref=$4; export sref
+bref=$1; export bref
+bin=$2; export bin
+sref=$3; export sref
+sin=$4; export sin
 matf=$5; export matf
 shift 5
 args=$* ; export args
