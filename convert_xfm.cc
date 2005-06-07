@@ -75,7 +75,7 @@ void print_usage(int argc, char *argv[])
 {
   cout << "Usage: " << argv[0] << " [options] <input-matrix-filename>\n"
        << "  e.g. " << argv[0] << " -omat <outmat> -inverse <inmat>\n"
-       << "       " << argv[0] << " -omat <outmat> -concat <mat2> <mat1>\n\n"
+       << "       " << argv[0] << " -omat <outmat_AtoC> -concat <mat_BtoC> <mat_AtoB>\n\n"
        << "       " << argv[0] << " -ref <refvol> -in <invol> -omedx <medxmat> <flirtmat>\n\n"
        << "  Available options are:\n"
        << "        -ref <refvol>                      (no default)\n"
