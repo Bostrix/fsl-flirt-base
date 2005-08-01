@@ -580,8 +580,15 @@ void search_cost(Matrix& paramlist, volume<float>& costs, volume<float>& tx,
   globaloptions::get().refparams(8) = 1.0;
   globaloptions::get().refparams(9) = 1.0;
   // set the initial translation (to align cog's)
-  trans = globaloptions::get().impair->refvol.cog() 
-            - globaloptions::get().impair->testvol.cog();
+  //  trans = refvol.cog() - initmat * testvol.cog()
+  ColumnVector testcog(4), tcog(3);
+  tcog = globaloptions::get().impair->testvol.cog();
+  testcog(1)=tcog(1); testcog(2)=tcog(2); testcog(3)=tcog(3); testcog(4)=1.0;
+  testcog = globaloptions::get().initmat * testcog;
+  trans = globaloptions::get().impair->refvol.cog();
+  trans(1) -= testcog(1);
+  trans(2) -= testcog(2);
+  trans(3) -= testcog(3);
   globaloptions::get().refparams(4) = trans(1);
   globaloptions::get().refparams(5) = trans(2);
   globaloptions::get().refparams(6) = trans(3);
