@@ -1305,12 +1305,12 @@ void no_optimise()
     cout << "Init Matrix = \n" << globaloptions::get().initmat << endl;
   }
   
-  float min_sampling_ref=1.0;
-  min_sampling_ref = Min(refvol.xdim(),Min(refvol.ydim(),refvol.zdim()));
-  
   if (globaloptions::get().iso) {
     resample_refvol(refvol,globaloptions::get().isoscale);
   }
+
+  float min_sampling_ref=1.0;
+  min_sampling_ref = Min(refvol.xdim(),Min(refvol.ydim(),refvol.zdim()));
 
   volume4D<float> outputvol;
   for (int t0=testvol.mint(); t0<=testvol.maxt(); t0++) {
