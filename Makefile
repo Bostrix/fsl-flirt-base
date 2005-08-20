@@ -21,7 +21,7 @@ P_OBJS = pointflirt.o
 M_OBJS = makerot.o
 MID_OBJS = midtrans.o
 
-RUNTCLS = Flirt InvertXFM ApplyXFM InvertMEDxXFM ConcatXFM
+RUNTCLS = Flirt InvertXFM ApplyXFM InvertMEDxXFM ConcatXFM Nudge
 XFILES = flirt convert_xfm avscale rmsdiff tal2imgcoord img2talcoord \
 	img2imgcoord applyxfm4D pointflirt makerot midtrans
 TESTXFILES = 
