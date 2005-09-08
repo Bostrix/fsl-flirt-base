@@ -20,11 +20,12 @@ X_OBJS = applyxfm4D.o
 P_OBJS = pointflirt.o
 M_OBJS = makerot.o
 MID_OBJS = midtrans.o
+NL_OBJS = nonlin.o
 
 RUNTCLS = Flirt InvertXFM ApplyXFM InvertMEDxXFM ConcatXFM Nudge
 XFILES = flirt convert_xfm avscale rmsdiff tal2imgcoord img2talcoord \
 	img2imgcoord applyxfm4D pointflirt makerot midtrans
-TESTXFILES = 
+TESTXFILES = nonlin
 HFILES =
 SCRIPTS = extracttxt pairreg fixxfm standard_space_roi
 
@@ -67,3 +68,6 @@ makerot:	${M_OBJS}
 
 midtrans:	${MID_OBJS}
 		${CXX}  ${CXXFLAGS} ${LDFLAGS} -o $@  ${MID_OBJS} ${LIBS}
+
+nonlin:		${NL_OBJS}
+		${CXX}  ${CXXFLAGS} ${LDFLAGS} -o $@  ${NL_OBJS} ${LIBS}

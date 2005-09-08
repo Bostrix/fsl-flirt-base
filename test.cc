@@ -20,12 +20,12 @@
 
 #include "newmatap.h"
 #include "newmatio.h"
-#include "miscimfns.h"
+//#include "miscimfns.h"
 #include "miscmaths/miscmaths.h"
-#include "interpolation.h"
-#include "mjimage.h"
+//#include "interpolation.h"
+//#include "mjimage.h"
 #include "newimage/costfns.h"
-#include "generalio.h"
+#include "newimage/newimageall.h"
 #include "globaloptions.h"
 
 #ifndef NO_NAMESPACE
