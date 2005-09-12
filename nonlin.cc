@@ -40,6 +40,9 @@ Option<bool> verbose(string("-v,--verbose"), false,
 Option<bool> help(string("-h,--help"), false,
 		  string("display this message"),
 		  false, no_argument);
+Option<bool> debug(string("-d,--debug"), false, 
+		     string("switch on debugging output"), 
+		     false, no_argument);
 Option<string> inname(string("-i,--in"), string(""),
 		      string("input image filename"),
 		      true, requires_argument);
@@ -51,6 +54,9 @@ Option<string> outname(string("-o,--out"), string(""),
 		       true, requires_argument);
 Option<string> warpname(string("-w,--warp"), string(""),
 			string("output warp-field filename"),
+			false, requires_argument);
+Option<string> affname(string("--initaff"), string(""),
+			string("filename for initial affine matrix"),
 			false, requires_argument);
 int nonoptarg;
 
@@ -69,8 +75,15 @@ int do_work(int argc, char* argv[])
   refweight = vref * 0.0f + 1.0f;
   inweight = vin * 0.0f + 1.0f;
 
+  Matrix affmat;
+  if (affname.set()) {
+    affmat = read_ascii_matrix(affname.value());
+  } else {
+    affmat = Identity(4);
+  }
+
   volume4D<float> warp;
-  affine2warp(Identity(4),warp,vref);
+  affine2warp(affmat,warp,vref);
 
   if (verbose.value()) { cerr << "Setting up costfn object" << endl; }
   Costfn costfnobj(vref,vin,refweight,inweight);
@@ -82,7 +95,7 @@ int do_work(int argc, char* argv[])
   if (verbose.value()) { print_volume_info(warp,"warp"); }
 
   cerr << "Pre-calling affine cost" << endl;
-  cost = costfnobj.cost(Identity(4));
+  cost = costfnobj.cost(affmat);
   cerr << "Returned affine cost = " << cost << endl;
 
   cost = costfnobj.cost(warp);
@@ -105,8 +118,52 @@ int do_work(int argc, char* argv[])
       }
     }
   }
+  
+  cout << "Returning to original warp" << endl;
+  affine2warp(affmat,warp,vref);
   cost = costfnobj.cost(warp);
-  cout << "Cost = " << cost << endl;
+  cout << "Non-grad Cost = " << cost << endl;
+  volume4D<float> gradvec;
+  cost = costfnobj.cost_gradient(gradvec,warp);
+  cout << "Grad Cost = " << cost << endl;
+
+  if (debug.value()) {
+    save_volume4D(gradvec,fslbasename(outname.value())+"_grad");
+  }
+
+  // calculate scale factor for gradient move
+  float scalefac=1.0;
+  volume<float> dummy;
+  dummy = sumsquaresvol(gradvec);
+  dummy = sqrt(dummy);
+  scalefac = 1.0 / dummy.percentile(0.95);
+
+  ColumnVector sfacs(7);
+  sfacs << -0.5 << -0.5 << -1.0 << +2.0 << 0.5 << 0.5 << 1.0;
+  sfacs *= scalefac;
+
+  float cumfac = 0.0, bestcumfac=0, mincost=cost;
+  for (int idx=1; idx<=sfacs.Nrows(); idx++) {
+    cumfac += sfacs(idx);
+    warp += ((float) sfacs(idx))*gradvec;
+    cost = costfnobj.cost(warp);
+    if (cost<mincost) { mincost=cost; bestcumfac=cumfac; }
+    cout << "Post-grad (" << cumfac/scalefac << ") Cost = " << cost << endl;
+  }
+
+  // reset warp to best one found so far
+  affine2warp(affmat,warp,vref);
+  warp += bestcumfac*gradvec;
+
+  if (warpname.set()) {
+    save_volume4D(warp,warpname.value());
+  }
+
+  if (outname.set()) {
+    volume<float> vout(vref);
+    apply_warp(vin,vout,warp);
+    save_volume(vout,outname.value());
+  }
 
   return 0;
 }
@@ -126,7 +183,9 @@ int main(int argc,char *argv[])
     options.add(refname);
     options.add(outname);
     options.add(warpname);
+    options.add(affname);
     options.add(verbose);
+    options.add(debug);
     options.add(help);
     
     nonoptarg = options.parse_command_line(argc, argv);
