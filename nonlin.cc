@@ -127,6 +127,12 @@ int do_work(int argc, char* argv[])
   cost = costfnobj.cost_gradient(gradvec,warp);
   cout << "Grad Cost = " << cost << endl;
 
+  // project gradient onto constraint manifold
+  float blursize=20.0; // mm
+  gradvec[0] = blur(gradvec[0],blursize);
+  gradvec[1] = blur(gradvec[1],blursize);
+  gradvec[2] = blur(gradvec[2],blursize);
+
   if (debug.value()) {
     save_volume4D(gradvec,fslbasename(outname.value())+"_grad");
   }
@@ -137,9 +143,16 @@ int do_work(int argc, char* argv[])
   dummy = sumsquaresvol(gradvec);
   dummy = sqrt(dummy);
   scalefac = 1.0 / dummy.percentile(0.95);
+  if (verbose.value()) { 
+    cout << "scaled gradient motion percentiles (90,95,99,max) are: "
+	 << scalefac * dummy.percentile(0.9) << " " 
+	 << scalefac * dummy.percentile(0.95) << " "
+	 << scalefac * dummy.percentile(0.99) << " " << scalefac * dummy.max() 
+	 << endl;
+  }
 
   ColumnVector sfacs(7);
-  sfacs << -0.5 << -0.5 << -1.0 << +2.0 << 0.5 << 0.5 << 1.0;
+  sfacs << -0.5 << -1.0 << -1.0 << +2.5 << 0.5 << 1.0 << 1.0;
   sfacs *= scalefac;
 
   float cumfac = 0.0, bestcumfac=0, mincost=cost;
