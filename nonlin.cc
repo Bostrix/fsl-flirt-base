@@ -43,6 +43,15 @@ Option<bool> help(string("-h,--help"), false,
 Option<bool> debug(string("-d,--debug"), false, 
 		     string("switch on debugging output"), 
 		     false, no_argument);
+Option<bool> nullbc(string("--nullbc"), false, 
+		     string("set null boundary condition (zero gradient)"), 
+		     false, no_argument);
+Option<int> maxiter(string("--maxiter"), 2, 
+		     string("maximum number of iterations"), 
+		     false, requires_argument);
+Option<float> blursize(string("--blursize"), 20, 
+		     string("amount of blurring of gradient (in mm)"), 
+		     false, requires_argument);
 Option<string> inname(string("-i,--in"), string(""),
 		      string("input image filename"),
 		      true, requires_argument);
@@ -58,11 +67,41 @@ Option<string> warpname(string("-w,--warp"), string(""),
 Option<string> affname(string("--initaff"), string(""),
 			string("filename for initial affine matrix"),
 			false, requires_argument);
+Option<string> initwarp(string("--initwarp"), string(""),
+			string("filename for initial warp"),
+			false, requires_argument);
 int nonoptarg;
 
 ////////////////////////////////////////////////////////////////////////////
 
 // Local functions
+
+// 1D minimisation function
+float line_minimise(volume4D<float>& warp,
+		    const volume4D<float>& gradvec, 
+		    Costfn& costfnobj, float scalefac, 
+		    float current_cost)
+{
+    ColumnVector sfacs(16);
+    sfacs << -0.1 << -0.1 << -0.1 << -0.1 << -0.1 << -0.5 << -0.5 << -0.5 << +2.0 << 0.1 << 0.1 << 0.1 << 0.1 << 0.1 << 0.5 << 1.0;
+    sfacs *= scalefac;
+    
+    volume4D<float> startwarp(warp);  // probably memory alloc inefficient!
+
+    float cumfac = 0.0, bestfac=0, mincost=current_cost, cost=current_cost;
+    for (int idx=1; idx<=sfacs.Nrows(); idx++) {
+      cumfac += sfacs(idx);
+      warp += ((float) sfacs(idx))*gradvec;
+      cost = costfnobj.cost(warp);
+      if (cost<mincost) { mincost=cost; bestfac=cumfac; }
+      cout << "Post-grad (" << cumfac/scalefac << ") Cost = " << cost << endl;
+    }
+    
+    // reset warp to best one found so far
+    warp = startwarp;
+    warp += bestfac*gradvec;
+    return mincost;
+}
 
 // this is the non-linear registration bit!
 int do_work(int argc, char* argv[]) 
@@ -82,91 +121,59 @@ int do_work(int argc, char* argv[])
     affmat = Identity(4);
   }
 
-  volume4D<float> warp;
-  affine2warp(affmat,warp,vref);
-
   if (verbose.value()) { cerr << "Setting up costfn object" << endl; }
   Costfn costfnobj(vref,vin,refweight,inweight);
   costfnobj.set_no_bins(256);
   costfnobj.set_costfn(CorrRatio);
 
-  float cost;
-  if (verbose.value()) { cerr << "Calling cost()" << endl; }
+  volume4D<float> warp, bestwarp;
+  affine2warp(affmat,warp,vref);
+  bestwarp = warp;
+  if (initwarp.set()) {
+    volume4D<float> initwarpvol;
+    read_volume4D(initwarpvol,initwarp.value());
+    concat_warps(initwarpvol,warp,bestwarp); 
+  }
+  warp = bestwarp;
   if (verbose.value()) { print_volume_info(warp,"warp"); }
 
-  cerr << "Pre-calling affine cost" << endl;
-  cost = costfnobj.cost(affmat);
-  cerr << "Returned affine cost = " << cost << endl;
-
-  cost = costfnobj.cost(warp);
-  cout << "Cost = " << cost << endl;
-
-  for (int z=vref.minz(); z<=vref.maxz(); z++) {
-    for (int y=vref.miny(); y<=vref.maxy(); y++) {
-      for (int x=vref.minx(); x<=vref.maxx(); x++) {
-	warp[1](x,y,z) += 0.001*x*x + z/200;
-      }
-    }
-  }
-  cost = costfnobj.cost(warp);
-  cout << "Cost = " << cost << endl;
-
-  for (int z=vref.minz(); z<=vref.maxz(); z++) {
-    for (int y=vref.miny(); y<=vref.maxy(); y++) {
-      for (int x=vref.minx(); x<=vref.maxx(); x++) {
-	warp[1](x,y,z) += 0.01*x*x + z/20;
-      }
-    }
-  }
-  
-  cout << "Returning to original warp" << endl;
-  affine2warp(affmat,warp,vref);
+  if (verbose.value()) { cerr << "Calling cost()" << endl; }
+  float cost;
   cost = costfnobj.cost(warp);
   cout << "Non-grad Cost = " << cost << endl;
   volume4D<float> gradvec;
-  cost = costfnobj.cost_gradient(gradvec,warp);
-  cout << "Grad Cost = " << cost << endl;
 
-  // project gradient onto constraint manifold
-  float blursize=20.0; // mm
-  gradvec[0] = blur(gradvec[0],blursize);
-  gradvec[1] = blur(gradvec[1],blursize);
-  gradvec[2] = blur(gradvec[2],blursize);
+  // start iteration
+  for (int iter=1; iter<=maxiter.value(); iter++) { 
+    cost = costfnobj.cost_gradient(gradvec,warp,nullbc.value());
+    cout << "Grad Cost = " << cost << endl;
+    
+    // project gradient onto constraint manifold
+    gradvec = blur(gradvec,blursize.value());
+    if (debug.value()) {
+      save_volume4D(gradvec,fslbasename(outname.value())+"_grad");
+    }
+    
+    // calculate scale factor for gradient move
+    float scalefac=1.0;
+    volume<float> dummy;
+    dummy = sumsquaresvol(gradvec);
+    dummy = sqrt(dummy);
+    scalefac = 1.0 / dummy.percentile(0.95);
+    if (verbose.value()) { 
+      cout << "scaled gradient motion percentiles (90,95,99,max) are: "
+	   << scalefac * dummy.percentile(0.9) << " " 
+	   << scalefac * dummy.percentile(0.95) << " "
+	   << scalefac * dummy.percentile(0.99) << " " << scalefac * dummy.max() 
+	   << endl;
+    }
+    
+    cost = line_minimise(warp,gradvec,costfnobj,scalefac,cost);
+    bestwarp = warp;
 
-  if (debug.value()) {
-    save_volume4D(gradvec,fslbasename(outname.value())+"_grad");
-  }
-
-  // calculate scale factor for gradient move
-  float scalefac=1.0;
-  volume<float> dummy;
-  dummy = sumsquaresvol(gradvec);
-  dummy = sqrt(dummy);
-  scalefac = 1.0 / dummy.percentile(0.95);
-  if (verbose.value()) { 
-    cout << "scaled gradient motion percentiles (90,95,99,max) are: "
-	 << scalefac * dummy.percentile(0.9) << " " 
-	 << scalefac * dummy.percentile(0.95) << " "
-	 << scalefac * dummy.percentile(0.99) << " " << scalefac * dummy.max() 
-	 << endl;
-  }
-
-  ColumnVector sfacs(7);
-  sfacs << -0.5 << -1.0 << -1.0 << +2.5 << 0.5 << 1.0 << 1.0;
-  sfacs *= scalefac;
-
-  float cumfac = 0.0, bestcumfac=0, mincost=cost;
-  for (int idx=1; idx<=sfacs.Nrows(); idx++) {
-    cumfac += sfacs(idx);
-    warp += ((float) sfacs(idx))*gradvec;
-    cost = costfnobj.cost(warp);
-    if (cost<mincost) { mincost=cost; bestcumfac=cumfac; }
-    cout << "Post-grad (" << cumfac/scalefac << ") Cost = " << cost << endl;
-  }
-
-  // reset warp to best one found so far
-  affine2warp(affmat,warp,vref);
-  warp += bestcumfac*gradvec;
+  } // end iteration
+  
+  warp = bestwarp;
 
   if (warpname.set()) {
     save_volume4D(warp,warpname.value());
@@ -197,6 +204,10 @@ int main(int argc,char *argv[])
     options.add(outname);
     options.add(warpname);
     options.add(affname);
+    options.add(initwarp);
+    options.add(blursize);
+    options.add(maxiter);
+    options.add(nullbc);
     options.add(verbose);
     options.add(debug);
     options.add(help);
