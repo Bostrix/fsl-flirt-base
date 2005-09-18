@@ -1,0 +1,22 @@
+#!/bin/sh
+
+function run { echo $1 ; $1 ; }
+
+# 4mm stages (with decreasing blurring/constraint)
+run "./nonlin -i mjbrain4 -r colin4 -o grot4 -w grot4_warp --initaff=mjbrain2colin.mat -d -v --maxiter=6 --blursize=20"
+
+run "./nonlin -i mjbrain4 -r colin4 -o grot4b -w postwarp4 -d -v --maxiter=4 --initwarp=grot4_warp --blursize=8"
+
+# resample output warp for 2mm stage (include translational fixes? TODO)
+run "flirt -in postwarp4 -ref colin2 -out prewarp2 -applyxfm"
+
+# 2mm stages
+run "./nonlin -i mjbrain2 -r colin2 -o grot2 -w grot2_warp -d -v --maxiter=4 --initwarp=prewarp2 --blursize=8"
+
+run "./nonlin -i mjbrain2 -r colin2 -o grot2b -w postwarp2 -d -v --maxiter=4 --initwarp=grot2_warp --blursize=4"
+
+# finished - display message for checking
+echo " "
+echo "Check results by running:"
+echo fv colin2 mjbrain2_to_colin2 grot2b
+
