@@ -15,17 +15,40 @@ fi
 if [ `imtest mjbrain1` = '0' ] ; then 
   run "flirt -in mjbrain -ref mjbrain -out mjbrain1 -applyisoxfm 1"
 fi
+ 
+if [ `imtest colin8` = '0' ] ; then 
+  run "flirt -in colin -ref colin -out colin8 -applyisoxfm 8"
+fi
+if [ `imtest colin4` = '0' ] ; then 
+  run "flirt -in colin -ref colin -out colin4 -applyisoxfm 4"
+fi
+if [ `imtest colin2` = '0' ] ; then 
+  run "flirt -in colin -ref colin -out colin2 -applyisoxfm 2"
+fi
+if [ `imtest colin1` = '0' ] ; then 
+  run "flirt -in colin -ref colin -out colin1 -applyisoxfm 1"
+fi
+
+
+# resample output for 8mm stage
+if [ `imtest mjbrain8_to_colin8` = '0' ] ; then 
+  run "flirt -in mjbrain8 -init mjbrain2colin.mat -ref colin8 -out mjbrain8_to_colin8 -applyxfm"
+fi
+
+# 8mm stages (with decreasing blurring/constraint)
+run "./nonlin -i mjbrain8 -r colin8 -o grot8 -w postwarp8 --initaff=mjbrain2colin.mat -d -v --maxiter=12 --nbins=20 --blursize=20"
 
 
 # resample output for 4mm stage
+run "flirt -in postwarp8 -ref colin4 -out prewarp4 -applyxfm"
 if [ `imtest mjbrain4_to_colin4` = '0' ] ; then 
   run "flirt -in mjbrain4 -init mjbrain2colin.mat -ref colin4 -out mjbrain4_to_colin4 -applyxfm"
 fi
 
 # 4mm stages (with decreasing blurring/constraint)
-run "./nonlin -i mjbrain4 -r colin4 -o grot4 -w grot4_warp --initaff=mjbrain2colin.mat -d -v --maxiter=6 --blursize=20"
+run "./nonlin -i mjbrain4 -r colin4 -o grot4 -w grot4_warp  -d -v --maxiter=6 --initwarp=prewarp4 --nbins=40 --blursize=20"
 
-run "./nonlin -i mjbrain4 -r colin4 -o grot4b -w postwarp4 -d -v --maxiter=4 --initwarp=grot4_warp --blursize=8"
+run "./nonlin -i mjbrain4 -r colin4 -o grot4b -w postwarp4 -d -v --maxiter=4 --initwarp=grot4_warp --nbins=40 --blursize=8"
 
 # resample output warp for 2mm stage (include translational fixes? TODO)
 run "flirt -in postwarp4 -ref colin2 -out prewarp2 -applyxfm"
@@ -34,9 +57,9 @@ if [ `imtest mjbrain2_to_colin2` = '0' ] ; then
 fi
 
 # 2mm stages
-run "./nonlin -i mjbrain2 -r colin2 -o grot2 -w grot2_warp -d -v --maxiter=4 --initwarp=prewarp2 --blursize=8"
+run "./nonlin -i mjbrain2 -r colin2 -o grot2 -w grot2_warp -d -v --maxiter=4 --initwarp=prewarp2 --nbins=80 --blursize=8"
 
-run "./nonlin -i mjbrain2 -r colin2 -o grot2b -w postwarp2 -d -v --maxiter=4 --initwarp=grot2_warp --blursize=4"
+run "./nonlin -i mjbrain2 -r colin2 -o grot2b -w postwarp2 -d -v --maxiter=4 --initwarp=grot2_warp --nbins=80 --blursize=4"
 
 # resample output warp for 2mm stage (include translational fixes? TODO)
 run "flirt -in postwarp2 -ref colin1 -out prewarp1 -applyxfm"
@@ -45,10 +68,12 @@ if [ `imtest mjbrain1_to_colin1` = '0' ] ; then
 fi
 
 # 1mm stages
-run "./nonlin -i mjbrain1 -r colin1 -o grot1 -w grot1_warp -d -v --maxiter=4 --initwarp=prewarp1 --blursize=4"
+run "./nonlin -i mjbrain1 -r colin1 -o grot1 -w grot1_warp -d -v --maxiter=4 --initwarp=prewarp1 --nbins=80 --blursize=4"
+
+run "./nonlin -i mjbrain1 -r colin1 -o grot1b -w postwarp1 -d -v --maxiter=4 --initwarp=grot1_warp --nbins=80 --blursize=2"
 
 # finished - display message for checking
 echo " "
 echo "Check results by running:"
-echo fv colin1 mjbrain1_to_colin1 grot1
+echo fv colin1 mjbrain1_to_colin1 grot1b
 
