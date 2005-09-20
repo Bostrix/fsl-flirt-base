@@ -2,78 +2,97 @@
 
 function run { echo $1 ; $1 ; }
 
+if [ $# -ge 1 ] ; then
+  INPIM=`$FSLDIR/bin/remove_ext $1` ;
+else
+  INPIM=mjbrain ;
+fi
+
+if [ $# -ge 2 ] ; then
+  REFIM=`$FSLDIR/bin/remove_ext $2` ;
+else
+  REFIM=colin ;
+fi
+
+NLOPTIONS="-d -v --nullbc"
+
 # prepare input images at required resolutions
-if [ `imtest mjbrain8` = '0' ] ; then 
-  run "flirt -in mjbrain -ref mjbrain -out mjbrain8 -applyisoxfm 8"
+if [ `imtest ${INPIM}8` = '0' ] ; then 
+  run "flirt -in ${INPIM} -ref ${INPIM} -out ${INPIM}8 -applyisoxfm 8"
 fi
-if [ `imtest mjbrain4` = '0' ] ; then 
-  run "flirt -in mjbrain -ref mjbrain -out mjbrain4 -applyisoxfm 4"
+if [ `imtest ${INPIM}4` = '0' ] ; then 
+  run "flirt -in ${INPIM} -ref ${INPIM} -out ${INPIM}4 -applyisoxfm 4"
 fi
-if [ `imtest mjbrain2` = '0' ] ; then 
-  run "flirt -in mjbrain -ref mjbrain -out mjbrain2 -applyisoxfm 2"
+if [ `imtest ${INPIM}2` = '0' ] ; then 
+  run "flirt -in ${INPIM} -ref ${INPIM} -out ${INPIM}2 -applyisoxfm 2"
 fi
-if [ `imtest mjbrain1` = '0' ] ; then 
-  run "flirt -in mjbrain -ref mjbrain -out mjbrain1 -applyisoxfm 1"
+if [ `imtest ${INPIM}1` = '0' ] ; then 
+  run "flirt -in ${INPIM} -ref ${INPIM} -out ${INPIM}1 -applyisoxfm 1"
 fi
  
-if [ `imtest colin8` = '0' ] ; then 
-  run "flirt -in colin -ref colin -out colin8 -applyisoxfm 8"
+if [ `imtest ${REFIM}8` = '0' ] ; then 
+  run "flirt -in ${REFIM} -ref ${REFIM} -out ${REFIM}8 -applyisoxfm 8"
 fi
-if [ `imtest colin4` = '0' ] ; then 
-  run "flirt -in colin -ref colin -out colin4 -applyisoxfm 4"
+if [ `imtest ${REFIM}4` = '0' ] ; then 
+  run "flirt -in ${REFIM} -ref ${REFIM} -out ${REFIM}4 -applyisoxfm 4"
 fi
-if [ `imtest colin2` = '0' ] ; then 
-  run "flirt -in colin -ref colin -out colin2 -applyisoxfm 2"
+if [ `imtest ${REFIM}2` = '0' ] ; then 
+  run "flirt -in ${REFIM} -ref ${REFIM} -out ${REFIM}2 -applyisoxfm 2"
 fi
-if [ `imtest colin1` = '0' ] ; then 
-  run "flirt -in colin -ref colin -out colin1 -applyisoxfm 1"
+if [ `imtest ${REFIM}1` = '0' ] ; then 
+  run "flirt -in ${REFIM} -ref ${REFIM} -out ${REFIM}1 -applyisoxfm 1"
 fi
 
+
+# Do initial affine alignment (if not already present)
+if [ ! -e ${INPIM}2${REFIM}.mat ] ; then
+  run "flirt -in ${INPIM} -ref ${REFIM} -omat ${INPIM}2${REFIM}.mat"
+fi
 
 # resample output for 8mm stage
-if [ `imtest mjbrain8_to_colin8` = '0' ] ; then 
-  run "flirt -in mjbrain8 -init mjbrain2colin.mat -ref colin8 -out mjbrain8_to_colin8 -applyxfm"
+if [ `imtest ${INPIM}8_to_${REFIM}8` = '0' ] ; then 
+  run "flirt -in ${INPIM}8 -init ${INPIM}2${REFIM}.mat -ref ${REFIM}8 -out ${INPIM}8_to_${REFIM}8 -applyxfm"
 fi
 
-# 8mm stages (with decreasing blurring/constraint)
-run "./nonlin -i mjbrain8 -r colin8 -o grot8 -w postwarp8 --initaff=mjbrain2colin.mat -d -v --maxiter=12 --nbins=20 --blursize=20"
+# 8mm stages 
+run "./nonlin -i ${INPIM}8 -r ${REFIM}8 -o grot8 -w postwarp8 --initaff=${INPIM}2${REFIM}.mat ${NLOPTIONS} --maxiter=2 --nbins=20 --blursize=20"
 
 
 # resample output for 4mm stage
-run "flirt -in postwarp8 -ref colin4 -out prewarp4 -applyxfm"
-if [ `imtest mjbrain4_to_colin4` = '0' ] ; then 
-  run "flirt -in mjbrain4 -init mjbrain2colin.mat -ref colin4 -out mjbrain4_to_colin4 -applyxfm"
+run "flirt -in postwarp8 -ref ${REFIM}4 -out prewarp4 -applyxfm"
+if [ `imtest ${INPIM}4_to_${REFIM}4` = '0' ] ; then 
+  run "flirt -in ${INPIM}4 -init ${INPIM}2${REFIM}.mat -ref ${REFIM}4 -out ${INPIM}4_to_${REFIM}4 -applyxfm"
 fi
 
 # 4mm stages (with decreasing blurring/constraint)
-run "./nonlin -i mjbrain4 -r colin4 -o grot4 -w grot4_warp  -d -v --maxiter=6 --initwarp=prewarp4 --nbins=40 --blursize=20"
+run "./nonlin -i ${INPIM}4 -r ${REFIM}4 -o grot4 -w grot4_warp ${NLOPTIONS} --maxiter=6 --initwarp=prewarp4 --nbins=40 --blursize=20"
 
-run "./nonlin -i mjbrain4 -r colin4 -o grot4b -w postwarp4 -d -v --maxiter=4 --initwarp=grot4_warp --nbins=40 --blursize=8"
+run "./nonlin -i ${INPIM}4 -r ${REFIM}4 -o grot4b -w postwarp4 ${NLOPTIONS} --maxiter=4 --initwarp=grot4_warp --nbins=40 --blursize=8"
 
 # resample output warp for 2mm stage (include translational fixes? TODO)
-run "flirt -in postwarp4 -ref colin2 -out prewarp2 -applyxfm"
-if [ `imtest mjbrain2_to_colin2` = '0' ] ; then 
-  run "flirt -in mjbrain2 -init mjbrain2colin.mat -ref colin2 -out mjbrain2_to_colin2 -applyxfm"
+run "flirt -in postwarp4 -ref ${REFIM}2 -out prewarp2 -applyxfm"
+if [ `imtest ${INPIM}2_to_${REFIM}2` = '0' ] ; then 
+  run "flirt -in ${INPIM}2 -init ${INPIM}2${REFIM}.mat -ref ${REFIM}2 -out ${INPIM}2_to_${REFIM}2 -applyxfm"
 fi
 
 # 2mm stages
-run "./nonlin -i mjbrain2 -r colin2 -o grot2 -w grot2_warp -d -v --maxiter=4 --initwarp=prewarp2 --nbins=80 --blursize=8"
+run "./nonlin -i ${INPIM}2 -r ${REFIM}2 -o grot2 -w grot2_warp ${NLOPTIONS} --maxiter=6 --initwarp=prewarp2 --nbins=80 --blursize=8"
 
-run "./nonlin -i mjbrain2 -r colin2 -o grot2b -w postwarp2 -d -v --maxiter=4 --initwarp=grot2_warp --nbins=80 --blursize=4"
+run "./nonlin -i ${INPIM}2 -r ${REFIM}2 -o grot2b -w postwarp2 ${NLOPTIONS} --maxiter=4 --initwarp=grot2_warp --nbins=80 --blursize=4"
 
 # resample output warp for 2mm stage (include translational fixes? TODO)
-run "flirt -in postwarp2 -ref colin1 -out prewarp1 -applyxfm"
-if [ `imtest mjbrain1_to_colin1` = '0' ] ; then 
-  run "flirt -in mjbrain1 -init mjbrain2colin.mat -ref colin1 -out mjbrain1_to_colin1 -applyxfm"
+run "flirt -in postwarp2 -ref ${REFIM}1 -out prewarp1 -applyxfm"
+if [ `imtest ${INPIM}1_to_${REFIM}1` = '0' ] ; then 
+  run "flirt -in ${INPIM}1 -init ${INPIM}2${REFIM}.mat -ref ${REFIM}1 -out ${INPIM}1_to_${REFIM}1 -applyxfm"
 fi
 
 # 1mm stages
-run "./nonlin -i mjbrain1 -r colin1 -o grot1 -w grot1_warp -d -v --maxiter=4 --initwarp=prewarp1 --nbins=80 --blursize=4"
+run "./nonlin -i ${INPIM}1 -r ${REFIM}1 -o grot1 -w grot1_warp ${NLOPTIONS} --maxiter=4 --initwarp=prewarp1 --nbins=80 --blursize=4"
 
-run "./nonlin -i mjbrain1 -r colin1 -o grot1b -w postwarp1 -d -v --maxiter=4 --initwarp=grot1_warp --nbins=80 --blursize=2"
+run "./nonlin -i ${INPIM}1 -r ${REFIM}1 -o grot1b -w postwarp1 ${NLOPTIONS} --maxiter=4 --initwarp=grot1_warp --nbins=80 --blursize=2"
 
 # finished - display message for checking
 echo " "
 echo "Check results by running:"
-echo fv colin1 mjbrain1_to_colin1 grot1b
+echo fv ${REFIM}1 ${INPIM}1_to_${REFIM}1 grot1b
 

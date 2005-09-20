@@ -384,6 +384,9 @@ int do_work(int argc, char* argv[])
 	   << scalefac * dummy.percentile(0.99) << " " << scalefac * dummy.max() 
 	   << endl;
     }
+
+    // clamp the gradvec to avoid very large deformations
+    clamp(gradvec,-2.0f/scalefac,+2.0f/scalefac);
     
     cost = line_minimise(warp,gradvec,costfnobj,scalefac,cost);
     bestwarp = warp;
