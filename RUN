@@ -14,7 +14,7 @@ else
   REFIM=colin ;
 fi
 
-NLOPTIONS="-d -v --nullbc"
+NLOPTIONS="-d -v"
 
 # prepare input images at required resolutions
 if [ `imtest ${INPIM}8` = '0' ] ; then 
@@ -49,7 +49,7 @@ if [ ! -e ${INPIM}2${REFIM}.mat ] ; then
   run "flirt -in ${INPIM} -ref ${REFIM} -omat ${INPIM}2${REFIM}.mat"
 fi
 
-# resample output for 8mm stage
+# resample output for 8mm stage 
 if [ `imtest ${INPIM}8_to_${REFIM}8` = '0' ] ; then 
   run "flirt -in ${INPIM}8 -init ${INPIM}2${REFIM}.mat -ref ${REFIM}8 -out ${INPIM}8_to_${REFIM}8 -applyxfm"
 fi
@@ -58,8 +58,8 @@ fi
 run "./nonlin -i ${INPIM}8 -r ${REFIM}8 -o grot8 -w postwarp8 --initaff=${INPIM}2${REFIM}.mat ${NLOPTIONS} --maxiter=2 --nbins=20 --blursize=20"
 
 
-# resample output for 4mm stage
-run "flirt -in postwarp8 -ref ${REFIM}4 -out prewarp4 -applyxfm"
+# resample output for 4mm stage - STILL NEED EXTRAPOLATION FIX!
+run "flirt -in postwarp8 -ref ${REFIM}4 -out prewarp4 -applyxfm -paddingsize 8"
 if [ `imtest ${INPIM}4_to_${REFIM}4` = '0' ] ; then 
   run "flirt -in ${INPIM}4 -init ${INPIM}2${REFIM}.mat -ref ${REFIM}4 -out ${INPIM}4_to_${REFIM}4 -applyxfm"
 fi
@@ -69,8 +69,8 @@ run "./nonlin -i ${INPIM}4 -r ${REFIM}4 -o grot4 -w grot4_warp ${NLOPTIONS} --ma
 
 run "./nonlin -i ${INPIM}4 -r ${REFIM}4 -o grot4b -w postwarp4 ${NLOPTIONS} --maxiter=4 --initwarp=grot4_warp --nbins=40 --blursize=8"
 
-# resample output warp for 2mm stage (include translational fixes? TODO)
-run "flirt -in postwarp4 -ref ${REFIM}2 -out prewarp2 -applyxfm"
+# resample output warp for 2mm stage (include translational fixes? TODO) - STILL NEED EXTRAPOLATION FIX!
+run "flirt -in postwarp4 -ref ${REFIM}2 -out prewarp2 -applyxfm -paddingsize 4"
 if [ `imtest ${INPIM}2_to_${REFIM}2` = '0' ] ; then 
   run "flirt -in ${INPIM}2 -init ${INPIM}2${REFIM}.mat -ref ${REFIM}2 -out ${INPIM}2_to_${REFIM}2 -applyxfm"
 fi
@@ -80,8 +80,8 @@ run "./nonlin -i ${INPIM}2 -r ${REFIM}2 -o grot2 -w grot2_warp ${NLOPTIONS} --ma
 
 run "./nonlin -i ${INPIM}2 -r ${REFIM}2 -o grot2b -w postwarp2 ${NLOPTIONS} --maxiter=4 --initwarp=grot2_warp --nbins=80 --blursize=4"
 
-# resample output warp for 2mm stage (include translational fixes? TODO)
-run "flirt -in postwarp2 -ref ${REFIM}1 -out prewarp1 -applyxfm"
+# resample output warp for 2mm stage (include translational fixes? TODO) - STILL NEED EXTRAPOLATION FIX!
+run "flirt -in postwarp2 -ref ${REFIM}1 -out prewarp1 -applyxfm -paddingsize 2"
 if [ `imtest ${INPIM}1_to_${REFIM}1` = '0' ] ; then 
   run "flirt -in ${INPIM}1 -init ${INPIM}2${REFIM}.mat -ref ${REFIM}1 -out ${INPIM}1_to_${REFIM}1 -applyxfm"
 fi

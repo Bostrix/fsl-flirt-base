@@ -319,6 +319,146 @@ float line_minimise(volume4D<float>& warp,
 
 ////////////////////////////////////////////////////////////////////////////
 
+// topology preservation code
+
+volume4D<float> jacobian_check(ColumnVector& jacobian_stats, 
+			       const volume4D<float>& warp,
+			       float minJ, float maxJ)
+{
+  // set up jacobian stats to contain: min, max, num < minJ, num > maxJ
+  if (jacobian_stats.Nrows()!=4) { jacobian_stats.ReSize(4); }
+  jacobian_stats = 0.0;
+  jacobian_stats(1)=1.0; jacobian_stats(2)=1.0; 
+  volume4D<float> jvol(warp);
+  jvol=0.0f; 
+  jvol.addvolume(jvol[0]);
+  jvol.addvolume(jvol[0]);
+  jvol.addvolume(jvol[0]);
+  jvol.addvolume(jvol[0]);
+  jvol.addvolume(jvol[0]);
+  float Jfff, Jbff, Jfbf, Jffb, Jbbf, Jbfb, Jfbb, Jbbb;
+  float wx000=0,wx001=0,wx010=0,wx011=0,wx100=0,wx101=0,wx110=0,wx111=0;
+  float wy000=0,wy001=0,wy010=0,wy011=0,wy100=0,wy101=0,wy110=0,wy111=0;
+  float wz000=0,wz001=0,wz010=0,wz011=0,wz100=0,wz101=0,wz110=0,wz111=0;
+  float volscale=1.0/(warp.xdim() * warp.ydim() * warp.zdim());
+  for (int z=warp.minz(); z<=warp.maxz()-1; z++) {
+    for (int y=warp.miny(); y<=warp.maxy()-1; y++) {
+      for (int x=warp.minx(); x<=warp.maxx()-1; x++) {
+	warp[0].getneighbours(x,y,z,wx000,wx001,wx010,wx011,
+			      wx100,wx101,wx110,wx111);
+	warp[1].getneighbours(x,y,z,wy000,wy001,wy010,wy011,
+			      wy100,wy101,wy110,wy111);
+	warp[2].getneighbours(x,y,z,wz000,wz001,wz010,wz011,
+			      wz100,wz101,wz110,wz111);
+	Jfff = (wx100-wx000) *
+	  ((wy010-wy000) * (wz001-wz000) - (wy001-wy000) * (wz010-wz000)) 
+	  - (wx010-wx000) *
+	  ((wy100-wy000) * (wz001-wz000) - (wy001-wy000) * (wz100-wz000)) 
+	  + (wx001-wx000) *
+	  ((wy100-wy000) * (wz010-wz000) - (wy010-wy000) * (wz100-wz000));
+	Jfff *= volscale;
+	if (Jfff<jacobian_stats(1)) { jacobian_stats(1)=Jfff; }
+	if (Jfff>jacobian_stats(2)) { jacobian_stats(2)=Jfff; }
+	if (Jfff<minJ) { jacobian_stats(3)+=1.0; }
+	if (Jfff>maxJ) { jacobian_stats(4)+=1.0; }
+	Jbff = (wx100-wx000) *
+	  ((wy110-wy100) * (wz101-wz100) - (wy101-wy100) * (wz110-wz100)) 
+	  - (wx110-wx100) *
+	  ((wy100-wy000) * (wz101-wz100) - (wy101-wy100) * (wz100-wz000)) 
+	  + (wx101-wx100) *
+	  ((wy100-wy000) * (wz110-wz100) - (wy110-wy100) * (wz100-wz000));
+	Jbff *= volscale;
+	if (Jbff<jacobian_stats(1)) { jacobian_stats(1)=Jbff; }
+	if (Jbff>jacobian_stats(2)) { jacobian_stats(2)=Jbff; }
+	if (Jbff<minJ) { jacobian_stats(3)+=1.0; }
+	if (Jbff>maxJ) { jacobian_stats(4)+=1.0; }
+	Jfbf = (wx110-wx010) *
+	  ((wy010-wy000) * (wz011-wz010) - (wy011-wy010) * (wz010-wz000)) 
+	  - (wx010-wx000) *
+	  ((wy110-wy010) * (wz011-wz010) - (wy011-wy010) * (wz110-wz010)) 
+	  + (wx011-wx010) *
+	  ((wy110-wy010) * (wz010-wz000) - (wy010-wy000) * (wz110-wz010));
+	Jfbf *= volscale;
+	if (Jfbf<jacobian_stats(1)) { jacobian_stats(1)=Jfbf; }
+	if (Jfbf>jacobian_stats(2)) { jacobian_stats(2)=Jfbf; }
+	if (Jfbf<minJ) { jacobian_stats(3)+=1.0; }
+	if (Jfbf>maxJ) { jacobian_stats(4)+=1.0; }
+	Jffb = (wx101-wx001) *
+	  ((wy011-wy001) * (wz001-wz000) - (wy001-wy000) * (wz011-wz001)) 
+	  - (wx011-wx001) *
+	  ((wy101-wy001) * (wz001-wz000) - (wy001-wy000) * (wz101-wz001)) 
+	  + (wx001-wx000) *
+	  ((wy101-wy001) * (wz011-wz001) - (wy011-wy001) * (wz101-wz001));
+	Jffb *= volscale;
+	if (Jffb<jacobian_stats(1)) { jacobian_stats(1)=Jffb; }
+	if (Jffb>jacobian_stats(2)) { jacobian_stats(2)=Jffb; }
+	if (Jffb<minJ) { jacobian_stats(3)+=1.0; }
+	if (Jffb>maxJ) { jacobian_stats(4)+=1.0; }
+	Jfbb = (wx111-wx011) *
+	  ((wy011-wy001) * (wz011-wz010) - (wy011-wy010) * (wz011-wz001)) 
+	  - (wx011-wx001) *
+	  ((wy111-wy011) * (wz011-wz010) - (wy011-wy010) * (wz111-wz011)) 
+	  + (wx011-wx010) *
+	  ((wy111-wy011) * (wz011-wz001) - (wy011-wy001) * (wz111-wz011));
+	Jfbb *= volscale;
+	if (Jfbb<jacobian_stats(1)) { jacobian_stats(1)=Jfbb; }
+	if (Jfbb>jacobian_stats(2)) { jacobian_stats(2)=Jfbb; }
+	if (Jfbb<minJ) { jacobian_stats(3)+=1.0; }
+	if (Jfbb>maxJ) { jacobian_stats(4)+=1.0; }
+	Jbfb = (wx101-wx001) *
+	  ((wy111-wy101) * (wz101-wz100) - (wy101-wy100) * (wz111-wz101)) 
+	  - (wx111-wx101) *
+	  ((wy101-wy001) * (wz101-wz100) - (wy101-wy100) * (wz101-wz001)) 
+	  + (wx101-wx100) *
+	  ((wy101-wy001) * (wz111-wz101) - (wy111-wy101) * (wz101-wz001));
+	Jbfb *= volscale;
+	if (Jbfb<jacobian_stats(1)) { jacobian_stats(1)=Jbfb; }
+	if (Jbfb>jacobian_stats(2)) { jacobian_stats(2)=Jbfb; }
+	if (Jbfb<minJ) { jacobian_stats(3)+=1.0; }
+	if (Jbfb>maxJ) { jacobian_stats(4)+=1.0; }
+	Jbbf = (wx110-wx010) *
+	  ((wy110-wy100) * (wz111-wz110) - (wy111-wy110) * (wz110-wz100)) 
+	  - (wx110-wx100) *
+	  ((wy110-wy010) * (wz111-wz110) - (wy111-wy110) * (wz110-wz010)) 
+	  + (wx111-wx110) *
+	  ((wy110-wy010) * (wz110-wz100) - (wy110-wy100) * (wz110-wz010));
+	Jbbf *= volscale;
+	if (Jbbf<jacobian_stats(1)) { jacobian_stats(1)=Jbbf; }
+	if (Jbbf>jacobian_stats(2)) { jacobian_stats(2)=Jbbf; }
+	if (Jbbf<minJ) { jacobian_stats(3)+=1.0; }
+	if (Jbbf>maxJ) { jacobian_stats(4)+=1.0; }
+	Jbbb = (wx111-wx011) *
+	  ((wy111-wy101) * (wz111-wz110) - (wy111-wy110) * (wz111-wz101)) 
+	  - (wx111-wx101) *
+	  ((wy111-wy011) * (wz111-wz110) - (wy111-wy110) * (wz111-wz011)) 
+	  + (wx111-wx110) *
+	  ((wy111-wy011) * (wz111-wz101) - (wy111-wy101) * (wz111-wz011));
+	Jbbb *= volscale;
+	if (Jbbb<jacobian_stats(1)) { jacobian_stats(1)=Jbbb; }
+	if (Jbbb>jacobian_stats(2)) { jacobian_stats(2)=Jbbb; }
+	if (Jbbb<minJ) { jacobian_stats(3)+=1.0; }
+	if (Jbbb>maxJ) { jacobian_stats(4)+=1.0; }
+// 	if (debug.value()) {
+// 	  cout << "Jacobian values are: " << Jfff << ", " << Jffb << ", " 
+// 	       << Jfbf << ", " << Jbff << ", " << Jfbb << ", " << Jbfb 
+// 	       << ", " << Jbbf << "," << Jbbb  << endl;
+// 	}
+	jvol(x,y,z,0) = Jfff;
+	jvol(x,y,z,1) = Jbff;
+	jvol(x,y,z,2) = Jfbf;
+	jvol(x,y,z,3) = Jffb;
+	jvol(x,y,z,4) = Jfbb;
+	jvol(x,y,z,5) = Jbfb;
+	jvol(x,y,z,6) = Jbbf;
+	jvol(x,y,z,7) = Jbbb;
+      }
+    }
+  }
+  return jvol;
+}
+
+////////////////////////////////////////////////////////////////////////////
+
 // this is the non-linear registration bit!
 int do_work(int argc, char* argv[]) 
 {
@@ -360,6 +500,19 @@ int do_work(int argc, char* argv[])
   cout << "Non-grad Cost = " << cost << endl;
   volume4D<float> gradvec;
 
+  volume4D<float> jvol;
+  ColumnVector jstats(4);
+  jstats=0;
+  jvol = jacobian_check(jstats,bestwarp,0.1,7.0);
+  if (verbose.value()) { 
+    cout << "Jacobian stats: min J = " << jstats(1) << " , max J = " <<
+      jstats(2) << " , num < 0.1 = " << jstats(3) << " , num > 7.0 = " <<
+      jstats(4) << endl;
+  }
+  if (debug.value()) {
+    save_volume4D(jvol,fslbasename(outname.value())+"_jac");
+  }
+
   // start iteration
   for (int iter=1; iter<=maxiter.value(); iter++) { 
     cost = costfnobj.cost_gradient(gradvec,warp,nullbc.value());
@@ -390,6 +543,15 @@ int do_work(int argc, char* argv[])
     
     cost = line_minimise(warp,gradvec,costfnobj,scalefac,cost);
     bestwarp = warp;
+    jvol = jacobian_check(jstats,bestwarp,0.1,7.0);
+    if (verbose.value()) { 
+      cout << "Jacobian stats: min J = " << jstats(1) << " , max J = " <<
+	jstats(2) << " , num < 0.1 = " << jstats(3) << " , num > 7.0 = " <<
+	jstats(4) << endl;
+    }
+    if (debug.value()) {
+      save_volume4D(jvol,fslbasename(outname.value())+"_jac");
+    }
 
   } // end iteration
   
