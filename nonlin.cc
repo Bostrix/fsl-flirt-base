@@ -47,6 +47,9 @@ Option<bool> debug(string("-d,--debug"), false,
 Option<bool> nullbc(string("--nullbc"), false, 
 		     string("set null boundary condition (zero gradient)"), 
 		     false, no_argument);
+Option<int> constrainlevel(string("--constrainlevel"), 1, 
+			 string("Level of topology constraint (0=none)"), 
+			 false, requires_argument);
 Option<int> maxiter(string("--maxiter"), 2, 
 		     string("maximum number of iterations"), 
 		     false, requires_argument);
@@ -329,14 +332,17 @@ void jacobian_check(volume4D<float>& jvol,
 		    float minJ, float maxJ, bool use_vol=true)
 {
   // set up jacobian stats to contain: min, max, num < minJ, num > maxJ
+  if (debug.value()) { cout << "Call: jacobian_check" << endl; }
   if (jacobian_stats.Nrows()!=4) { jacobian_stats.ReSize(4); }
   jacobian_stats = 0.0;
   jacobian_stats(1)=1.0; jacobian_stats(2)=1.0; 
   if (use_vol) {
-    if (!samesize(jvol[0],warp[0]) || (jvol.tsize()!=8)) {
+    if (verbose.value()) { cout << "Check jvol size" << endl; }
+    if ((jvol.tsize()!=8) || !samesize(jvol[0],warp[0])) {
       jvol = warp;  // set up all the right properties
-      jvol=0.0f; 
+      jvol = 0.0f; 
       for (int n=1; n<=5; n++) { jvol.addvolume(jvol[0]); }
+      if (debug.value()) { print_volume_info(jvol,"initialised jacvol"); }
     }
   }
   float Jfff, Jbff, Jfbf, Jffb, Jbbf, Jbfb, Jfbb, Jbbb;
@@ -484,32 +490,50 @@ void jacobian_check_quick(ColumnVector& jacobian_stats,
 void grad_calc(volume4D<float>& gradvols, const volume4D<float>& warp)
 {
   // returns gradients in the order: dx'/dx, dx'/dy, dx'/dz, dy'/dx, etc
-  if (!samesize(gradvols[0],warp[0]) || (gradvols.tsize()!=9)) {
+  if (debug.value()) { cout << "Call: grad_calc" << endl; }
+  if ((gradvols.tsize()!=9) || !samesize(gradvols[0],warp[0])) {
     gradvols = warp;  // set up all the right properties
     gradvols=0.0f; 
     for (int n=1; n<=6; n++) { gradvols.addvolume(gradvols[0]); }
   }
+  float dx=warp.xdim(), dy=warp.ydim(), dz=warp.zdim();
   float wx000=0,wx001=0,wx010=0,wx011=0,wx100=0,wx101=0,wx110=0,wx111=0;
   float wy000=0,wy001=0,wy010=0,wy011=0,wy100=0,wy101=0,wy110=0,wy111=0;
   float wz000=0,wz001=0,wz010=0,wz011=0,wz100=0,wz101=0,wz110=0,wz111=0;
-  for (int z=warp.minz(); z<=warp.maxz()-1; z++) {
-    for (int y=warp.miny(); y<=warp.maxy()-1; y++) {
-      for (int x=warp.minx(); x<=warp.maxx()-1; x++) {
-	warp[0].getneighbours(x,y,z,wx000,wx001,wx010,wx011,
-			      wx100,wx101,wx110,wx111);
-	warp[1].getneighbours(x,y,z,wy000,wy001,wy010,wy011,
-			      wy100,wy101,wy110,wy111);
-	warp[2].getneighbours(x,y,z,wz000,wz001,wz010,wz011,
-			      wz100,wz101,wz110,wz111);
-	gradvols[0](x,y,z) = wx100-wx000;
-	gradvols[1](x,y,z) = wx010-wx000;
-	gradvols[2](x,y,z) = wx001-wx000;
-	gradvols[3](x,y,z) = wy100-wy000;
-	gradvols[4](x,y,z) = wy010-wy000;
-	gradvols[5](x,y,z) = wy001-wy000;
-	gradvols[6](x,y,z) = wz100-wz000;
-	gradvols[7](x,y,z) = wz010-wz000;
-	gradvols[8](x,y,z) = wz001-wz000;
+  for (int z=warp.minz(); z<=warp.maxz(); z++) {
+    for (int y=warp.miny(); y<=warp.maxy(); y++) {
+      for (int x=warp.minx(); x<=warp.maxx(); x++) {
+	if ((z<warp.maxz()) && (y<warp.maxy()) && (x<warp.maxx())) {
+	  warp[0].getneighbours(x,y,z,wx000,wx001,wx010,wx011,
+				wx100,wx101,wx110,wx111);
+	  warp[1].getneighbours(x,y,z,wy000,wy001,wy010,wy011,
+				wy100,wy101,wy110,wy111);
+	  warp[2].getneighbours(x,y,z,wz000,wz001,wz010,wz011,
+				wz100,wz101,wz110,wz111);
+	  gradvols[0](x,y,z) = (wx100-wx000)/dx;
+	  gradvols[1](x,y,z) = (wx010-wx000)/dx;
+	  gradvols[2](x,y,z) = (wx001-wx000)/dx;
+	  gradvols[3](x,y,z) = (wy100-wy000)/dy;
+	  gradvols[4](x,y,z) = (wy010-wy000)/dy;
+	  gradvols[5](x,y,z) = (wy001-wy000)/dy;
+	  gradvols[6](x,y,z) = (wz100-wz000)/dz;
+	  gradvols[7](x,y,z) = (wz010-wz000)/dz;
+	  gradvols[8](x,y,z) = (wz001-wz000)/dz;
+	} else {
+	  int x2=x+1,y2=y+1,z2=z+1;
+	  if (x2>warp.maxx()) { x2 -= warp.maxx() + 1 - warp.minx(); }
+	  if (y2>warp.maxy()) { y2 -= warp.maxy() + 1 - warp.miny(); }
+	  if (z2>warp.maxz()) { z2 -= warp.maxz() + 1 - warp.minz(); }
+	  gradvols[0](x,y,z) = (warp[0](x2,y,z) - warp[0](x,y,z))/dx;
+	  gradvols[1](x,y,z) = (warp[0](x,y2,z) - warp[0](x,y,z))/dx;
+	  gradvols[2](x,y,z) = (warp[0](x,y,z2) - warp[0](x,y,z))/dx;
+	  gradvols[3](x,y,z) = (warp[1](x2,y,z) - warp[1](x,y,z))/dy;
+	  gradvols[4](x,y,z) = (warp[1](x,y2,z) - warp[1](x,y,z))/dy;
+	  gradvols[5](x,y,z) = (warp[1](x,y,z2) - warp[1](x,y,z))/dy;
+	  gradvols[6](x,y,z) = (warp[2](x2,y,z) - warp[2](x,y,z))/dz;
+	  gradvols[7](x,y,z) = (warp[2](x,y2,z) - warp[2](x,y,z))/dz;
+	  gradvols[8](x,y,z) = (warp[2](x,y,z2) - warp[2](x,y,z))/dz;
+	}
       }
     }
   }
@@ -524,28 +548,34 @@ void integrate_gradient_field(volume4D<float>& newwarp,
   // Note that the mean of the newwarp will be equal to warpmean{x,y,z}
   //  pass in: oldwarp[0].mean(), oldwarp[1].mean(), oldwarp[2].mean()
   
+  if (debug.value()) { cout << "Call: integrate_gradient_field" << endl; }
   int Nx, Ny, Nz;
-  Nx = grad.maxx();
-  Ny = grad.maxy();
-  Nz = grad.maxz();
-  if (!samesize(newwarp[0],grad[0]) || (newwarp.tsize()!=3) ) {
+  Nx = grad.xsize();
+  Ny = grad.ysize();
+  Nz = grad.zsize();
+  if ((newwarp.tsize()!=3) || !samesize(newwarp[0],grad[0])) {
     newwarp = grad;
-    for (int n=8; n>2; n++) { newwarp.deletevolume(n); }
+    for (int n=8; n>2; n--) { newwarp.deletevolume(n); }
     newwarp = 0.0f;
   }
   volume4D<float> gradkre(newwarp), gradkim(newwarp);
   float dotprodre, dotprodim, norm, argx, argy, argz;
   float gradkrealx, gradkimagx, gradkrealy, gradkimagy, gradkrealz, gradkimagz;
+  //print_volume_info(grad,"grad");
   // enforce things separately for gradients of warp[0], warp[1] and warp[2]
   for (int n=0; n<3; n++) {
     // take FFT of the x,y,z gradient fields (of warp[n])
     fft3(grad[n*3+0],grad[n*3+0]*0.0f,gradkre[0],gradkim[0]);
     fft3(grad[n*3+1],grad[n*3+1]*0.0f,gradkre[1],gradkim[1]);
     fft3(grad[n*3+2],grad[n*3+2]*0.0f,gradkre[2],gradkim[2]);
+    //save_volume4D(gradkre,"TEST_ksp_re");
+    //save_volume4D(gradkim,"TEST_ksp_im");
+    //print_volume_info(gradkre[0],"gradkre[0]");
+    //print_volume_info(gradkim[0],"gradkim[0]");
     // take normalised dot product of gradient vector and "A" vector
-    for (int z=grad.minz(); z<=grad.maxz()-1; z++) {
-      for (int y=grad.miny(); y<=grad.maxy()-1; y++) {
-	for (int x=grad.minx(); x<=grad.maxx()-1; x++) {
+    for (int z=grad.minz(); z<=grad.maxz(); z++) {
+      for (int y=grad.miny(); y<=grad.maxy(); y++) {
+	for (int x=grad.minx(); x<=grad.maxx(); x++) {
 	  argx=2.0*M_PI*x/Nx;  argy=2.0*M_PI*y/Ny;  argz=2.0*M_PI*z/Nz;  
 	  norm = 6.0 - 2.0*cos(argx) - 2.0*cos(argy) - 2.0*cos(argz);
 	  gradkrealx = gradkre[0](x,y,z);
@@ -562,32 +592,81 @@ void integrate_gradient_field(volume4D<float>& newwarp,
 	  dotprodre += gradkrealz * (cos(argz)-1) + gradkimagz * sin(argz);
 	  dotprodim += gradkimagz * (cos(argz)-1) - gradkrealz * sin(argz);
 	  // write back values into gradkre[0] and gradkim[0]
-	  gradkre[0](x,y,z) = dotprodre / norm;
-	  gradkim[0](x,y,z) = dotprodim / norm;
+	  if (fabs(norm)>1e-12) {
+	    gradkre[0](x,y,z) = dotprodre / norm;
+	    gradkim[0](x,y,z) = dotprodim / norm;
+	  } else {
+	    gradkre[0](x,y,z) = 0;
+	    gradkim[0](x,y,z) = 0;
+	  }
 	}
       }
     }
     // take IFFT to get the integrated gradient field
+    volume<float> dummy1, dummy2;
     ifft3(gradkre[0],gradkim[0]);
+    //print_volume_info(gradkre[0],"gradkre[0]");
+    //print_volume_info(gradkim[0],"gradkim[0]");
     newwarp[n] = gradkre[0];
+    //save_volume(gradkre[0],"TEST_imsp");
+    //save_volume(gradkim[0],"TEST_imsp2");
   }
+  // rescale newwarp by the voxel dimensions
+  newwarp[0] *= grad.xdim();
+  newwarp[1] *= grad.ydim();
+  newwarp[2] *= grad.zdim();
   // adjust the mean values
   newwarp[0] += warpmeanx;
   newwarp[1] += warpmeany;
   newwarp[2] += warpmeanz;
 }
 
-void get_jac_offset(int jacnum, int& xoff, int& yoff, int& zoff)
+void get_jac_offset(int jacnum, int* xoff, int* yoff, int* zoff)
 {
-  xoff=0; yoff=0; zoff=0;
-  if (jacnum==0) { xoff=0; yoff=0; zoff=0; } // Jfff
-  if (jacnum==1) { xoff=1; yoff=0; zoff=0; } // Jbff
-  if (jacnum==2) { xoff=0; yoff=1; zoff=0; } // Jfbf
-  if (jacnum==3) { xoff=0; yoff=0; zoff=1; } // Jffb
-  if (jacnum==4) { xoff=0; yoff=1; zoff=1; } // Jfbb
-  if (jacnum==5) { xoff=1; yoff=0; zoff=1; } // Jbfb
-  if (jacnum==6) { xoff=1; yoff=1; zoff=0; } // Jbbf
-  if (jacnum==7) { xoff=1; yoff=1; zoff=1; } // Jbbb
+  xoff[1]=0; yoff[1]=0; zoff[1]=0; 
+  xoff[2]=0; yoff[2]=0; zoff[2]=0; 
+  xoff[3]=0; yoff[3]=0; zoff[3]=0; 
+
+  if (jacnum==0) {  // Jfff
+    xoff[1]=0; yoff[1]=0; zoff[1]=0; 
+    xoff[2]=0; yoff[2]=0; zoff[2]=0; 
+    xoff[3]=0; yoff[3]=0; zoff[3]=0; 
+  }
+  if (jacnum==1) { // Jbff
+    xoff[1]=0; yoff[1]=0; zoff[1]=0; 
+    xoff[2]=1; yoff[2]=0; zoff[2]=0; 
+    xoff[3]=1; yoff[3]=0; zoff[3]=0; 
+  }
+  if (jacnum==2) { // Jfbf
+    xoff[1]=0; yoff[1]=1; zoff[1]=0; 
+    xoff[2]=0; yoff[2]=0; zoff[2]=0; 
+    xoff[3]=0; yoff[3]=1; zoff[3]=0; 
+  }
+  if (jacnum==3) { // Jffb
+    xoff[1]=0; yoff[1]=0; zoff[1]=1; 
+    xoff[2]=0; yoff[2]=0; zoff[2]=1; 
+    xoff[3]=0; yoff[3]=0; zoff[3]=0; 
+  }
+  if (jacnum==4) { // Jfbb
+    xoff[1]=0; yoff[1]=1; zoff[1]=1; 
+    xoff[2]=0; yoff[2]=0; zoff[2]=1; 
+    xoff[3]=0; yoff[3]=1; zoff[3]=0; 
+  }
+  if (jacnum==5) { // Jbfb
+    xoff[1]=0; yoff[1]=0; zoff[1]=1; 
+    xoff[2]=1; yoff[2]=0; zoff[2]=1; 
+    xoff[3]=1; yoff[3]=0; zoff[3]=0; 
+  }
+  if (jacnum==6) { // Jbbf
+    xoff[1]=0; yoff[1]=1; zoff[1]=0; 
+    xoff[2]=1; yoff[2]=0; zoff[2]=0; 
+    xoff[3]=1; yoff[3]=1; zoff[3]=0; 
+  }
+  if (jacnum==7) { // Jbbb
+    xoff[1]=0; yoff[1]=1; zoff[1]=1; 
+    xoff[2]=1; yoff[2]=0; zoff[2]=1; 
+    xoff[3]=1; yoff[3]=1; zoff[3]=0; 
+  }
 }
 
 void limit_grad(volume4D<float>& grad, const volume4D<float>& jvol, 
@@ -595,34 +674,53 @@ void limit_grad(volume4D<float>& grad, const volume4D<float>& jvol,
 {
   // use initaffmat for the default config (needs to be modified if
   //  this becomes a library function)
-  Matrix J, Jnew, J0;
-  J0 = initaffmat;
+  if (debug.value()) { cout << "Call: limit_grad" << endl; }
+  Matrix J(3,3), Jnew(3,3), J0(3,3);
+  if ((initaffmat.Nrows()!=4) || (initaffmat.Ncols()!=4)) {
+    initaffmat = Identity(4);
+  }
+  J0 = initaffmat.SubMatrix(1,3,1,3);
   float alpha, detJ;
-  int xoff, yoff, zoff;
+  int xoff[4], yoff[4], zoff[4];
   for (int z=grad.minz(); z<=grad.maxz()-1; z++) {
     for (int y=grad.miny(); y<=grad.maxy()-1; y++) {
       for (int x=grad.minx(); x<=grad.maxx()-1; x++) {
-	for (jacnum=0; jacnum<8; jacnum++) {
+	for (int jacnum=0; jacnum<8; jacnum++) {
 	  if ((jvol[jacnum](x,y,z)<minJ) || (jvol[jacnum](x,y,z)>maxJ)) {
 	    get_jac_offset(jacnum,xoff,yoff,zoff);
 	    // interpolate between current J matrix and initaffmat
 	    for (int n1=1; n1<=3; n1++) { for (int n2=1; n2<=3; n2++) {
-	      J(n1,n2) = grad[(n1-1)*3 + (n2-1)](x+xoff,y+yoff,z+zoff);
+		J(n1,n2) = grad[3*n1+n2-4](x+xoff[n2],y+yoff[n2],z+zoff[n2]);
 	    } }
 	    alpha = 0.0;
 	    Jnew = J;
 	    detJ = Jnew.Determinant();
+// 	    if (debug.value()) {
+// 	      if (fabs(detJ - jvol[jacnum](x,y,z))>0.01) {
+// 		cout << "ERROR: miscmatched jacobians " << detJ << " and "
+// 		     << jvol[jacnum](x,y,z) << " for jacnum = "<<jacnum<<endl;
+// 	      }
+// 	    }
 	    while ( (detJ > maxJ) || (detJ < minJ) ) {
 	      alpha += 0.1;
 	      if (alpha>1.0) alpha=1.0;
 	      Jnew = (1 - alpha ) * J + alpha * J0;
 	      detJ = Jnew.Determinant();
 	    }
+	    // and another one for luck!
+	    alpha += 0.1;
+	    if (alpha>1.0) alpha=1.0;
 	    // rescale gradients as required
 	    for (int n1=1; n1<=3; n1++) { for (int n2=1; n2<=3; n2++) {
-	      grad[(n1-1)*3 + (n2-1)](x+xoff,y+yoff,z+zoff) = 
+		grad[3*n1+n2-4](x+xoff[n2],y+yoff[n2],z+zoff[n2]) = 
 		(1 - alpha) * J(n1,n2) + alpha * J0(n1,n2);
 	    } }
+// 	    if (debug.value()) { 
+// 	      cout << "Rescaling with alpha = " << alpha << endl; 
+// 	      if (alpha>0.05) {
+// 		cout << "New J = " << Jnew << endl;
+// 	      }
+// 	    }
 	  }
 	}
       }
@@ -634,17 +732,25 @@ void limit_grad(volume4D<float>& grad, const volume4D<float>& jvol,
 void constrain_topology(volume4D<float>& warp, float minJ, float maxJ)
 {
   ColumnVector jstats(4);
+  if (verbose.value()) { cout << "Call: constrain_topology" << endl; }
   jacobian_check_quick(jstats,warp,minJ,maxJ);
   volume4D<float> grad, jvol;
   int n=1, maxit=10;
   while ( (n++<maxit) && ( (jstats(3)>0.5) || (jstats(4)>0.5) ) ) {
     grad_calc(grad,warp);
     jacobian_check(jvol,jstats,warp,minJ,maxJ);
+    if (verbose.value()) {
+      cout << "Jacobian stats of (min,max,#<min,#>max): " << jstats.t() << endl;
+    }
     limit_grad(grad,jvol,minJ,maxJ);
     integrate_gradient_field(warp, grad, warp[0].mean(), warp[1].mean(), 
 			     warp[2].mean());
     jacobian_check_quick(jstats,warp,minJ,maxJ);
   }
+  if (verbose.value()) { 
+    cout << "Finished constrain_topology in " << n
+	 << " iterations, with final stats of (min,max,#<min,#>max): " 
+	 << jstats.t() << endl; }
 }
 
 void constrain_topology(volume4D<float>& warp)
@@ -654,9 +760,35 @@ void constrain_topology(volume4D<float>& warp)
 
 ////////////////////////////////////////////////////////////////////////////
 
+int test_code()
+{
+  volume<float> vref;
+  read_volume(vref,refname.value());
+  print_volume_info(vref,"vref");
+  volume4D<float> warp, grad, jvol;
+  ColumnVector jstats(4);
+  float minJ=0.1, maxJ=7.0;
+  read_volume4D(warp,inname.value());
+  warp[1](warp.maxx()/2,warp.maxy()/2,warp.maxz()/2) += 10.5;
+  save_volume4D(warp,"TEST_pre_warp");
+  grad_calc(grad,warp);
+  save_volume4D(grad,"TEST_pre_grad");
+  jacobian_check(jvol,jstats,warp,minJ,maxJ);
+  cout << "Jacobian stats of (min,max,#<min,#>max): " << jstats.t() << endl;
+  constrain_topology(warp,minJ,maxJ);
+  save_volume4D(warp,"TEST_post_warp");
+  jacobian_check(jvol,jstats,warp,minJ,maxJ);
+  cout << "Jacobian stats of (min,max,#<min,#>max): " << jstats.t() << endl;
+  return 1;
+}
+
+////////////////////////////////////////////////////////////////////////////
+
 // this is the non-linear registration bit!
 int do_work(int argc, char* argv[]) 
 {
+  //if (debug.value()) { if (test_code()!=0) return 1; }
+
   volume<float> vin, vref;
   read_volume(vin,inname.value());
   read_volume(vref,refname.value());
@@ -699,9 +831,7 @@ int do_work(int argc, char* argv[])
   jstats=0;
   jvol = jacobian_check(jstats,bestwarp,0.1,7.0);
   if (verbose.value()) { 
-    cout << "Jacobian stats: min J = " << jstats(1) << " , max J = " <<
-      jstats(2) << " , num < 0.1 = " << jstats(3) << " , num > 7.0 = " <<
-      jstats(4) << endl;
+    cout << "Jacobian stats of (min,max,#<min,#>max): " << jstats.t() << endl;
   }
   if (debug.value()) {
     save_volume4D(jvol,fslbasename(outname.value())+"_jac");
@@ -711,12 +841,6 @@ int do_work(int argc, char* argv[])
   for (int iter=1; iter<=maxiter.value(); iter++) { 
     cost = costfnobj.cost_gradient(gradvec,warp,nullbc.value());
     cout << "Grad Cost = " << cost << endl;
-    
-    // project gradient onto constraint manifold
-    gradvec = blur(gradvec,blursize.value());
-    if (debug.value()) {
-      save_volume4D(gradvec,fslbasename(outname.value())+"_grad");
-    }
     
     // calculate scale factor for gradient move
     float scalefac=1.0;
@@ -734,21 +858,50 @@ int do_work(int argc, char* argv[])
 
     // clamp the gradvec to avoid very large deformations
     clamp(gradvec,-2.0f/scalefac,+2.0f/scalefac);
+
+    // project gradient onto constraint manifold
+    gradvec = blur(gradvec,blursize.value());
+    if (debug.value()) {
+      save_volume4D(gradvec,fslbasename(outname.value())+"_grad");
+    }
     
+//     // calculate scale factor for gradient move
+//     float scalefac=1.0;
+//     volume<float> dummy;
+//     dummy = sumsquaresvol(gradvec);
+//     dummy = sqrt(dummy);
+//     scalefac = 1.0 / dummy.percentile(0.95);
+//     if (verbose.value()) { 
+//       cout << "scaled gradient motion percentiles (90,95,99,max) are: "
+// 	   << scalefac * dummy.percentile(0.9) << " " 
+// 	   << scalefac * dummy.percentile(0.95) << " "
+// 	   << scalefac * dummy.percentile(0.99) << " " << scalefac * dummy.max() 
+// 	   << endl;
+//     }
+
+//     // clamp the gradvec to avoid very large deformations
+//     clamp(gradvec,-2.0f/scalefac,+2.0f/scalefac);
+
+    // do the optimisation
     cost = line_minimise(warp,gradvec,costfnobj,scalefac,cost);
     bestwarp = warp;
+
+    // check on the jacobian
     jvol = jacobian_check(jstats,bestwarp,0.1,7.0);
     if (verbose.value()) { 
-      cout << "Jacobian stats: min J = " << jstats(1) << " , max J = " <<
-	jstats(2) << " , num < 0.1 = " << jstats(3) << " , num > 7.0 = " <<
-	jstats(4) << endl;
+      cout << "Jacobian stats of (min,max,#<min,#>max): " << jstats.t() << endl;
     }
     if (debug.value()) {
       save_volume4D(jvol,fslbasename(outname.value())+"_jac");
     }
 
+    // enforce topology constraints
+    if (constrainlevel.value()>=2) { constrain_topology(bestwarp,0.1,7.0); }
+
   } // end iteration
   
+  if (verbose.value()) { cout << "Constrain level = " << constrainlevel.value() << endl; }
+  if (constrainlevel.value()>=1) { constrain_topology(bestwarp,0.1,7.0); }
   warp = bestwarp;
 
   if (warpname.set()) {
@@ -785,6 +938,7 @@ int main(int argc,char *argv[])
     options.add(maxiter);
     options.add(nbins);
     options.add(nullbc);
+    options.add(constrainlevel);
     options.add(verbose);
     options.add(debug);
     options.add(help);
