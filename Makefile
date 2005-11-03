@@ -7,7 +7,7 @@ PROJNAME = flirt
 USRINCFLAGS = -I${INC_NEWMAT} -I${INC_ZLIB}
 USRLDFLAGS = -L${LIB_NEWMAT} -L${LIB_ZLIB}
 
-LIBS = -lnewimage -lmiscmaths -lfslio -lniftiio -lznz -lnewmat -lutils -lm -lz
+LIBS = -lnewimage -lmiscmaths -lprob -lfslio -lniftiio -lznz -lnewmat -lutils -lm -lz
 
 FL_OBJS = globaloptions.o flirt.o 
 C_OBJS = convert_xfm.o
