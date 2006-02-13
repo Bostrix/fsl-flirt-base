@@ -1262,6 +1262,29 @@ int resample_refvol(volume<float>& refvol, float sampling=1.0)
 
 ////////////////////////////////////////////////////////////////////////////
 
+// template for either volume or volume4D (and no other)
+template <class V>
+int output_dtype(const V& outvol) 
+{
+  // used to determine whether a float should be forced for a mask
+  //  output (only if not overriden by user forcedatatype)
+  int dtype;
+  dtype = globaloptions::get().datatype;
+  // do not change this if the user is forcing a datatype
+  if (!globaloptions::get().forcedatatype) {
+    // only need to change it if it is not currently a floating type
+    if ( (dtype!=DT_FLOAT) && (dtype!=DT_DOUBLE) ) {
+      // only force floating output if range is currently < 1.5
+      if ((outvol.max() - outvol.min())<1.5) {
+	dtype=DT_FLOAT;
+      }
+    }
+  }
+  return dtype;
+}
+
+////////////////////////////////////////////////////////////////////////////
+
 
 void no_optimise()
 {
@@ -1328,8 +1351,9 @@ void no_optimise()
     final_transform(testvol[t0],outputvol[tref],globaloptions::get().initmat);
   }
   outputvol.setLRorder(refLRorder);
+  int outputdtype = output_dtype(outputvol);
   save_volume4D_dtype(outputvol,globaloptions::get().outputfname.c_str(),
-		      globaloptions::get().datatype,globaloptions::get().vinfo);
+		      outputdtype,globaloptions::get().vinfo);
 
   if (globaloptions::get().verbose>=2) {
     save_matrix_data(globaloptions::get().initmat, testvol[0], outputvol[0]);
@@ -2540,9 +2564,9 @@ int main(int argc,char *argv[])
 	print_volume_info(newtestvol,"Transformed testvol");
       }
       newtestvol.setLRorder(refLRorder);
+      int outputdtype = output_dtype(newtestvol);
       save_volume_dtype(newtestvol,globaloptions::get().outputfname.c_str(),
-			globaloptions::get().datatype,
-			globaloptions::get().vinfo);
+			outputdtype, globaloptions::get().vinfo);
     }
     if ( (globaloptions::get().outputmatascii.size()<=0) && 
 	 (globaloptions::get().outputmatmedx.size()<=0) ) {
