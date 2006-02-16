@@ -89,7 +89,7 @@ image.
 <itemize>
 
 <item>DO use the default settings (especially in advanced options) as they have been carefully chosen.</item> 
-<item>DO use it for Talairaching with the MNI average305 as this is what it is designed to do well.</item> 
+<item>DO use it for registering to the MNI152 average as this is what it is designed to do well.</item> 
 <item>DO use the Group facility for running the registration on a collection of images (this should avoid the need for scripting). </item>
 
 </itemize>
@@ -97,7 +97,7 @@ image.
 
 <section title="Template Images">
 
-<p>Talairached template images (whole head, extracted brain, brain
+<p>MNI152 template images (whole head, extracted brain, brain
 mask and skull) are included in fsl/etc/standard, courtesy of the
 <link url="http://www.mni.mcgill.ca/">MNI</link>.</p>
 
