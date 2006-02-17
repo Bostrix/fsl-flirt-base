@@ -36,7 +36,6 @@ public:
   bool usestd;
   bool mm;
   int verbose;
-  bool medx;
 public:
   globaloptions();
   ~globaloptions() {};
@@ -55,7 +54,6 @@ globaloptions::globaloptions()
   verbose = 0;
   usestd = false;
   mm = true;
-  medx = false;
 }
 
 
@@ -120,12 +118,7 @@ void parse_command_line(int argc, char* argv[])
       continue;
     } else if ( arg == "-flirt" ) {
       cerr << "WARNING::Using outdated options, please update to new usage" << endl;
-      globalopts.medx = false;
-      n++;
-      continue;
-    } else if ( arg == "-medx" ) {
-      cerr << "WARNING::Using outdated options, please update to new usage" << endl;
-      globalopts.medx = true;
+      // do nothing anymore
       n++;
       continue;
     } else if ( arg == "-v" ) {
@@ -270,14 +263,6 @@ int main(int argc,char *argv[])
       cout << " stdvox2world =" << endl << stdvol.sform_mat() << endl << endl;
     }
 
-    // bloody medx conventions
-    if (globalopts.medx) {
-      Matrix swapy2(4,4);
-      Identity(swapy2);
-      swapy2(2,2) = -1.0;
-      swapy2(2,4) = imgvol.ysize()-1.0;
-      vox2std = vox2std * swapy2;
-    }
 
   }
 

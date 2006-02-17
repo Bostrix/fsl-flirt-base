@@ -178,8 +178,6 @@ void save_matrix_data(const Matrix& matresult, const volume<float>& initvol,
 {
   Matrix outfmat = matresult;
   write_ascii_matrix(outfmat,globaloptions::get().outputmatascii);
-  write_medx_matrix(outfmat,globaloptions::get().outputmatmedx,
-		    initvol,finalvol,"a",globaloptions::get().reffname);
 }
 
 float costfn(const Matrix& matresult);
@@ -2568,8 +2566,7 @@ int main(int argc,char *argv[])
       save_volume_dtype(newtestvol,globaloptions::get().outputfname.c_str(),
 			outputdtype, globaloptions::get().vinfo);
     }
-    if ( (globaloptions::get().outputmatascii.size()<=0) && 
-	 (globaloptions::get().outputmatmedx.size()<=0) ) {
+    if ( (globaloptions::get().outputmatascii.size()<=0) ) {
       cout << endl << "Final result: " << endl << finalmat << endl;
     }
   }

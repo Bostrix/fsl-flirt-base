@@ -32,7 +32,6 @@ public:
   string testfname;
   string reffname;
   string outputmatascii;
-  string outputmatmedx;
   string initmatfname;
   string concatfname;
   string fixfname;
@@ -56,7 +55,6 @@ globaloptions::globaloptions()
 
   testfname = "";
   outputmatascii = "";
-  outputmatmedx = "";
   initmatfname = "";
   concatfname = "";
   fixfname = "";
@@ -162,16 +160,6 @@ void parse_command_line(int argc, char* argv[])
       continue;
     } else if ( arg == "-omat") {
       globalopts.outputmatascii = argv[n+1];
-      n+=2;
-      continue;
-    } else if ( arg == "-omedx") {
-      globalopts.outputmatmedx = argv[n+1];
-      globalopts.matonly = false;
-      n+=2;
-      continue;
-    } else if ( arg == "-xfmtype") {
-      globalopts.xfm_type = argv[n+1];
-      globalopts.matonly = false;
       n+=2;
       continue;
     } else if ( arg == "-verbose") {
@@ -322,16 +310,6 @@ int main(int argc,char *argv[])
   
   
   // Write outputs
-  if ((! globalopts.matonly) && (globalopts.outputmatmedx.size() >= 1)) {
-    if (globalopts.inverse) {
-      write_medx_matrix(affmat,globalopts.outputmatmedx,refvol,testvol,
-			globalopts.xfm_type,globalopts.testfname);
-    } else {
-      write_medx_matrix(affmat,globalopts.outputmatmedx,testvol,refvol,
-			globalopts.xfm_type,globalopts.reffname);
-    }
-  }
-  
   if (globalopts.outputmatascii.size() >= 1) {
     write_ascii_matrix(affmat,globalopts.outputmatascii);
   }

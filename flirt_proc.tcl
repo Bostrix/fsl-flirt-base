@@ -64,8 +64,6 @@ if { $interp == "sinc" } {
     set flirtinterp "$flirtinterp -sincwidth $sincwidth -sincwindow $sincwindow"
 }
 
-# non-MEDx FLIRTing
-
 set outroot [ file rootname $output ]
 
 if { $regmode == 1 } {

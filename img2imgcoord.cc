@@ -35,7 +35,6 @@ public:
   string coordfname;
   bool mm;
   int verbose;
-  bool medx;
 public:
   globaloptions();
   ~globaloptions() {};
@@ -52,7 +51,6 @@ globaloptions::globaloptions()
   coordfname = "";
   xfmfname = "";
   mm = false;
-  medx=true;
 }
 
 
@@ -69,7 +67,6 @@ void print_usage(int argc, char *argv[])
        << "        -xfm <Source to Destination transform filename>\n"
        << "        -vox                                 (all coordinates in voxels - default)\n"
        << "        -mm                                  (all coordinates in mm)\n"
-       << "        -flirt                               (use flirt, not medx, coordinate conventions)\n" 
        << "        -help\n\n"
        << " Note that the first three options are compulsory\n";
 }
@@ -110,7 +107,7 @@ void parse_command_line(int argc, char* argv[])
       n++;
       continue;
     } else if ( arg == "-flirt" ) {
-      globalopts.medx = false;
+      // do nothing anymore - this is all you can ever do!
       n++;
       continue;
     } else if ( arg == "-v" ) {
@@ -205,17 +202,11 @@ int main(int argc,char *argv[])
 
 
   // Let Volume 2 be Source and Volume 1 be Destination
-  //  notate variables as (v=vox, w=world, f=flirt, m=medx, t=dest)
+  //  notate variables as (v=vox, w=world, f=flirt, t=dest)
   
-  // the swap matrices convert flirt voxels to medx voxels
+  // the swap matrices are now defunct
   Matrix swapy1(4,4), swapy2(4,4);
   Identity(swapy1);  Identity(swapy2);
-  if (globalopts.medx) {
-    swapy1(2,2) = -1.0;
-    swapy2(2,2) = -1.0;
-    swapy1(2,4) = destvol.ysize()-1.0;
-    swapy2(2,4) = srcvol.ysize()-1.0;
-  }
   
   Matrix destvox2world, srcvox2world;
   destvox2world = destvol.sampling_mat() * swapy1;

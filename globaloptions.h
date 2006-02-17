@@ -47,7 +47,6 @@ class globaloptions {
   string outputfname;
   string reffname;
   string outputmatascii;
-  string outputmatmedx;
   string initmatfname;
   string refweightfname;
   string testweightfname;
@@ -149,7 +148,6 @@ inline globaloptions::globaloptions()
 
   inputfname = "";
   outputmatascii = "";
-  outputmatmedx = "";
   initmatfname = "";
   refweightfname = "";
   testweightfname = "";

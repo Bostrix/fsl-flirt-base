@@ -132,10 +132,6 @@ void globaloptions::parse_command_line(int argc,char** argv,
       outputmatascii = argv[n+1];
       n+=2;
       continue;
-    } else if ( arg == "-omedx") {
-      outputmatmedx = argv[n+1];
-      n+=2;
-      continue;
     } else if ( arg == "-bins") {
       no_bins = atoi(argv[n+1]);
       n+=2;
@@ -349,10 +345,8 @@ void globaloptions::print_usage(int argc, char *argv[])
        << "  Available options are:\n"
        << "        -in  <inputvol>                    (no default)\n"
        << "        -ref <refvol>                      (no default)\n"
-       << "        -init <matrix-filname>             (input 4x4 affine matrix - "
-                                        << "autodetects format ascii/medx)\n"
+       << "        -init <matrix-filname>             (input 4x4 affine matrix)\n"
        << "        -omat <matrix-filename>            (output in 4x4 ascii format)\n"
-       << "        -omedx <matrix-filename>           (output in MEDx format)\n"
        << "        -out, -o <outputvol>               (default is none)\n"
        << "        -datatype {char,short,int,float,double}                    (force output data type)\n"
        << "        -cost {mutualinfo,corratio,normcorr,normmi,leastsq}        (default is corratio)\n"
