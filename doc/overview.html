@@ -112,22 +112,20 @@ separated.
 
  <!-- J-Back -->
 
-<A NAME="section8"></A><HR><H2>img2talcoord</H2>
+<A NAME="section8"></A><HR><H2>img2stdcoord</H2>
  
-<B>img2talcoord</B> is a similar utility to <B>img2imgcoord</B>
-except that the destination volume coordinates are treated as Talairach
-space coordinates.  This requires the Talairach volume to have the
+<B>img2stdcoord</B> is a similar utility to <B>img2imgcoord</B>
+except that the destination volume coordinates are treated as standard
+space coordinates.  This requires the standard space image to have the
 origin coordinates and voxel dimensions entered in the correct analyse
-header fields.  (Note that this has only been tested with the standard
-images contained in fsl/etc/standard - there is no guarantee with other
-images, as the origin is not a standard analyse header field)
+header fields.  This is more complicated for nifti - see the FSL FAQ.
 
  <!-- J-Back -->
 
-<A NAME="section9"></A><HR><H2>tal2imgcoord</H2>
+<A NAME="section9"></A><HR><H2>std2imgcoord</H2>
  
-<B>tal2imgcoord</B> is the complementary utility to <B>img2talcoord</B>.
-It works the same way but transfers coordinates from Talairach space to
+<B>std2imgcoord</B> is the complementary utility to <B>img2stdcoord</B>.
+It works the same way but transfers coordinates from standard space to
 the other image (IMG) space.
 
  <!-- J-Back -->
