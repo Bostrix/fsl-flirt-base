@@ -35,7 +35,6 @@ int main(int argc,char *argv[])
   if (argc!=4) { 
     cerr << "Usage: " << argv[0] << " matrixfile1 matrixfile2 refvol" << endl; 
     cerr << "        Outputs rms deviation between matrices (in mm)" << endl;
-	 << endl;
     return -1; 
   }
   

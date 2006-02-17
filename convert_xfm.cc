@@ -13,8 +13,6 @@
 #define WANT_STREAM
 #define WANT_MATH
 
-string version="2.0"
-
 #include "newmatap.h"
 #include "newmatio.h"
 #include "newimage/newimageall.h"
@@ -71,6 +69,8 @@ globaloptions::globaloptions()
 
 void print_usage(int argc, char *argv[])
 {
+  const string version="2.0";
+
   cout << "convert_xfm (Version " << version << ")" << endl
        << "Tool for manipulating FSL transformation matrices" << endl
        << "Copyright(c) 1999, University of Oxford (Mark Jenkinson)" << endl
