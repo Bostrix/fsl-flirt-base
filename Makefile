@@ -13,8 +13,8 @@ FL_OBJS = globaloptions.o flirt.o
 C_OBJS = convert_xfm.o
 A_OBJS = avscale.o
 R_OBJS = rmsdiff.o
-TAL_OBJS = tal2imgcoord.o
-EPI_OBJS = img2talcoord.o
+STD_OBJS = std2imgcoord.o
+EPI_OBJS = img2stdcoord.o
 IMG_OBJS = img2imgcoord.o
 X_OBJS = applyxfm4D.o
 P_OBJS = pointflirt.o
@@ -23,7 +23,7 @@ MID_OBJS = midtrans.o
 NL_OBJS = nonlin.o
 
 RUNTCLS = Flirt InvertXFM ApplyXFM InvertMEDxXFM ConcatXFM Nudge
-XFILES = flirt convert_xfm avscale rmsdiff tal2imgcoord img2talcoord \
+XFILES = flirt convert_xfm avscale rmsdiff std2imgcoord img2stdcoord \
 	img2imgcoord applyxfm4D pointflirt makerot midtrans
 TESTXFILES = nonlin
 HFILES =
@@ -48,10 +48,10 @@ avscale:        ${A_OBJS}
 rmsdiff:        ${R_OBJS}
 		${CXX}  ${CXXFLAGS} ${LDFLAGS} -o $@  ${R_OBJS} ${LIBS}
 
-tal2imgcoord:	${TAL_OBJS}
-		${CXX}  ${CXXFLAGS} ${LDFLAGS} -o $@  ${TAL_OBJS} ${LIBS}
+std2imgcoord:	${STD_OBJS}
+		${CXX}  ${CXXFLAGS} ${LDFLAGS} -o $@  ${STD_OBJS} ${LIBS}
 
-img2talcoord:	${EPI_OBJS}
+img2stdcoord:	${EPI_OBJS}
 		${CXX}  ${CXXFLAGS} ${LDFLAGS} -o $@  ${EPI_OBJS} ${LIBS}
 
 img2imgcoord:	${IMG_OBJS}
