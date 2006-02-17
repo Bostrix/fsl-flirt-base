@@ -2,7 +2,7 @@
 
     Mark Jenkinson, FMRIB Image Analysis Group
 
-    Copyright (C) 1999-2000 University of Oxford  */
+    Copyright (C) 1999-2006 University of Oxford  */
 
 /*  CCOPYRIGHT  */
 
@@ -13,16 +13,16 @@
 #define WANT_STREAM
 #define WANT_MATH
 
+string version="2.0"
+
 #include "newmatap.h"
 #include "newmatio.h"
 #include "newimage/newimageall.h"
 #include "miscmaths/miscmaths.h"
 
-#ifndef NO_NAMESPACE
  using namespace MISCMATHS;
  using namespace NEWMAT;
  using namespace NEWIMAGE;
-#endif
 
 ////////////////////////////////////////////////////////////////////////////
 // the real defaults are provided in the function parse_command_line
@@ -73,28 +73,20 @@ globaloptions::globaloptions()
 
 void print_usage(int argc, char *argv[])
 {
-  cout << "Usage: " << argv[0] << " [options] <input-matrix-filename>\n"
-       << "  e.g. " << argv[0] << " -omat <outmat> -inverse <inmat>\n"
-       << "       " << argv[0] << " -omat <outmat_AtoC> -concat <mat_BtoC> <mat_AtoB>\n\n"
-       << "       " << argv[0] << " -ref <refvol> -in <invol> -omedx <medxmat> <flirtmat>\n\n"
-       << "  Available options are:\n"
-       << "        -ref <refvol>                      (no default)\n"
-       << "        -in <inputvol>                     (no default)\n"
-       << "        -omat <matrix-filename>            (4x4 ascii format)\n"
-       << "        -omedx <matrix-filename>           (MEDx format)\n"
-    //       << "        -ominc <matrix-filename>           (MINC format)\n"
-       << "        -xfmtype {a,m,u,g,s,t}             (Specify MEDx xfm format)\n"
-       << "                      a,m = AlignLinearReslice (default)\n"
-       << "                      u   = UserTransformation\n"
-       << "                      g   = GenericReslice\n"
-       << "                      s   = ShadowTransform\n"
-       << "                      t   = IntoTalairachSpace\n"
-       << "        -concat <second-matrix-filename>\n"
-       << "        -fixscaleskew <second-matrix-filename>\n"
-       << "        -middlevol <intermediary-volume-filename>\n"
-       << "        -inverse                           (Reference image must be the one originally used)\n"
-       << "        -matonly                           (Use no volumes or MEDx support - default)\n"
-       << "        -help\n";
+  cout << "convert_xfm (Version " << version << ")" << endl
+       << "Tool for manipulating FSL transformation matrices" << endl
+       << "Copyright(c) 1999, University of Oxford (Mark Jenkinson)" << endl
+       << endl 
+       << "Usage: " << argv[0] << " [options] <input-matrix-filename>" << endl
+       << "  e.g. " << argv[0] << " -omat <outmat> -inverse <inmat>" << endl
+       << "       " << argv[0] << " -omat <outmat_AtoC> -concat <mat_BtoC> <mat_AtoB>" << endl << endl
+       << "  Available options are:" << endl
+       << "        -omat <matrix-filename>            (4x4 ascii format)" << endl
+    //       << "        -ominc <matrix-filename>           (MINC format)" << endl
+       << "        -concat <second-matrix-filename>" << endl
+       << "        -fixscaleskew <second-matrix-filename>" << endl
+       << "        -inverse                           (Reference image must be the one originally used)" << endl
+       << "        -help" << endl;
 }
 
 
@@ -194,15 +186,18 @@ void parse_command_line(int argc, char* argv[])
   }  // while (n<argc)
 
   if (globalopts.initmatfname.size()<1) {
-    cerr << "Input matrix filename not found\n\n";
+    cerr << "Input matrix filename not found" << endl << endl;
     print_usage(argc,argv);
     exit(2);
   }
+  if (!globalopts.matonly) {
+    cerr << "WARNING:: Using old style options - please update usage" << endl;
+  }
   if ((!globalopts.matonly) && (globalopts.testfname.size()<1)) {
-    cerr << "ERROR:: Inputvol filename not found\n\n";
+    cerr << "ERROR:: Inputvol filename not found" << endl << endl;
   }
   if ((!globalopts.matonly) && (globalopts.reffname.size()<1)) {
-    cerr << "ERROR:: Reference volume filename not found\n\n";
+    cerr << "ERROR:: Reference volume filename not found" << endl << endl;
   }
 }
 
