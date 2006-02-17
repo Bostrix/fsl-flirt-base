@@ -22,12 +22,12 @@ M_OBJS = makerot.o
 MID_OBJS = midtrans.o
 NL_OBJS = nonlin.o
 
-RUNTCLS = Flirt InvertXFM ApplyXFM InvertMEDxXFM ConcatXFM Nudge
+RUNTCLS = Flirt InvertXFM ApplyXFM ConcatXFM Nudge
 XFILES = flirt convert_xfm avscale rmsdiff std2imgcoord img2stdcoord \
 	img2imgcoord applyxfm4D pointflirt makerot midtrans
 TESTXFILES = nonlin
 HFILES =
-SCRIPTS = extracttxt pairreg fixxfm standard_space_roi
+SCRIPTS = extracttxt pairreg standard_space_roi
 
 all:	${XFILES} schedule
 

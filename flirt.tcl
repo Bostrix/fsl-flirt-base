@@ -23,7 +23,7 @@ proc flirt { w } {
 
     #{{{ setup main window etc
 
-    global reg entries USER FSLDIR INMEDX argc argv PWD PADY IGS VERSION gui_ext
+    global reg entries USER FSLDIR argc argv PWD PADY IGS VERSION gui_ext
 
     set reg($w,maxnstats) 20
 
@@ -38,15 +38,9 @@ proc flirt { w } {
     tixLabelFrame $w.f.basic
     set lfbasic [ $w.f.basic subwidget frame ]
 
-    if { $INMEDX } {
-	set PADY 0
-	set IG  "image/group"
-	set IGS "images/groups"
-    } else {
 	set PADY 3
 	set IG  "image"
 	set IGS "images"
-    }
 
 #}}}
     #{{{ number of secondary images
@@ -61,14 +55,6 @@ proc flirt { w } {
 #}}}
     #{{{ standard image
 
-    if { $INMEDX } {
-	set entries($w,1) ""
-        frame $w.f.ref
-        label $w.f.reftxt -width 23 -text "Reference image"
-        entry $w.f.refvar -textvariable entries($w,1) -width 30
-        button $w.f.refsel -text "Select" -command "SelectPage:Dialog $w 1 0 40 entries"
-        pack $w.f.reftxt $w.f.refvar $w.f.refsel -in $w.f.ref -padx 3 -pady 0 -side left
-    } else {
 	set entries($w,1) ${FSLDIR}/etc/standard/avg152T1_brain.hdr
 	FSLFileEntry $w.f.ref \
 		-variable entries($w,1) \
@@ -79,7 +65,6 @@ proc flirt { w } {
 		-title "Select" \
 		-width 50 \
 		-filterhist VARS(history)
-    }
 
 #}}}
 
@@ -106,13 +91,6 @@ proc flirt { w } {
 
     #{{{ input/high res image
 
-    if { $INMEDX } {
-        frame $w.f.test
-        label $w.f.testtxt -width 23 -text "Input image/group"
-        entry $w.f.testvar -textvariable entries($w,2) -width 30
-        button $w.f.testsel -text "Select" -command "SelectPage:Dialog $w 2 0 40 entries"
-        pack $w.f.testtxt $w.f.testvar $w.f.testsel -in $w.f.test -padx 3 -pady 0 -side left
-    } else {
 	FSLFileEntry $w.f.test \
 		-variable entries($w,2) \
 		-pattern "IMAGE" \
@@ -122,18 +100,10 @@ proc flirt { w } {
 		-title "Select" \
 		-width 50 \
 		-filterhist VARS(history)
-    }
 
 #}}}
     #{{{ low res image
 
-    if { $INMEDX } {
-        frame $w.f.test2
-        label $w.f.testtxt2 -width 23 -text "Low res image/group"
-        entry $w.f.testvar2 -textvariable entries($w,3) -width 30
-        button $w.f.testsel2 -text "Select" -command "SelectPage:Dialog $w 3 0 40 entries"
-        pack $w.f.testtxt2 $w.f.testvar2 $w.f.testsel2 -in $w.f.test2 -padx 3 -pady 0 -side left
-    } else {
 	FSLFileEntry $w.f.test2 \
 		-variable entries($w,3) \
 		-pattern "IMAGE" \
@@ -143,7 +113,6 @@ proc flirt { w } {
 		-title "Select" \
 		-width 50 \
 		-filterhist VARS(history)
-    }
 
 
  
@@ -183,20 +152,7 @@ proc flirt { w } {
 
     #{{{ output image
 
-    if { ! $INMEDX } {
-	FSLFileEntry $w.f.output \
-		-variable entries($w,4) \
-		-pattern "IMAGE" \
-		-directory $PWD \
-		-label "Output image   " \
-		-labelwidth 18 \
-		-title "Select" \
-		-width 50 \
-		-filterhist VARS(history)
-	pack $w.f.output -in $lfbasic -side top -anchor w -pady $PADY -padx 5
-    } else {
 	set entries($w,4) /tmp/grot
-    }
 
 
 #}}}
@@ -205,13 +161,6 @@ proc flirt { w } {
 set i 1
 while { $i <= $reg($w,maxnstats) } {
 
-    if { $INMEDX } {
-	frame $w.f.second$i
-	label $w.f.secondtxt($i) -width 23 -text "Secondary image/group $i"
-	entry $w.f.secondvar($i) -textvariable entries($w,[ expr $i + 4 ]) -width 30
-        button $w.f.secondsel($i) -text "Select" -command "SelectPage:Dialog $w [ expr $i + 4 ] 0 40 entries"
-	pack $w.f.secondtxt($i) $w.f.secondvar($i) $w.f.secondsel($i) -in $w.f.second$i -padx 0 -pady 0 -side left
-    } else {
 	FSLFileEntry $w.f.second$i \
 		-variable entries($w,[ expr $i + 4 ]) \
 		-pattern "IMAGE" \
@@ -221,7 +170,6 @@ while { $i <= $reg($w,maxnstats) } {
 		-title "Select" \
 		-width 50 \
 		-filterhist VARS(history)
-    }
 
     incr i 1
 }
@@ -350,9 +298,7 @@ while { $i <= $reg($w,maxnstats) } {
     
     # ---- pack ----
     pack $w.interpbanner $w.trilinear -in $interplf -side top -anchor w -padx 3
-    if { ! $INMEDX } {
-	pack $w.nearestneighbour $w.sinc -in $interplf -side top -anchor w -padx 3
-    }
+    pack $w.nearestneighbour $w.sinc -in $interplf -side top -anchor w -padx 3
     set reg($w,interp) trilinear
 
     pack $w.swinbanner -in $w.swinopt -side top -anchor w -padx 3
@@ -364,13 +310,6 @@ while { $i <= $reg($w,maxnstats) } {
     set weightlf [$w.nb subwidget weights]
 
     set entries($w,35) ""
-    if { $INMEDX } {
-        frame $w.wgt
-        label $w.wgttxt -width 23 -text "Reference weighting"
-        entry $w.wgtvar -textvariable entries($w,35) -width 30
-        button $w.wgtsel -text "Select" -command "SelectPage:Dialog $w 35 0 40 entries"
-        pack $w.wgttxt $w.wgtvar $w.wgtsel -in $w.wgt -padx 3 -pady 0 -side left
-    } else {
 	FSLFileEntry $w.wgt \
 		-variable entries($w,35) \
 		-pattern "IMAGE" \
@@ -380,16 +319,8 @@ while { $i <= $reg($w,maxnstats) } {
 		-title "Select" \
 		-width 50 \
 		-filterhist VARS(history)
-    }
 
     set entries($w,36) ""
-    if { $INMEDX } {
-        frame $w.iwgt
-        label $w.iwgttxt -width 23 -text "Input weighting"
-        entry $w.iwgtvar -textvariable entries($w,36) -width 30
-        button $w.iwgtsel -text "Select" -command "SelectPage:Dialog $w 36 0 40 entries"
-        pack $w.iwgttxt $w.iwgtvar $w.iwgtsel -in $w.iwgt -padx 3 -pady 0 -side left
-    } else {
 	FSLFileEntry $w.iwgt \
 		-variable entries($w,36) \
 		-pattern "IMAGE" \
@@ -399,16 +330,8 @@ while { $i <= $reg($w,maxnstats) } {
 		-title "Select" \
 		-width 50 \
 		-filterhist VARS(history)
-    }
 
     set entries($w,37) ""
-    if { $INMEDX } {
-        frame $w.iwgt2
-        label $w.iwgttxt2 -width 23 -text "Low res weighting"
-        entry $w.iwgtvar2 -textvariable entries($w,37) -width 30
-        button $w.iwgtsel2 -text "Select" -command "SelectPage:Dialog $w 37 0 40 entries"
-        pack $w.iwgttxt2 $w.iwgtvar2 $w.iwgtsel2 -in $w.iwgt2 -padx 3 -pady 0 -side left
-    } else {
 	FSLFileEntry $w.iwgt2 \
 		-variable entries($w,37) \
 		-pattern "IMAGE" \
@@ -418,7 +341,6 @@ while { $i <= $reg($w,maxnstats) } {
 		-title "Select" \
 		-width 50 \
 		-filterhist VARS(history)
-    }
 
     # ---- pack ----
     pack $w.wgt $w.iwgt -in $weightlf -side top -anchor w -padx 3 -pady $PADY
@@ -514,17 +436,12 @@ proc flirt:destroy { w } {
 #{{{ flirt:updatemode
 
 proc flirt:updatemode { w junk } {
-    global reg INMEDX PADY IGS
+    global reg PADY IGS
 
     if { $reg($w,mode) == 1 } {
-	if { $INMEDX } {
-	    $w.f.testtxt configure -text "Input image/group"
-	    $w.iwgttxt configure -text "Input weighting"
-	} else {
-	    $w.f.dof.label configure -text "  Model/DOF (input to ref)"
-	    $w.f.test.frame.label configure -text "Input image"
-	    $w.iwgt.frame.label configure -text "Input weighting"
-	}
+	$w.f.dof.label configure -text "  Model/DOF (input to ref)"
+	$w.f.test.frame.label configure -text "Input image"
+	$w.iwgt.frame.label configure -text "Input weighting"
 	$w.f.nstats configure -label "Number of secondary $IGS to apply transform to "
 	pack forget $w.f.test2
 	pack forget $w.f.doftwo
@@ -532,14 +449,9 @@ proc flirt:updatemode { w junk } {
 #	pack $w.wgt -in [$w.nb subwidget weights] -side top -anchor w -padx 3
 #	pack $w.iwgt -in [$w.nb subwidget weights] -side top -anchor w -padx 3 -pady $PADY
     } else {
-	if { $INMEDX } {
-	    $w.f.testtxt configure -text "High res image/group"
-	    $w.iwgttxt configure -text "High res weighting"
-	} else {
-	    $w.f.dof.label configure -text "  Model/DOF (highres to ref)"
-	    $w.f.test.frame.label configure -text "High res image"
-	    $w.iwgt.frame.label configure -text "High res weighting"
-	}
+	$w.f.dof.label configure -text "  Model/DOF (highres to ref)"
+	$w.f.test.frame.label configure -text "High res image"
+	$w.iwgt.frame.label configure -text "High res weighting"
 	$w.f.nstats configure -label "Number of secondary $IGS to apply combined transform to "
 	pack $w.f.doftwo $w.f.test2 -in $w.f -side top -anchor w -pady $PADY -padx 5 -after $w.f.test
 	pack $w.iwgt2 -in [$w.nb subwidget weights] -side top -anchor w -padx 3 -pady $PADY
@@ -552,7 +464,7 @@ proc flirt:updatemode { w junk } {
 #{{{ flirt:updatestats
 
 proc flirt:updatestats { w junk } {
-    global reg INMEDX PADY
+    global reg PADY
 
     set i 1
     while { $i <= $reg($w,maxnstats) } {
@@ -562,19 +474,11 @@ proc flirt:updatestats { w junk } {
 
     if { $reg($w,nstats) > 0 } {
 	pack $w.f.second1 -in $w.f -side top -anchor w -pady $PADY -padx 5 -after $w.f.nstats
-	if { $INMEDX } {
-	    $w.f.secondtxt(1) configure -text "Secondary image/group"
-	} else {
-	    $w.f.second1.frame.label configure -text "Secondary image"
-	}
+	$w.f.second1.frame.label configure -text "Secondary image"
     }
     set i 2
     while { $i <= $reg($w,nstats) } {
-	if { $INMEDX } {
-	    $w.f.secondtxt(1) configure -text "Secondary image/group 1"
-	} else {
-	    $w.f.second1.frame.label configure -text "Secondary image 1"
-	}
+	$w.f.second1.frame.label configure -text "Secondary image 1"
 	pack $w.f.second$i -in $w.f -side top -anchor w -pady $PADY -padx 5 -after $w.f.second[ expr $i - 1 ]
 	incr i 1
     }

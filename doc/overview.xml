@@ -19,8 +19,7 @@ an input (<attrib>-in</attrib>) and a reference
 (<attrib>-ref</attrib>) volume, and then calculates the affine
 transformation that registers the input to the reference.  The
 transformation can be saved as a 4x4 affine matrix
-(<attrib>-omat</attrib>) or as a MEDx transform
-(<attrib>-omedx</attrib>).
+(<attrib>-omat</attrib>).
 
 <p>
 In addition, FLIRT can also be used to apply a saved transformation to
@@ -33,19 +32,12 @@ the voxel and image dimensions of the resulting volume.
 
 <section title="CONVERT_XFM">
 <type>convert_xfm</type> is a utility that is used to convert between different
-transformation file formats.  It can read and write ascii 4x4 matrices
-and MEDx transforms as well as reading MINC transform files.  In
+transformation file formats.  It can read and write ascii 4x4 matrices.  In
 addition, it can be used to concatenate two transforms (using
 <attrib>-concat</attrib> with the second transform) or to find the
 inverse transformation (using <attrib>-inverse</attrib>).
 
-<p>
-As MEDx transformations require voxel dimensions, the input and
-reference volume corresponding to the transformation must be specified
-when using this command.  However, if only ascii files are used, the
-<attrib>-matonly</attrib> option can be used, in which case no volumes
-need to be specified.
-</p>
+
 </section>
 
 <section title="RMSDIFF">

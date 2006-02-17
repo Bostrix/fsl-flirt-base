@@ -98,46 +98,6 @@ improve the robustness of the registration.
 </UL>
 
 
-<A NAME="section3"></A><HR><H2>SUGGESTED USAGE AND EXPLANATION OF
-MULTIPLE REGISTRATIONS IN MEDx</H2>
-
-<H3>Reslice Image/Group -&gt; Standard Image</H3>
-  
-<UL>
-
-<LI>To register an image to a standard template, put the name of
-    template image (as found from the Page Manager) in the <B><FONT COLOR=BROWN>Reference
-    image</FONT></B> box and the other in the <B><FONT COLOR=BROWN>Input image</FONT></B> box.
-<LI>To register two images to each other (where neither is a standard image),
-    put the higher resolution image in the <B><FONT COLOR=BROWN>Reference Image</FONT></B> box and the
-    other in the <B><FONT COLOR=BROWN>Input image</FONT></B> box.
-<LI>To do a number of different registrations in MEDx to a single reference image, first make a group of all the
-    images to be registered and then enter the Group page in the
-    <B><FONT COLOR=BROWN>Input image</FONT></B> box.
-
-</UL>
-
-<H3>Low Res Image/Group -&gt; High Res Image/Group -&gt; Standard Image</H3>
-  
-<UL>
-
-<LI>To register both a functional image and its corresponding structural to the standard image, put the template image in the
-    <B><FONT COLOR=BROWN>Reference image</FONT></B> box, the structural image in the <B><FONT COLOR=BROWN>High res image</FONT></B> box and a single image from the functional series in
-    the <B><FONT COLOR=BROWN>Low res image</FONT></B> box. In addition, statistical images such as Z-scores can be entered in as <B><FONT COLOR=BROWN>Secondary images</FONT></B> which
-    will also be registered to the standard image, allowing them to be rendered on the structural image in the coordinate system of
-    the standard image.
-<LI>To do a number of registrations in MEDx for different functional experiments requires that two groups of
-    images be made. The first group should contain all the structural images and the second group should be a group of single
-    functional images, one corresponding to each structural image. Note that the ordering of the images in these groups is critical
-    - the functional example images must be in the same order as the corresponding structural images. Once the groups are made,
-    enter the Group page of the structurals in the <B><FONT COLOR=BROWN>High res image</FONT></B> box and the Group page of the functionals in the <B><FONT COLOR=BROWN>Low
-    res image</FONT></B> box. Any statistical images can be entered in as a <B><FONT COLOR=BROWN>Secondary Group</FONT></B>; these must also be in the
-    corresponding order. 
-
-</UL>
-
-<br>
-
 
 <P>
 <IMG SRC="xfmhelp.gif" ALIGN="CENTER" ALT="" BORDER=0>

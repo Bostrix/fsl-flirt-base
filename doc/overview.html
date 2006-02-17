@@ -85,17 +85,11 @@ calculations.
 <A NAME="misc"></A><HR><H2>convert_xfm</H2>
  
 <B>convert_xfm</B> is a utility that is used to convert between different
-transformation file formats.  It can read and write ascii 4x4 matrices
-(and MEDx transforms).  In
+transformation file formats.  It can read and write ascii 4x4 matrices.  In
 addition, it can be used to concatenate two transforms (using
 <FONT COLOR=PURPLE>-concat</FONT> with the second transform) or to find the
 inverse transformation (using <FONT COLOR=PURPLE>-inverse</FONT>).
 
-<P>
-As MEDx transformations require voxel dimensions, the input and
-reference volume corresponding to the transformation must be specified
-when using this command.  However, if only ascii files are used
-no volumes need to be specified (as in the example usage).
 <br>
 
  <!-- J-Back -->
@@ -155,8 +149,6 @@ volume pair) to see how much they differ.  This is useful to compare
 alternative registrations.  It calculates the average using an analytic
 formula applied over an 80mm sphere with the origin at the centre of the
 image (for which it requires the input image to be specified).  
-Note that this cannot be used with MEDx 
-transformations.
 
  <!-- J-Back -->
 
