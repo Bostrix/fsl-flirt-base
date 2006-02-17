@@ -59,9 +59,9 @@ if [ `${FSLDIR}/bin/imtest $standard` = 0 ] ; then
     Usage
 fi
 
-${FSLDIR}/bin/flirt -in $in -ref $standard -o ${out}_tmp_to_tal -omat ${out}_tmp_to_tal.mat $@
+${FSLDIR}/bin/flirt -in $in -ref $standard -o ${out}_tmp_to_std -omat ${out}_tmp_to_std.mat $@
 
-${FSLDIR}/bin/convert_xfm -matonly -inverse -omat ${out}_tmp_to_tal_inv.mat ${out}_tmp_to_tal.mat
+${FSLDIR}/bin/convert_xfm -matonly -inverse -omat ${out}_tmp_to_std_inv.mat ${out}_tmp_to_std.mat
 
 X=`${FSLDIR}/bin/avwval $standard dim1` ; X=`echo "$X 1 - p" | dc -`
 Y=`${FSLDIR}/bin/avwval $standard dim2` ; Y=`echo "$Y 1 - p" | dc -`
@@ -69,9 +69,9 @@ Z=`${FSLDIR}/bin/avwval $standard dim3` ; Z=`echo "$Z 1 - p" | dc -`
 
 xmin=$X ; xmax=0; ymin=$Y ; ymax=0; zmin=$Z ; zmax=0; 
 for c in "0 0 0" "$X 0 0" "0 $Y 0" "$X $Y 0" "0 0 $Z" "$X 0 $Z" "0 $Y $Z" "$X $Y $Z" ; do
-    x=`echo $c | img2imgcoord -src $standard -dest $in -xfm ${out}_tmp_to_tal_inv.mat -vox | grep -v voxels | awk '{print "0 k " $1 " 1 / p"}' | sed 's/-/_/g' | dc -`
-    y=`echo $c | img2imgcoord -src $standard -dest $in -xfm ${out}_tmp_to_tal_inv.mat -vox | grep -v voxels | awk '{print "0 k " $2 " 1 / p"}' | sed 's/-/_/g' | dc -`
-    z=`echo $c | img2imgcoord -src $standard -dest $in -xfm ${out}_tmp_to_tal_inv.mat -vox | grep -v voxels | awk '{print "0 k " $3 " 1 / p"}' | sed 's/-/_/g' | dc -`
+    x=`echo $c | img2imgcoord -src $standard -dest $in -xfm ${out}_tmp_to_std_inv.mat -vox | grep -v voxels | awk '{print "0 k " $1 " 1 / p"}' | sed 's/-/_/g' | dc -`
+    y=`echo $c | img2imgcoord -src $standard -dest $in -xfm ${out}_tmp_to_std_inv.mat -vox | grep -v voxels | awk '{print "0 k " $2 " 1 / p"}' | sed 's/-/_/g' | dc -`
+    z=`echo $c | img2imgcoord -src $standard -dest $in -xfm ${out}_tmp_to_std_inv.mat -vox | grep -v voxels | awk '{print "0 k " $3 " 1 / p"}' | sed 's/-/_/g' | dc -`
     if [ $x -lt $xmin ] ; then xmin=$x ; fi
     if [ $x -gt $xmax ] ; then xmax=$x ; fi
     if [ $y -lt $ymin ] ; then ymin=$y ; fi
