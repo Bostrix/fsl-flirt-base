@@ -321,7 +321,7 @@ proc applyxfm:proc { invol transmat outvol refvol invxfm refsize nx ny nz dx dy 
     if { $invxfm == 1 } {
 	set thetransmat ${transmat}_tmp
 	set tmpfiles "$tmpfiles $thetransmat"
-	set invcommand "${FSLDIR}/bin/convert_xfm -matonly -omat $thetransmat -inverse $transmat"
+	set invcommand "${FSLDIR}/bin/convert_xfm -omat $thetransmat -inverse $transmat"
 	puts $invcommand
 	catch { exec sh -c $invcommand } errmsg
 	puts $errmsg

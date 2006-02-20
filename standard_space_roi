@@ -61,7 +61,7 @@ fi
 
 ${FSLDIR}/bin/flirt -in $in -ref $standard -o ${out}_tmp_to_std -omat ${out}_tmp_to_std.mat $@
 
-${FSLDIR}/bin/convert_xfm -matonly -inverse -omat ${out}_tmp_to_std_inv.mat ${out}_tmp_to_std.mat
+${FSLDIR}/bin/convert_xfm -inverse -omat ${out}_tmp_to_std_inv.mat ${out}_tmp_to_std.mat
 
 X=`${FSLDIR}/bin/avwval $standard dim1` ; X=`echo "$X 1 - p" | dc -`
 Y=`${FSLDIR}/bin/avwval $standard dim2` ; Y=`echo "$Y 1 - p" | dc -`

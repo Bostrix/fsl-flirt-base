@@ -59,8 +59,8 @@ whole_func2highres.mat
 flirt -ref standard -in highres -out highres2standard -omat highres2standard.mat
 
 <LI>Now combine the transforms:<br>
-convert_xfm -matonly -concat whole_func2highres.mat -omat example_func2highres.mat example_func2whole_func.mat<br>
-convert_xfm -matonly -concat highres2standard.mat -omat example_func2standard.mat example_func2highres.mat
+convert_xfm -concat whole_func2highres.mat -omat example_func2highres.mat example_func2whole_func.mat<br>
+convert_xfm -concat highres2standard.mat -omat example_func2standard.mat example_func2highres.mat
 
 <LI>Now you could use these to transform stats images (eg produced by
 FEAT) in the space of the original <b>func</b> data into standard

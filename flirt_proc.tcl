@@ -85,7 +85,7 @@ if { $regmode == 1 } {
     catch { exec sh -c $thecommand } errmsg
     puts $errmsg
 
-    set thecommand "${FSLDIR}/bin/convert_xfm -matonly -concat ${outroot}1.mat -omat ${outroot}.mat ${outroot}2.mat"
+    set thecommand "${FSLDIR}/bin/convert_xfm -concat ${outroot}1.mat -omat ${outroot}.mat ${outroot}2.mat"
     puts $thecommand
     catch { exec sh -c $thecommand } errmsg
     puts $errmsg
