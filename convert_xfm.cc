@@ -69,7 +69,7 @@ globaloptions::globaloptions()
 
 void print_usage(int argc, char *argv[])
 {
-  const string version="2.0";
+  const string version="2.1";
 
   cout << "convert_xfm (Version " << version << ")" << endl
        << "Tool for manipulating FSL transformation matrices" << endl

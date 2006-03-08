@@ -24,7 +24,7 @@ using namespace NEWIMAGE;
 
 // COMMAND LINE OPTIONS
 
-string title="pointflirt (Version 1.1)\nCopyright(c) 2001, University of Oxford (Mark Jenkinson)";
+string title="pointflirt (Version 1.2)\nCopyright(c) 2001, University of Oxford (Mark Jenkinson)";
 string examples="pointflirt -i <invol coords>  -r <refvol coords> -o <output matrix>\npointflirt -i <invol coords>  -r <refvol coords> -o <output matrix> --vox --invol=<input vol> --refvol=<ref vol>";
 
 Option<bool> verbose(string("-v,--verbose"), false, 
