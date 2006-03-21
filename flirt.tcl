@@ -68,7 +68,6 @@ proc flirt { w } {
 
 #}}}
 
-
     #{{{ DOF
 
     tixOptionMenu $w.f.dof -label "  Model/DOF (input to ref)" \
@@ -147,15 +146,22 @@ proc flirt { w } {
     $w.f.mode add command 2 -label "Low res $IG -> High res $IG -> Reference image"
 
 #}}}
-
-    pack $w.f.mode $w.f.ref $w.f.dof $w.f.test -in $lfbasic -side top -anchor w -pady $PADY -padx 5
-
     #{{{ output image
 
-	set entries($w,4) /tmp/grot
-
+FSLFileEntry $w.f.output \
+    -variable entries($w,4) \
+    -pattern "IMAGE" \
+    -directory $PWD \
+    -label "Output image   " \
+    -labelwidth 18 \
+    -title "Select" \
+    -width 50 \
+    -filterhist VARS(history)
 
 #}}}
+
+    pack $w.f.mode $w.f.ref $w.f.dof $w.f.test $w.f.output -in $lfbasic -side top -anchor w -pady $PADY -padx 5
+
     #{{{ secondary image(s)
 
 set i 1
