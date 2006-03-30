@@ -34,7 +34,7 @@
 #endif
 
 // Put current version number here:
-const string version = "5.4";
+const string version = "5.4.2";
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -1303,8 +1303,10 @@ void no_optimise()
 
   if ( (refvol.sform_code()!=NIFTI_XFORM_UNKNOWN) && 
        (testvol[0].sform_code()!=NIFTI_XFORM_UNKNOWN) ) {
-    cerr << "WARNING: Both reference and input images have an sform matrix set" << endl;
-    cerr << "  The output image will use the transformed sform from the reference image" << endl;
+    if (globaloptions::get().verbose>0) {
+      cerr << "WARNING: Both reference and input images have an sform matrix set" << endl;
+      cerr << "  The output image will use the transformed sform from the reference image" << endl;
+    }
   }
 
   short dtype;
@@ -2368,8 +2370,10 @@ int main(int argc,char *argv[])
 
   if ( (refvol.sform_code()!=NIFTI_XFORM_UNKNOWN) && 
        (testvol.sform_code()!=NIFTI_XFORM_UNKNOWN) ) {
-    cerr << "WARNING: Both reference and input images have an sform matrix set" << endl;
-    cerr << "  The output image will use the sform from the reference image" << endl;
+    if (globaloptions::get().verbose>0) {
+      cerr << "WARNING: Both reference and input images have an sform matrix set" << endl;
+      cerr << "  The output image will use the sform from the reference image" << endl;
+    }
   }
 
   if (globaloptions::get().verbose>0) {
