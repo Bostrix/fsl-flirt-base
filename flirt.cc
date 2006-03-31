@@ -82,7 +82,19 @@ int FLIRT_read_volume4D(volume4D<float>& target, const string& filename,
   // make voxels bigger if basescale is smaller than 1.0 (and vice versa)
   int retval = read_volume4D(target,filename,vinfo);
   LRorder = target.left_right_order();
+  if (globaloptions::get().verbose>2) {
+    cout << "Original file qform code & mat = " << target.qform_code() << endl;
+    cout << target.qform_mat() << endl;
+    cout << "Original file sform code & mat = " << target.sform_code()<< endl;
+    cout << target.sform_mat() << endl;
+  }
   target.makeradiological();
+  if (globaloptions::get().verbose>2) {
+    cout << "Reoriented image qform code & mat = " << target.qform_code()<<endl;
+    cout << target.qform_mat() << endl;
+    cout << "Reoriented image sform code & mat = " << target.sform_code()<<endl;
+    cout << target.sform_mat() << endl;
+  }
   // if basescale != 1.0
   if (fabs(globaloptions::get().basescale - 1.0)>1e-5) {
     target.setxdim(target.xdim() / globaloptions::get().basescale);
@@ -98,7 +110,19 @@ int FLIRT_read_volume(volume<float>& target, const string& filename,
   // make voxels bigger if basescale is smaller than 1.0 (and vice versa)
   int retval = read_volume(target,filename,vinfo);
   LRorder = target.left_right_order();
+  if (globaloptions::get().verbose>2) {
+    cout << "Original file qform code & mat = " << target.qform_code() << endl;
+    cout << target.qform_mat() << endl;
+    cout << "Original file sform code & mat = " << target.sform_code()<< endl;
+    cout << target.sform_mat() << endl;
+  }
   target.makeradiological();
+  if (globaloptions::get().verbose>2) {
+    cout << "Reoriented image qform code & mat = " << target.qform_code()<<endl;
+    cout << target.qform_mat() << endl;
+    cout << "Reoriented image sform code & mat = " << target.sform_code()<<endl;
+    cout << target.sform_mat() << endl;
+  }
   // if basescale != 1.0
   if (fabs(globaloptions::get().basescale - 1.0)>1e-5) {
     target.setxdim(target.xdim() / globaloptions::get().basescale);
