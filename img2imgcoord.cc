@@ -204,13 +204,9 @@ int main(int argc,char *argv[])
   // Let Volume 2 be Source and Volume 1 be Destination
   //  notate variables as (v=vox, w=world, f=flirt, t=dest)
   
-  // the swap matrices are now defunct
-  Matrix swapy1(4,4), swapy2(4,4);
-  Identity(swapy1);  Identity(swapy2);
-  
   Matrix destvox2world, srcvox2world;
-  destvox2world = destvol.sampling_mat() * swapy1;
-  srcvox2world = srcvol.sampling_mat() * swapy2;
+  destvox2world = voxel2flirtcoord(destvol);
+  srcvox2world = voxel2flirtcoord(srcvol);
   if (globalopts.verbose>3) {
     cout << " destvox2world =" << endl << destvox2world << endl << endl;
     cout << " srcvox2world =" << endl << srcvox2world << endl;
@@ -242,7 +238,7 @@ int main(int argc,char *argv[])
 	matfile >> srccoord(j);
       }
       if (globalopts.mm) {  // in mm
-	destcoord = destvol.sampling_mat() * destvox2world.i() * affmat * srcvox2world * srcvol.sampling_mat().i() * srccoord;
+	destcoord = affmat * srccoord;
       } else { // in voxels
 	destcoord = destvox2world.i() * affmat * srcvox2world * srccoord; 
       }
@@ -264,7 +260,7 @@ int main(int argc,char *argv[])
       if (oldsrc == srccoord)  return 0;
       oldsrc = srccoord;
       if (globalopts.mm) {  // in mm
-	destcoord = destvol.sampling_mat() * destvox2world.i() * affmat * srcvox2world * srcvol.sampling_mat().i() * srccoord;
+	destcoord = affmat * srccoord;
       } else { // in voxels
 	destcoord = destvox2world.i() * affmat * srcvox2world * srccoord; 
       }

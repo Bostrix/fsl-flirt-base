@@ -244,19 +244,19 @@ int main(int argc,char *argv[])
 	cerr << "WARNING:: standard coordinates not set in img" << endl; 
       }
       // using sform = sampling_mat
-      vox2std = imgvol.sampling_mat();
+      vox2std = voxel2flirtcoord(imgvol);
     }
   } else {
 
     // set the main matrix
-    vox2std = stdvol.sorqform_mat() * stdvol.sampling_mat().i() * affmat * imgvol.sampling_mat();
+    vox2std = stdvol.sorqform_mat() * voxel2flirtcoord(stdvol).i() * affmat * voxel2flirtcoord(imgvol);
 
     if (stdvol.sorqform_code()==NIFTI_XFORM_UNKNOWN) { 
       if (globalopts.verbose>0) {
 	cerr << "WARNING:: standard coordinates not set in standard image" << endl; 
       }
       // using sform = sampling_mat
-      vox2std = affmat * imgvol.sampling_mat();
+      vox2std = affmat * voxel2flirtcoord(imgvol);
     }
     
     if (globalopts.verbose>3) {
@@ -320,7 +320,7 @@ int main(int argc,char *argv[])
     }
 
     if (globalopts.mm) {  // in mm
-      imgcoord = imgvol.sampling_mat() * vox2std.i() * stdcoord;
+      imgcoord = voxel2flirtcoord(imgvol) * vox2std.i() * stdcoord;
     } else { // in voxels
       imgcoord = vox2std.i() * stdcoord; 
     }
