@@ -1345,13 +1345,6 @@ void no_optimise()
 		globaloptions::get().initmatfname,testvol[0]);
   }
 
-  if (globaloptions::get().initmatsorqform) {
-    globaloptions::get().initmat = voxel2flirtcoord(refvol)
-      * refvol.sorqform_mat().i() * testvol.sorqform_mat()
-      * voxel2flirtcoord(testvol).i();
-  }
-
-
   if (globaloptions::get().verbose>0) {
     if (refvol.sform_code()!=NIFTI_XFORM_UNKNOWN) {
       cout << "The output image will use the sform from the reference image" << endl;    
@@ -2420,13 +2413,6 @@ int main(int argc,char *argv[])
       cout << "The output image will use the transformed sform from the input image" << endl;    
     }
   }
-
-  if (globaloptions::get().initmatsorqform) {
-    globaloptions::get().initmat = voxel2flirtcoord(refvol)
-      * refvol.sorqform_mat().i() * testvol.sorqform_mat()
-      * voxel2flirtcoord(testvol).i();
-  }
-
 
 
   float min_sampling_ref=1.0, min_sampling_test=1.0, min_sampling=1.0;
