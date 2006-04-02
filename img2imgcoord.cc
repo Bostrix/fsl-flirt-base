@@ -142,11 +142,6 @@ void parse_command_line(int argc, char* argv[])
 
   }  // while (n<argc)
 
-//    if (globalopts.coordfname.size()<1) {
-//      cerr << "Input coordinate file not found\n\n";
-//      print_usage(argc,argv);
-//      exit(2);
-//    }
   if ((globalopts.srcfname.size()<1)) {
     cerr << "ERROR:: Source volume filename not found\n\n";
   }
@@ -204,14 +199,6 @@ int main(int argc,char *argv[])
   // Let Volume 2 be Source and Volume 1 be Destination
   //  notate variables as (v=vox, w=world, f=flirt, t=dest)
   
-  Matrix destvox2world, srcvox2world;
-  destvox2world = voxel2flirtcoord(destvol);
-  srcvox2world = voxel2flirtcoord(srcvol);
-  if (globalopts.verbose>3) {
-    cout << " destvox2world =" << endl << destvox2world << endl << endl;
-    cout << " srcvox2world =" << endl << srcvox2world << endl;
-  }
-  
   ColumnVector srccoord(4), destcoord(4), oldsrc(4);
   srccoord = 0;
   destcoord = 0;
@@ -238,9 +225,9 @@ int main(int argc,char *argv[])
 	matfile >> srccoord(j);
       }
       if (globalopts.mm) {  // in mm
-	destcoord = affmat * srccoord;
+	destcoord = Vox2VoxMatrix(affmat,srcvol,destvol) * srcvol.vox2mm_mat() * srccoord; 
       } else { // in voxels
-	destcoord = destvox2world.i() * affmat * srcvox2world * srccoord; 
+	destcoord = destvol.vox2mm_mat().i() * Vox2VoxMatrix(affmat,srcvol,destvol) * srcvol.vox2mm_mat() * srccoord; 
       }
       cout << destcoord(1) << "  " << destcoord(2) << "  " << destcoord(3) << endl;
     }
@@ -260,9 +247,9 @@ int main(int argc,char *argv[])
       if (oldsrc == srccoord)  return 0;
       oldsrc = srccoord;
       if (globalopts.mm) {  // in mm
-	destcoord = affmat * srccoord;
+	destcoord = Vox2VoxMatrix(affmat,srcvol,destvol) * srcvol.vox2mm_mat() * srccoord; 
       } else { // in voxels
-	destcoord = destvox2world.i() * affmat * srcvox2world * srccoord; 
+	destcoord = destvol.vox2mm_mat().i() * Vox2VoxMatrix(affmat,srcvol,destvol) * srcvol.vox2mm_mat() * srccoord; 
       }
       cout << destcoord(1) << "  " << destcoord(2) << "  " << destcoord(3) << endl;
     }
@@ -271,11 +258,4 @@ int main(int argc,char *argv[])
 
   return 0;
 }
-
-
-
-
-
-
-
 

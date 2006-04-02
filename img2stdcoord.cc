@@ -198,9 +198,7 @@ int main(int argc,char *argv[])
   }
     
   if (globalopts.verbose>3) {
-    if (globalopts.usestd) {
-      print_info(stdvol,"standard image");
-    }
+    if (globalopts.usestd) { print_info(stdvol,"standard image"); }
     print_info(imgvol,"input image");
   }
 
@@ -230,34 +228,20 @@ int main(int argc,char *argv[])
   Matrix vox2std(4,4);
 
   if (use_sform) {
-
     // set the main matrix
     vox2std = imgvol.vox2mm_mat();
- 
     if (imgvol.vox2mm_code()==NIFTI_XFORM_UNKNOWN) { 
-      if (globalopts.verbose>0) {
-	cerr << "WARNING:: standard coordinates not set in image" << endl; 
-      }
-      // using sampling_mat instead of sform
-      // vox2std = voxel2flirtcoord(imgvol);
+      cerr << "WARNING:: standard coordinates not set in image" << endl; 
     }
   } else {
-    
     // set the main matrix
     vox2std = stdvol.vox2mm_mat() * Vox2VoxMatrix(affmat,imgvol,stdvol);
-    
     if (stdvol.vox2mm_code()==NIFTI_XFORM_UNKNOWN) { 
-      if (globalopts.verbose>0) {
-	cerr << "WARNING:: standard coordinates not set in standard image" << endl; 
-      }
-      // using sampling_mat instead of sform
-      // vox2std = affmat * voxel2flirtcoord(imgvol);
+      cerr << "WARNING:: standard coordinates not set in standard image" << endl; 
     }
-    
     if (globalopts.verbose>3) {
       cout << " stdvox2world =" << endl << stdvol.vox2mm_mat() << endl << endl;
     }
-        
   }
 
   // initialise coordinate vectors
@@ -323,11 +307,5 @@ int main(int argc,char *argv[])
   
   return 0;
 }
-
-
-
-
-
-
 
 
