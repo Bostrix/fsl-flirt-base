@@ -81,10 +81,6 @@ void globaloptions::parse_command_line(int argc,char** argv,
       mode2D = true;
       n++;
       continue;
-    } else if ( arg == "-initsorqform") {
-      initmatsorqform = true;
-      n++;
-      continue;
     } else if ( arg == "-debugsave") {
       nosave = false;
       n++;
@@ -355,7 +351,6 @@ void globaloptions::print_usage(int argc, char *argv[])
        << "        -datatype {char,short,int,float,double}                    (force output data type)\n"
        << "        -cost {mutualinfo,corratio,normcorr,normmi,leastsq}        (default is corratio)\n"
        << "        -searchcost {mutualinfo,corratio,normcorr,normmi,leastsq}  (default is corratio)\n"
-       << "        -initsorqform                      (initialise using sform or qform as set in images)\n"
        << "        -anglerep {quaternion,euler}       (default is euler)\n"
        << "        -interp {trilinear,nearestneighbour,sinc}  (final interpolation: def - trilinear)\n"
        << "        -sincwidth <full-width in voxels>  (default is 7)\n"

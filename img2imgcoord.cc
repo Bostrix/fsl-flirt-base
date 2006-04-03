@@ -142,6 +142,11 @@ void parse_command_line(int argc, char* argv[])
 
   }  // while (n<argc)
 
+//    if (globalopts.coordfname.size()<1) {
+//      cerr << "Input coordinate file not found\n\n";
+//      print_usage(argc,argv);
+//      exit(2);
+//    }
   if ((globalopts.srcfname.size()<1)) {
     cerr << "ERROR:: Source volume filename not found\n\n";
   }
@@ -199,6 +204,18 @@ int main(int argc,char *argv[])
   // Let Volume 2 be Source and Volume 1 be Destination
   //  notate variables as (v=vox, w=world, f=flirt, t=dest)
   
+  // the swap matrices are now defunct
+  Matrix swapy1(4,4), swapy2(4,4);
+  Identity(swapy1);  Identity(swapy2);
+  
+  Matrix destvox2world, srcvox2world;
+  destvox2world = destvol.sampling_mat() * swapy1;
+  srcvox2world = srcvol.sampling_mat() * swapy2;
+  if (globalopts.verbose>3) {
+    cout << " destvox2world =" << endl << destvox2world << endl << endl;
+    cout << " srcvox2world =" << endl << srcvox2world << endl;
+  }
+  
   ColumnVector srccoord(4), destcoord(4), oldsrc(4);
   srccoord = 0;
   destcoord = 0;
@@ -225,9 +242,9 @@ int main(int argc,char *argv[])
 	matfile >> srccoord(j);
       }
       if (globalopts.mm) {  // in mm
-	destcoord = Vox2VoxMatrix(affmat,srcvol,destvol) * srcvol.vox2mm_mat() * srccoord; 
+	destcoord = destvol.sampling_mat() * destvox2world.i() * affmat * srcvox2world * srcvol.sampling_mat().i() * srccoord;
       } else { // in voxels
-	destcoord = destvol.vox2mm_mat().i() * Vox2VoxMatrix(affmat,srcvol,destvol) * srcvol.vox2mm_mat() * srccoord; 
+	destcoord = destvox2world.i() * affmat * srcvox2world * srccoord; 
       }
       cout << destcoord(1) << "  " << destcoord(2) << "  " << destcoord(3) << endl;
     }
@@ -247,9 +264,9 @@ int main(int argc,char *argv[])
       if (oldsrc == srccoord)  return 0;
       oldsrc = srccoord;
       if (globalopts.mm) {  // in mm
-	destcoord = Vox2VoxMatrix(affmat,srcvol,destvol) * srcvol.vox2mm_mat() * srccoord; 
+	destcoord = destvol.sampling_mat() * destvox2world.i() * affmat * srcvox2world * srcvol.sampling_mat().i() * srccoord;
       } else { // in voxels
-	destcoord = destvol.vox2mm_mat().i() * Vox2VoxMatrix(affmat,srcvol,destvol) * srcvol.vox2mm_mat() * srccoord; 
+	destcoord = destvox2world.i() * affmat * srcvox2world * srccoord; 
       }
       cout << destcoord(1) << "  " << destcoord(2) << "  " << destcoord(3) << endl;
     }
@@ -258,4 +275,11 @@ int main(int argc,char *argv[])
 
   return 0;
 }
+
+
+
+
+
+
+
 

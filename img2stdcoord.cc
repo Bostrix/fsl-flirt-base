@@ -198,7 +198,9 @@ int main(int argc,char *argv[])
   }
     
   if (globalopts.verbose>3) {
-    if (globalopts.usestd) { print_info(stdvol,"standard image"); }
+    if (globalopts.usestd) {
+      print_info(stdvol,"standard image");
+    }
     print_info(imgvol,"input image");
   }
 
@@ -228,20 +230,34 @@ int main(int argc,char *argv[])
   Matrix vox2std(4,4);
 
   if (use_sform) {
+
     // set the main matrix
-    vox2std = imgvol.vox2mm_mat();
-    if (imgvol.vox2mm_code()==NIFTI_XFORM_UNKNOWN) { 
-      cerr << "WARNING:: standard coordinates not set in image" << endl; 
+    vox2std = imgvol.sform_mat();
+ 
+    if (imgvol.sform_code()==NIFTI_XFORM_UNKNOWN) { 
+      if (globalopts.verbose>0) {
+	cerr << "WARNING:: standard coordinates not set in image" << endl; 
+      }
+      // using sampling_mat instead of sform
+      vox2std = imgvol.sampling_mat();
     }
   } else {
+    
     // set the main matrix
-    vox2std = stdvol.vox2mm_mat() * Vox2VoxMatrix(affmat,imgvol,stdvol);
-    if (stdvol.vox2mm_code()==NIFTI_XFORM_UNKNOWN) { 
-      cerr << "WARNING:: standard coordinates not set in standard image" << endl; 
+    vox2std = stdvol.sform_mat() * stdvol.sampling_mat().i() * affmat * imgvol.sampling_mat();
+    
+    if (stdvol.sform_code()==NIFTI_XFORM_UNKNOWN) { 
+      if (globalopts.verbose>0) {
+	cerr << "WARNING:: standard coordinates not set in standard image" << endl; 
+      }
+      // using sampling_mat instead of sform
+      vox2std = affmat * imgvol.sampling_mat();
     }
+    
     if (globalopts.verbose>3) {
-      cout << " stdvox2world =" << endl << stdvol.vox2mm_mat() << endl << endl;
+      cout << " stdvox2world =" << endl << stdvol.sform_mat() << endl << endl;
     }
+        
   }
 
   // initialise coordinate vectors
@@ -296,7 +312,7 @@ int main(int argc,char *argv[])
     }
     
     if (globalopts.mm) {  // in mm
-      stdcoord = vox2std * imgvol.vox2mm_mat().i() * imgcoord;
+      stdcoord = vox2std * imgvol.sampling_mat().i() * imgcoord;
     } else { // in voxels
       stdcoord = vox2std * imgcoord; 
     }
@@ -307,5 +323,11 @@ int main(int argc,char *argv[])
   
   return 0;
 }
+
+
+
+
+
+
 
 
