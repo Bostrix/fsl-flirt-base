@@ -13,8 +13,9 @@ Usage() {
     echo ""
     echo "Usage: standard_space_roi <input> <output> [options] [flirt options]"
     echo ""
-    echo "-ref <ref_image>  : standard space reference image to use (default $FSLDIR/etc/standard/avg152T1)"
-    echo "-d                : debug (don't delete intermediate files)"
+    echo "-ssref <ref_image>  : standard space reference image to use (default $FSLDIR/etc/standard/avg152T1)"
+    echo "-ssapply <image>    : alternative input image to apply the ROI to, instead of the one used to generate the ROI"
+    echo "-ssd                : debug (don't delete intermediate files)"
     echo ""
     exit
 }
@@ -39,16 +40,20 @@ shift
 debug=0
 
 standard=${FSLDIR}/etc/standard/avg152T1
+inapply=$in
 
-for opts in $@ ; do
+while [ _$1 != _ ] ; do
 
-    if [ $opts = -d ] ; then
+    if [ $1 = -ssd ] ; then
         debug=1
         shift
-    fi
 
-    if [ $opts = -ref ] ; then
+    elif [ $1 = -ssref ] ; then
 	standard=$2
+	shift 2
+
+    elif [ $1 = -ssapply ] ; then
+	inapply=$2
 	shift 2
     fi
 
@@ -101,7 +106,7 @@ xsize=`echo "1 $xmax + $xmin - p" | dc -`
 ysize=`echo "1 $ymax + $ymin - p" | dc -`
 zsize=`echo "1 $zmax + $zmin - p" | dc -`
 
-${FSLDIR}/bin/avwroi $in $out $xmin $xsize $ymin $ysize $zmin $zsize
+${FSLDIR}/bin/avwroi $inapply $out $xmin $xsize $ymin $ysize $zmin $zsize
 
 if [ $debug = 0 ] ; then
     /bin/rm ${out}_tmp*
