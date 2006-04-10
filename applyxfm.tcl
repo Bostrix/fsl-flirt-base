@@ -4,7 +4,7 @@
 #
 # Mark Jenkinson and Stephen Smith, FMRIB Image Analysis Group
 #
-# Copyright (C) 2001 University of Oxford
+# Copyright (C) 2001-2006 University of Oxford
 #
 # TCLCOPYRIGHT
 
@@ -60,14 +60,20 @@ FSLFileEntry $w.f.xfm \
 		-width 40 \
 		-filterhist VARS(history)
 
-# Inverse button
+# Identity and Inverse button
 frame $w.f.xfminv
+
+label $w.f.xfminv.idlabel -text "Use Identity transformation       "
+set entries($w,idxfm) 0
+checkbutton $w.f.xfminv.idbutton -variable entries($w,idxfm) -command "applyxfm:updateinput $w $lfinput "
+
 label $w.f.xfminv.label -text "Apply inverse transformation"
 set entries($w,invxfm) 0
 checkbutton $w.f.xfminv.button -variable entries($w,invxfm)
-pack $w.f.xfminv.button $w.f.xfminv.label -in $w.f.xfminv -side left -padx 3 -pady 3
 
-    pack $w.f.xfm $w.f.xfminv $w.f.invol -in $lfinput -side top -anchor w -pady 3 -padx 5
+  # pack
+    pack $w.f.xfminv.idbutton $w.f.xfminv.idlabel $w.f.xfminv.button $w.f.xfminv.label -in $w.f.xfminv -side left -padx 3 -pady 3
+    pack $w.f.xfminv $w.f.xfm $w.f.invol -in $lfinput -side top -anchor w -pady 3 -padx 5
 
 # Reference volume
 
@@ -277,10 +283,26 @@ proc ApplyXFM:go { w } {
 proc ApplyXFM:apply { w } {
     global entries
 
-    set status [ applyxfm:proc $entries($w,invol) $entries($w,transmat) $entries($w,outvol) $entries($w,refvol) $entries($w,invxfm) $entries($w,refsize) $entries($w,outsize_nx) $entries($w,outsize_ny) $entries($w,outsize_nz) $entries($w,outsize_dx) $entries($w,outsize_dy) $entries($w,outsize_dz) $entries($w,interp) $entries($w,sincwidth) $entries($w,sincwindow) $entries($w,datatype) $entries($w,paddingsize) ]
+    set status [ applyxfm:proc $entries($w,invol) $entries($w,transmat) $entries($w,outvol) $entries($w,refvol) $entries($w,invxfm) $entries($w,refsize) $entries($w,outsize_nx) $entries($w,outsize_ny) $entries($w,outsize_nz) $entries($w,outsize_dx) $entries($w,outsize_dy) $entries($w,outsize_dz) $entries($w,interp) $entries($w,sincwidth) $entries($w,sincwindow) $entries($w,datatype) $entries($w,paddingsize) $entries($w,idxfm) ]
 
     update idletasks
     puts "Done"
+}
+
+proc applyxfm:updateinput { w lfinput } {
+    global entries
+    
+    if { $entries($w,idxfm) == 1 } {
+	pack forget $w.f.xfm
+	pack forget $w.f.xfminv.button
+	pack forget $w.f.xfminv.label
+	pack $w.f.xfminv.idbutton $w.f.xfminv.idlabel -in $w.f.xfminv -side left -padx 3 -pady 3
+	pack $w.f.xfminv $w.f.invol -in $lfinput -side top -anchor w -pady 3 -padx 5
+    } else {
+	pack $w.f.xfminv.idbutton $w.f.xfminv.idlabel $w.f.xfminv.button $w.f.xfminv.label -in $w.f.xfminv -side left -padx 3 -pady 3
+	pack $w.f.xfminv $w.f.xfm $w.f.invol -in $lfinput -side top -anchor w -pady 3 -padx 5
+    }
+
 }
 
 
@@ -311,20 +333,27 @@ proc applyxfm:updateinterp { w interplf } {
 }
 
 
-proc applyxfm:proc { invol transmat outvol refvol invxfm refsize nx ny nz dx dy dz interp sincwidth sincwindow datatype paddingsize} {
+proc applyxfm:proc { invol transmat outvol refvol invxfm refsize nx ny nz dx dy dz interp sincwidth sincwindow datatype paddingsize idxfm } {
 
     global FSLDIR
     
     set tmpfiles ""
 
-    set thetransmat $transmat
-    if { $invxfm == 1 } {
-	set thetransmat ${transmat}_tmp
-	set tmpfiles "$tmpfiles $thetransmat"
-	set invcommand "${FSLDIR}/bin/convert_xfm -omat $thetransmat -inverse $transmat"
-	puts $invcommand
-	catch { exec sh -c $invcommand } errmsg
-	puts $errmsg
+    if { $idxfm == 1 } {
+	set thetransmat $FSLDIR/etc/flirtsch/ident.mat
+    } else {
+	set thetransmat $transmat
+    }
+
+    if { $idxfm == 0 } {
+	if { $invxfm == 1 } {
+	    set thetransmat ${transmat}_tmp
+	    set tmpfiles "$tmpfiles $thetransmat"
+	    set invcommand "${FSLDIR}/bin/convert_xfm -omat $thetransmat -inverse $transmat"
+	    puts $invcommand
+	    catch { exec sh -c $invcommand } errmsg
+	    puts $errmsg
+	}
     }
 
     set flirtcommand "${FSLDIR}/bin/flirt -in $invol -applyxfm -init $thetransmat -out $outvol -paddingsize $paddingsize -interp $interp"    
