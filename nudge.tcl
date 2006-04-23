@@ -4,7 +4,7 @@
 #
 #   Stephen Smith, FMRIB Image Analysis Group
 #
-#   Copyright (C) 2005 University of Oxford
+#   Copyright (C) 2005-2006 University of Oxford
 #
 #   TCLCOPYRIGHT
 
@@ -36,7 +36,8 @@ FSLFileEntry $w.inputs.input \
 	-label "Input image" \
 	-title "Select the input image" \
 	-width 40 \
-	-filterhist VARS(history)
+	-filterhist VARS(history) \
+        -command "nudge_inputrange"
 
 FSLFileEntry $w.inputs.reference \
 	-variable nvars(reference) \
@@ -105,7 +106,7 @@ pack $w.nudge.trans.label $w.nudge.trans.x $w.nudge.trans.y $w.nudge.trans.z $w.
 
 frame $w.nudge.scale
 
-label $w.nudge.scale.label -text "Scaling (*):"
+label $w.nudge.scale.label -text "Scaling (X):"
 
 set nvars(xscale) 1
 set nvars(yscale) 1
@@ -130,10 +131,10 @@ frame $w.fslview -relief raised -borderwidth 1
 
 label $w.fslview.label -text "FSLView options for reference and input"
 
-entry $w.fslview.reference -textvariable nvars(fslview_reference) -width 30
+entry $w.fslview.reference -textvariable nvars(fslview_reference) -width 50
 
-set nvars(fslview_input) "-l \"Red to yellow\" -b 3,10"
-entry $w.fslview.input -textvariable nvars(fslview_input) -width 30
+set nvars(fslview_input) "-l Red-Yellow -b 3,10"
+entry $w.fslview.input -textvariable nvars(fslview_input) -width 50
 
 pack $w.fslview.label $w.fslview.reference $w.fslview.input -in $w.fslview -padx 5 -pady 5 -side top -anchor w -expand yes
 
@@ -155,7 +156,7 @@ pack $w.btns.apply -in $w.btns -padx 5 -pady 5 -side left -expand yes
 #{{{ nudge_update
 
 proc nudge_update { w dummy } {
-    global FSLDIR nvars fslviewpid
+    global FSLDIR nvars
 
     $w.nudge.rot.x configure -step $nvars(rotinc)
     $w.nudge.rot.y configure -step $nvars(rotinc)
@@ -168,6 +169,16 @@ proc nudge_update { w dummy } {
     $w.nudge.scale.x configure -step $nvars(scaleinc)
     $w.nudge.scale.y configure -step $nvars(scaleinc)
     $w.nudge.scale.z configure -step $nvars(scaleinc)
+}
+
+#}}}
+#{{{ nudge_inputrange
+
+proc nudge_inputrange { dummy } {
+    global FSLDIR nvars
+
+    set minmax [ fsl:exec "${FSLDIR}/bin/avwstats++ $nvars(input) -l 0.1 -r" ]
+    set nvars(fslview_input) "-l Red-Yellow -b [ lindex $minmax 0 ],[ lindex $minmax 1 ]"
 }
 
 #}}}
@@ -205,11 +216,7 @@ proc nudge_run { w dummy } {
 	catch { exec sh -c "kill -9 $fslviewpid" } errmsg
     }
 
-    if { [ file exists /Applications/fslview2.4.app/Contents/MacOS/fslview ] } {
-	set fslviewpid [ exec sh -c "export DYLD_LIBRARY_PATH=/Applications/fslview2.4.app/Contents/Frameworks:\$DYLD_LIBRARY_PATH ; /Applications/fslview2.4.app/Contents/MacOS/fslview $nvars(reference) $nvars(fslview_reference) $TMP $nvars(fslview_input) > /dev/null 2>&1" & ]
-    } else {
-	set fslviewpid [ exec sh -c "${FSLDIR}/bin/fslview $nvars(reference) $TMP" & ]
-    }
+    set fslviewpid [ exec sh -c "${FSLDIR}/bin/fslview $nvars(reference) $nvars(fslview_reference) $TMP $nvars(fslview_input)" & ]
 
     puts "final transform is in ${TMP}.xfm"
 }

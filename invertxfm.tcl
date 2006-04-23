@@ -127,10 +127,7 @@ proc invertxfm:proc { transAB invxfmfilename } {
 
     global FSLDIR
 
-    set thecommand "${FSLDIR}/bin/convert_xfm -omat $invxfmfilename -inverse $transAB"
-    puts $thecommand
-    catch { exec sh -c $thecommand } errmsg
-    puts $errmsg
+    fsl:exec "${FSLDIR}/bin/convert_xfm -omat $invxfmfilename -inverse $transAB"
 
     if { [ file readable $invxfmfilename ] == 0 } {
 	puts "No transformation saved!"

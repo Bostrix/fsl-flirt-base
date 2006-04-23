@@ -349,10 +349,7 @@ proc applyxfm:proc { invol transmat outvol refvol invxfm refsize nx ny nz dx dy 
 	if { $invxfm == 1 } {
 	    set thetransmat ${transmat}_tmp
 	    set tmpfiles "$tmpfiles $thetransmat"
-	    set invcommand "${FSLDIR}/bin/convert_xfm -omat $thetransmat -inverse $transmat"
-	    puts $invcommand
-	    catch { exec sh -c $invcommand } errmsg
-	    puts $errmsg
+	    fsl:exec "${FSLDIR}/bin/convert_xfm -omat $thetransmat -inverse $transmat"
 	}
     }
 
@@ -375,12 +372,9 @@ proc applyxfm:proc { invol transmat outvol refvol invxfm refsize nx ny nz dx dy 
 	set flirtcommand "$flirtcommand -ref $refvol"
     }
 
-    puts $flirtcommand
-    catch { exec sh -c $flirtcommand } errmsg
-    puts $errmsg
+    fsl:exec "$flirtcommand"
 
     # clean up
-    # puts "rm $tmpfiles"
     catch { exec sh -c "rm -f $tmpfiles" }
 
     if { [ imtest $outvol ] == 0 } {

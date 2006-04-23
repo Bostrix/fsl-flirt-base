@@ -66,44 +66,19 @@ if { $interp == "sinc" } {
 
 set outroot [ file rootname $output ]
 
+# tell fsl:exec to pass to batch system if setup, and set job durations to 10 minutes (potentially used by batch scheduler)
 if { $regmode == 1 } {
-    set thecommand "${FSLDIR}/bin/flirt -in $testname -ref $refname -out $output -omat ${outroot}.mat $flirtoptions $dofoptions $flirtweights1 $flirtinterp"
-    set thecommand [ fsl:remote $thecommand ]
-    puts $thecommand
-    catch { exec sh -c $thecommand } errmsg
-    puts $errmsg
+    fsl:exec "${FSLDIR}/bin/flirt -in $testname -ref $refname -out $output -omat ${outroot}.mat $flirtoptions $dofoptions $flirtweights1 $flirtinterp" -t 10
 } else {
-    set thecommand "${FSLDIR}/bin/flirt -in $testname -ref $refname -omat ${outroot}1.mat $flirtoptions $dofoptions $flirtweights1"
-    set thecommand [ fsl:remote $thecommand ]
-    puts $thecommand
-    catch { exec sh -c $thecommand } errmsg
-    puts $errmsg
-
-    set thecommand "${FSLDIR}/bin/flirt -in $testname2 -ref $testname -omat ${outroot}2.mat $flirtoptions $doftwooptions $flirtweights2"
-    set thecommand [ fsl:remote $thecommand ]
-    puts $thecommand
-    catch { exec sh -c $thecommand } errmsg
-    puts $errmsg
-
-    set thecommand "${FSLDIR}/bin/convert_xfm -concat ${outroot}1.mat -omat ${outroot}.mat ${outroot}2.mat"
-    puts $thecommand
-    catch { exec sh -c $thecommand } errmsg
-    puts $errmsg
-
-    set thecommand "${FSLDIR}/bin/flirt -in $testname2 -ref $refname -out $output -applyxfm -init ${outroot}.mat $flirtinterp"
-    puts $thecommand
-    catch { exec sh -c $thecommand } errmsg
-    puts $errmsg
-
+    fsl:exec "${FSLDIR}/bin/flirt -in $testname -ref $refname -omat ${outroot}1.mat $flirtoptions $dofoptions $flirtweights1" -t 10
+    fsl:exec "${FSLDIR}/bin/flirt -in $testname2 -ref $testname -omat ${outroot}2.mat $flirtoptions $doftwooptions $flirtweights2" -t 10
+    fsl:exec "${FSLDIR}/bin/convert_xfm -concat ${outroot}1.mat -omat ${outroot}.mat ${outroot}2.mat"
+    fsl:exec "${FSLDIR}/bin/flirt -in $testname2 -ref $refname -out $output -applyxfm -init ${outroot}.mat $flirtinterp"
 }
 
 for { set i 1 } { $i <= $nstats } { incr i 1 } {
     set statsname [ lindex $statslist [ expr $i - 1 ] ]
-
-    set thecommand "${FSLDIR}/bin/flirt -in $statsname -ref $refname -out [ file rootname ${output} ]_shadowreg_[ file tail [ file rootname $statsname ] ] -applyxfm -init ${outroot}.mat $flirtinterp"
-    puts $thecommand
-    catch { exec sh -c $thecommand } errmsg
-    puts $errmsg
+    fsl:exec "${FSLDIR}/bin/flirt -in $statsname -ref $refname -out [ file rootname ${output} ]_shadowreg_[ file tail [ file rootname $statsname ] ] -applyxfm -init ${outroot}.mat $flirtinterp"
 }
 
 puts Finished

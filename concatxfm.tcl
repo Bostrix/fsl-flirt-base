@@ -142,10 +142,7 @@ proc concatxfm:proc { transAB transBC outxfmfilename } {
 
     global FSLDIR
 
-    set thecommand "${FSLDIR}/bin/convert_xfm -omat $outxfmfilename -concat $transBC $transAB"
-    puts $thecommand
-    catch { exec sh -c $thecommand } errmsg
-    puts $errmsg
+    fsl:exec "${FSLDIR}/bin/convert_xfm -omat $outxfmfilename -concat $transBC $transAB"
 
     if { [ file readable $outxfmfilename ] == 0 } {
 	puts "No transformation saved!"
