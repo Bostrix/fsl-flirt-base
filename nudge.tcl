@@ -216,7 +216,12 @@ proc nudge_run { w dummy } {
 	catch { exec sh -c "kill -9 $fslviewpid" } errmsg
     }
 
-    set fslviewpid [ exec sh -c "${FSLDIR}/bin/fslview $nvars(reference) $nvars(fslview_reference) $TMP $nvars(fslview_input)" & ]
+    set FSLVIEW /usr/local/bin/fslview
+    if { [ file exists ${FSLDIR}/bin/fslview ] } {
+	set FSLVIEW ${FSLDIR}/bin/fslview
+    }
+
+    set fslviewpid [ exec sh -c "$FSLVIEW $nvars(reference) $nvars(fslview_reference) $TMP $nvars(fslview_input)" & ]
 
     puts "final transform is in ${TMP}.xfm"
 }
