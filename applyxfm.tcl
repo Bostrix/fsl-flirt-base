@@ -71,9 +71,13 @@ label $w.f.xfminv.label -text "Apply inverse transformation"
 set entries($w,invxfm) 0
 checkbutton $w.f.xfminv.button -variable entries($w,invxfm)
 
-  # pack
-    pack $w.f.xfminv.idbutton $w.f.xfminv.idlabel $w.f.xfminv.button $w.f.xfminv.label -in $w.f.xfminv -side left -padx 3 -pady 3
-    pack $w.f.xfminv $w.f.xfm $w.f.invol -in $lfinput -side top -anchor w -pady 3 -padx 5
+frame $w.f.xfmid
+label $w.f.xfmid.label -text "Use Identity transformation"
+set entries($w,idxfm) 0
+checkbutton $w.f.xfmid.button -variable entries($w,idxfm)
+    pack $w.f.xfmid.button $w.f.xfmid.label -in $w.f.xfmid -side left -padx 3 -pady 3
+
+    pack $w.f.xfm $w.f.xfmid $w.f.xfminv $w.f.invol -in $lfinput -side top -anchor w -pady 3 -padx 5
 
 # Reference volume
 

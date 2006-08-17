@@ -49,6 +49,7 @@ FSLFileEntry $w.f.xfm \
 		-width 40 \
 		-filterhist VARS(history)
 
+
 #}}}
     pack $w.f.xfm -in $lfinput -side top -anchor w -pady 3 -padx 5
 
