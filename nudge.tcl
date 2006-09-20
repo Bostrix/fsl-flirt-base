@@ -2,7 +2,7 @@
 
 #   nudge - interactive (if slow) alignment correction
 #
-#   Stephen Smith, FMRIB Image Analysis Group
+#   Stephen Smith and Matthew Webster FMRIB Image Analysis Group
 #
 #   Copyright (C) 2005-2006 University of Oxford
 #
