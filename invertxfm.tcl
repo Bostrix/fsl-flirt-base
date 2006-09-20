@@ -2,7 +2,7 @@
 
 # InvertXFM - the GUI for convert_xfm
 #
-# Mark Jenkinson and Stephen Smith, FMRIB Image Analysis Group
+# Mark Jenkinson, Stephen Smith and Matthew Webster, FMRIB Image Analysis Group
 #
 # Copyright (C) 2001 University of Oxford
 #
