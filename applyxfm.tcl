@@ -2,18 +2,13 @@
 
 # ApplyXFM - the GUI for applying an xfm
 #
-# Mark Jenkinson and Stephen Smith, FMRIB Image Analysis Group
+# Mark Jenkinson, Stephen Smith and Matthew Webster, FMRIB Image Analysis Group
 #
 # Copyright (C) 2001-2006 University of Oxford
 #
 # TCLCOPYRIGHT
 
-
 source [ file dirname [ info script ] ]/fslstart.tcl
-
-set VARS(history) {}
-
-
 
 proc applyxfm { w } {
 
@@ -25,40 +20,23 @@ proc applyxfm { w } {
     wm title $w "ApplyXFM"
     wm iconname $w "ApplyXFM"
     wm iconbitmap $w @${FSLDIR}/tcl/fmrib.xbm
-    tixBalloon    $w.bhelp
     frame $w.f
 
-
-    tixLabelFrame $w.f.input -label "Input"
-    set lfinput [ $w.f.input subwidget frame ]
+    TitleFrame $w.f.input -text "Input"  -relief groove 
+    set lfinput [ $w.f.input getframe ]
 
 # Input image
 
 set entries($w,invol) ""
 
-FSLFileEntry $w.f.invol \
-	-variable entries($w,invol) \
-	-pattern "IMAGE" \
-	-directory $PWD \
-	-label "Input Volume (3D or 4D)  " \
-	-labelwidth 29 \
-	-title "Select" \
-	-width 40 \
-	-filterhist VARS(history)
+    FileEntry  $w.f.invol -textvariable entries($w,invol) -label "Input Volume (3D or 4D)  " -title "Select" -width 40 -filedialog directory  -filetypes IMAGE 
+
 
 # Transform matrix
 
 set entries($w,transmat) ""
 
-FSLFileEntry $w.f.xfm \
-	-variable entries($w,transmat) \
-	-pattern "*.mat" \
-	-directory $PWD \
-	-label "Transformation Matrix   " \
-		-labelwidth 29 \
-		-title "Select" \
-		-width 40 \
-		-filterhist VARS(history)
+    FileEntry  $w.f.xfm -textvariable entries($w,transmat)  -label "Transformation Matrix   "  -title "Select" -width 40 -filedialog directory  -filetypes *.mat
 
 # Identity and Inverse button
 frame $w.f.xfminv
@@ -83,19 +61,10 @@ checkbutton $w.f.xfmid.button -variable entries($w,idxfm)
 
 set entries($w,refvol) ""
 
-    tixLabelFrame $w.f.outsize -label "Output Size"
-    set lfoutsize [ $w.f.outsize subwidget frame ]
-
-FSLFileEntry $w.f.outsize.refvol \
-	-variable entries($w,refvol) \
-	-pattern "IMAGE" \
-	-directory $PWD \
-	-label "Reference Volume   " \
-	-labelwidth 29 \
-	-title "Select" \
-	-width 40 \
-	-filterhist VARS(history)
-
+    TitleFrame $w.f.outsize -text "Output Size" -relief groove 
+    set lfoutsize [ $w.f.outsize getframe ]
+   
+     FileEntry  $w.f.outsize.refvol  -textvariable entries($w,refvol) -label "Reference Volume   " -title "Select" -width 40 -filedialog directory  -filetypes IMAGE
 
  #output volume size
 
@@ -108,40 +77,23 @@ set entries($w,outsize_dx) 4
 set entries($w,outsize_dy) 4
 set entries($w,outsize_dz) 6
 
-    tixOptionMenu $w.f.outsize.volname -label "Base on: " -variable entries($w,refsize)  -command "applyxfm:updateoutsize $w $lfoutsize"
-    $w.f.outsize.volname add command 0 -label "Existing Volume"
-    $w.f.outsize.volname add command 1 -label "Voxel Dimensions"
+frame $w.f.outsize.volname
+label $w.f.outsize.volname.label -text "Base on: "
+optionMenu2 $w.f.outsize.volname.menu  entries($w,refsize) -command "applyxfm:updateoutsize $w $lfoutsize" 0 "Existing Volume" 1 "Voxel Dimensions"
+pack $w.f.outsize.volname.label $w.f.outsize.volname.menu -in $w.f.outsize.volname -side top -side left
 
     frame $w.f.outsize.n
     frame $w.f.outsize.d
 
     label $w.f.outsize.n.lab -text "Number of Voxels: " -width 18
-
-    tixControl $w.f.outsize.n.x -label " X " \
-	    -variable entries($w,outsize_nx) -step 1 -min 1 -max 10000 \
-	    -selectmode immediate
-    
-    tixControl $w.f.outsize.n.y -label " Y " \
-	    -variable entries($w,outsize_ny) -step 1 -min 1 -max 10000 \
-	    -selectmode immediate
-    
-    tixControl $w.f.outsize.n.z -label " Z " \
-	    -variable entries($w,outsize_nz) -step 1 -min 1 -max 10000 \
-	    -selectmode immediate
+    LabelSpinBox $w.f.outsize.n.x -label " X " -textvariable entries($w,outsize_nx) -range {1 10000 1 } 
+    LabelSpinBox $w.f.outsize.n.y -label " Y " -textvariable entries($w,outsize_ny) -range {1 10000 1 } 
+    LabelSpinBox $w.f.outsize.n.z -label " Z " -textvariable entries($w,outsize_nz) -range {1 10000 1 } 
     
     label $w.f.outsize.d.lab -text "Voxel Size (mm): " -width 18
-
-    tixControl $w.f.outsize.d.x -label " X " \
-	    -variable entries($w,outsize_dx) -step 0.1 -min 0 -max 10000 \
-	    -selectmode immediate
-    
-    tixControl $w.f.outsize.d.y -label " Y " \
-	    -variable entries($w,outsize_dy) -step 0.1 -min 0 -max 10000 \
-	    -selectmode immediate
-    
-    tixControl $w.f.outsize.d.z -label " Z " \
-	    -variable entries($w,outsize_dz) -step 0.1 -min 0 -max 10000 \
-	    -selectmode immediate
+    LabelSpinBox $w.f.outsize.d.x -label " X " -textvariable entries($w,outsize_dx) -range {0.0 10000 0.1 } 
+    LabelSpinBox $w.f.outsize.d.y -label " Y " -textvariable entries($w,outsize_dy) -range {0.0 10000 0.1 } 
+    LabelSpinBox $w.f.outsize.d.z -label " Z " -textvariable entries($w,outsize_dz) -range {0.0 10000 0.1 } 
     
     pack $w.f.outsize.n.lab $w.f.outsize.n.x $w.f.outsize.n.y $w.f.outsize.n.z -in $w.f.outsize.n -side left -anchor w -padx 3 -pady 3
     pack $w.f.outsize.d.lab $w.f.outsize.d.x $w.f.outsize.d.y $w.f.outsize.d.z -in $w.f.outsize.d -side left -anchor w -padx 3 -pady 3
@@ -155,22 +107,13 @@ set entries($w,outsize_dz) 6
 
 set entries($w,outvol) ""
 
-    tixLabelFrame $w.f.output -label "Output"
-    set lfoutput [ $w.f.output subwidget frame ]
+    TitleFrame $w.f.output -text "Output" -relief groove 
+    set lfoutput [ $w.f.output getframe ]
 
-FSLFileEntry $w.f.outvol \
-	-variable entries($w,outvol) \
-	-pattern "IMAGE" \
-	-directory $PWD \
-	-label "Output Volume   " \
-	-labelwidth 29 \
-		-title "Select" \
-		-width 40 \
-		-filterhist VARS(history)
-
+   
+     FileEntry  $w.f.outvol -textvariable entries($w,outvol) -label "Output Volume   " -title "Select" -width 40 -filedialog directory  -filetypes IMAGE
 
     pack $w.f.outvol -in $lfoutput -side top -anchor w -pady 3 -padx 5
-
     pack $w.f.input $w.f.outsize $w.f.output -in $w.f -side top -anchor w -pady 0 -padx 5
 
 
@@ -180,14 +123,14 @@ FSLFileEntry $w.f.outvol \
 
     collapsible frame $w.f.opts -title "Advanced Options"    
 
-    tixNoteBook $w.nb -ipadx 5 -ipady 5
 
-    $w.nb add interp -label "Interpolation Method"
-    $w.nb add misc -label "Miscellaneous"
-    
+    NoteBook $w.nb -side top -bd 2 -tabpady {5 10} -arcradius 3
+    $w.nb insert 0 interp -text "Interpolation Method"
+    $w.nb insert 0 misc -text  "Miscellaneous"
+
     # Interpolation
 
-    set interplf [$w.nb subwidget interp]
+    set interplf [$w.nb getframe interp]
 
     radiobutton $w.trilinear -text "Tri-Linear" \
 	    -variable entries($w,interp) -value trilinear -anchor w -command "applyxfm:updateinterp $w $interplf"
@@ -196,8 +139,7 @@ FSLFileEntry $w.f.outvol \
     radiobutton $w.sinc -text "Sinc" \
 	    -variable entries($w,interp) -value sinc -anchor w -command "applyxfm:updateinterp $w $interplf"
 
-    tixControl $w.sincwidth -label " Width of Sinc Window (full width - voxels)" \
-	    -variable entries($w,sincwidth) -step 1 -min 1 -max 5000 -selectmode immediate
+    LabelSpinBox $w.sincwidth -label " Width of Sinc Window (full width - voxels)" -textvariable entries($w,sincwidth) -range {1 5000 1 } 
     set entries($w,sincwidth) 7
 
     frame $w.swinopt
@@ -221,14 +163,12 @@ FSLFileEntry $w.f.outvol \
 
     # Misc
 
-    set misclf [$w.nb subwidget misc]
+    set misclf [$w.nb getframe misc]
 
     set entries($w,datatype) 0
     set entries($w,paddingsize) 0.0
 
-    tixControl $w.paddingsize -label " Extra Padding for Output FOV (in voxels) " \
-	    -variable entries($w,paddingsize) -step 0.5 -min 0 -max 5000 -selectmode immediate
-
+    LabelSpinBox  $w.paddingsize -label  " Extra Padding for Output FOV (in voxels) " -textvariable entries($w,paddingsize) -range {0.0 5000 0.5} 
     checkbutton $w.datatype  -text " Force Output Datatype to be Floating Point " -variable entries($w,datatype)
 
     # ---- pack ----
