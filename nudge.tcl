@@ -29,33 +29,11 @@ proc nudge { w } {
 
 frame $w.inputs -relief raised -borderwidth 1
 
-FSLFileEntry $w.inputs.input \
-	-variable nvars(input) \
-	-pattern "IMAGE" \
-	-directory $PWD \
-	-label "Input image" \
-	-title "Select the input image" \
-	-width 40 \
-	-filterhist VARS(history) \
-        -command "nudge_inputrange"
+    FileEntry  $w.inputs.input -textvariable nvars(input) -label "Input image" -title "Select the input image" -width 40 -filedialog directory  -filetypes IMAGE -command "nudge_inputrange"
 
-FSLFileEntry $w.inputs.reference \
-	-variable nvars(reference) \
-	-pattern "IMAGE" \
-	-directory $PWD \
-	-label "Reference image" \
-	-title "Select the reference image" \
-	-width 40 \
-	-filterhist VARS(history)
+    FileEntry  $w.inputs.reference  -textvariable nvars(reference) -label "Reference image" -title "Select the reference image" -width 40 -filedialog directory  -filetypes IMAGE 
 
-FSLFileEntry $w.inputs.initial_xfm \
-        -variable nvars(initial_xfm) \
-        -pattern "*.mat" \
-        -directory $PWD \
-        -label "Initial transformation (optional)" \
-	-title "Select the initial transformation matrix" \
-	-width 40 \
-	-filterhist VARS(history)
+    FileEntry  $w.inputs.initial_xfm -textvariable nvars(initial_xfm) -label "Initial transformation (optional)" -title "Select the initial transformation matrix" -width 40 -filedialog directory  -filetypes *.mat
 
 pack $w.inputs.input $w.inputs.reference $w.inputs.initial_xfm -in $w.inputs -padx 5 -pady 5 -side top -anchor w -expand yes
 
@@ -75,10 +53,10 @@ set nvars(yrot) 0
 set nvars(zrot) 0
 set nvars(rotinc) 5
 
-tixControl $w.nudge.rot.x -label "X " -variable nvars(xrot) -step $nvars(rotinc) -selectmode immediate -options { entry.width 5 }
-tixControl $w.nudge.rot.y -label "Y " -variable nvars(yrot) -step $nvars(rotinc) -selectmode immediate -options { entry.width 5 }
-tixControl $w.nudge.rot.z -label "Z " -variable nvars(zrot) -step $nvars(rotinc) -selectmode immediate -options { entry.width 5 }
-tixControl $w.nudge.rot.inc -label "increment " -variable nvars(rotinc) -step 1 -selectmode immediate -options { entry.width 5 } -command "nudge_update $w"
+LabelSpinBox $w.nudge.rot.x -label " X " -textvariable nvars(xrot) -range "-10000.0 10000 $nvars(rotinc)" -width 5
+LabelSpinBox $w.nudge.rot.y -label " Y " -textvariable nvars(yrot) -range "-10000.0 10000 $nvars(rotinc)" -width 5
+LabelSpinBox $w.nudge.rot.z -label " Z " -textvariable nvars(zrot) -range "-10000.0 10000 $nvars(rotinc)" -width 5
+LabelSpinBox $w.nudge.rot.inc -label "increment " -textvariable nvars(rotinc) -range "-10000.0 10000 5" -width 5 -command "$w.nudge.rot.inc.spin.e validate; nudge_update $w" -modifycmd "nudge_update $w"
 
 pack $w.nudge.rot.label $w.nudge.rot.x $w.nudge.rot.y $w.nudge.rot.z $w.nudge.rot.inc -in $w.nudge.rot -padx 5 -side left -expand yes
 
@@ -94,10 +72,10 @@ set nvars(ytrans) 0
 set nvars(ztrans) 0
 set nvars(transinc) 5
 
-tixControl $w.nudge.trans.x -label "X " -variable nvars(xtrans) -step $nvars(transinc) -selectmode immediate -options { entry.width 5 }
-tixControl $w.nudge.trans.y -label "Y " -variable nvars(ytrans) -step $nvars(transinc) -selectmode immediate -options { entry.width 5 }
-tixControl $w.nudge.trans.z -label "Z " -variable nvars(ztrans) -step $nvars(transinc) -selectmode immediate -options { entry.width 5 }
-tixControl $w.nudge.trans.inc -label "increment " -variable nvars(transinc) -step 1 -selectmode immediate -options { entry.width 5 } -command "nudge_update $w"
+LabelSpinBox $w.nudge.trans.x -label " X " -textvariable nvars(xtrans) -range "-10000.0 10000 $nvars(transinc)" -width 5
+LabelSpinBox $w.nudge.trans.y -label " Y " -textvariable nvars(ytrans) -range "-10000.0 10000 $nvars(transinc)" -width 5
+LabelSpinBox $w.nudge.trans.z -label " Z " -textvariable nvars(ztrans) -range "-10000.0 10000 $nvars(transinc)" -width 5
+LabelSpinBox $w.nudge.trans.inc -label "increment " -textvariable nvars(transinc) -range "-10000.0 10000 5" -width 5 -command "$w.nudge.rot.inc.spin.e validate; nudge_update $w" -modifycmd "nudge_update $w"
 
 pack $w.nudge.trans.label $w.nudge.trans.x $w.nudge.trans.y $w.nudge.trans.z $w.nudge.trans.inc -in $w.nudge.trans -padx 5 -side left -expand yes
 
@@ -113,10 +91,10 @@ set nvars(yscale) 1
 set nvars(zscale) 1
 set nvars(scaleinc) .01
 
-tixControl $w.nudge.scale.x -label "X " -variable nvars(xscale) -step $nvars(scaleinc) -selectmode immediate -options { entry.width 5 }
-tixControl $w.nudge.scale.y -label "Y " -variable nvars(yscale) -step $nvars(scaleinc) -selectmode immediate -options { entry.width 5 }
-tixControl $w.nudge.scale.z -label "Z " -variable nvars(zscale) -step $nvars(scaleinc) -selectmode immediate -options { entry.width 5 }
-tixControl $w.nudge.scale.inc -label "increment " -variable nvars(scaleinc) -step .01 -selectmode immediate -options { entry.width 5 } -command "nudge_update $w"
+LabelSpinBox $w.nudge.scale.x -label " X " -textvariable nvars(xscale) -range "-10000.0 10000 $nvars(scaleinc)" -width 5
+LabelSpinBox $w.nudge.scale.y -label " Y " -textvariable nvars(yscale) -range "-10000.0 10000 $nvars(scaleinc)" -width 5
+LabelSpinBox $w.nudge.scale.z -label " Z " -textvariable nvars(zscale) -range "-10000.0 10000 $nvars(scaleinc)" -width 5
+LabelSpinBox $w.nudge.scale.inc -label "increment " -textvariable nvars(scaleinc) -range "-10000.0 10000 0.01" -width 5 -command "$w.nudge.rot.inc.spin.e validate; nudge_update $w" -modifycmd "nudge_update $w"
 
 pack $w.nudge.scale.label $w.nudge.scale.x $w.nudge.scale.y $w.nudge.scale.z $w.nudge.scale.inc -in $w.nudge.scale -padx 5 -side left -expand yes
 
@@ -158,18 +136,19 @@ pack $w.btns.apply -in $w.btns -padx 5 -pady 5 -side left -expand yes
 proc nudge_update { w dummy } {
     global FSLDIR nvars
 
-    $w.nudge.rot.x configure -step $nvars(rotinc)
-    $w.nudge.rot.y configure -step $nvars(rotinc)
-    $w.nudge.rot.z configure -step $nvars(rotinc)
+    $w.nudge.rot.x configure  -range "-10000.0 10000 $nvars(rotinc)" 
+    $w.nudge.rot.y configure  -range "-10000.0 10000 $nvars(rotinc)" 
+    $w.nudge.rot.z configure  -range "-10000.0 10000 $nvars(rotinc)" 
 
-    $w.nudge.trans.x configure -step $nvars(transinc)
-    $w.nudge.trans.y configure -step $nvars(transinc)
-    $w.nudge.trans.z configure -step $nvars(transinc)
+    $w.nudge.trans.x configure -range "-10000.0 10000 $nvars(transinc)"
+    $w.nudge.trans.y configure -range "-10000.0 10000 $nvars(transinc)"
+    $w.nudge.trans.z configure -range "-10000.0 10000 $nvars(transinc)"
 
-    $w.nudge.scale.x configure -step $nvars(scaleinc)
-    $w.nudge.scale.y configure -step $nvars(scaleinc)
-    $w.nudge.scale.z configure -step $nvars(scaleinc)
+    $w.nudge.scale.x configure  "-10000.0 10000 $nvars(scaleinc)"
+    $w.nudge.scale.y configure  "-10000.0 10000 $nvars(scaleinc)"
+    $w.nudge.scale.z configure  "-10000.0 10000 $nvars(scaleinc)"
 }
+
 
 #}}}
 #{{{ nudge_inputrange

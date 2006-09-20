@@ -2,7 +2,7 @@
 
 # Concatxfm - the GUI for convert_xfm
 #
-# Mark Jenkinson and Stephen Smith, FMRIB Image Analysis Group
+# Mark Jenkinson, Stephen Smith and Matthew Webster, FMRIB Image Analysis Group
 #
 # Copyright (C) 2001 University of Oxford
 #
@@ -28,60 +28,31 @@ proc concatxfm { w } {
     wm title $w "Concatxfm"
     wm iconname $w "Concatxfm"
     wm iconbitmap $w @${FSLDIR}/tcl/fmrib.xbm
-    tixBalloon    $w.bhelp
     frame $w.f
 
 #}}}
 
-    tixLabelFrame $w.f.input -label "Input"
-    set lfinput [ $w.f.input subwidget frame ]
+    TitleFrame $w.f.input -text "Input"  -relief groove 
+    set lfinput [ $w.f.input getframe ]
     #{{{ input transform
 
 set entries($w,xfm1) ""
 set entries($w,xfm2) ""
 
-FSLFileEntry $w.f.xfm \
-	-variable entries($w,xfm1) \
-	-pattern "*.mat" \
-	-directory $PWD \
-	-label "Transformation Matrix for A to B   " \
-		-labelwidth 34 \
-		-title "Select" \
-		-width 50 \
-		-filterhist VARS(history)
-
-
-FSLFileEntry $w.f.xfm2 \
-	-variable entries($w,xfm2) \
-	-pattern "*.mat" \
-	-directory $PWD \
-	-label "Transformation Matrix for B to C   " \
-		-labelwidth 34 \
-		-title "Select" \
-		-width 50 \
-		-filterhist VARS(history)
-
+    FileEntry  $w.f.xfm -textvariable entries($w,xfm1) -label "Transformation Matrix for A to B   " -title "Select" -width 50 -filedialog directory  -filetypes *.mat
+   FileEntry  $w.f.xfm2 -textvariable entries($w,xfm2) -label "Transformation Matrix for B to C   " -title "Select" -width 50 -filedialog directory  -filetypes *.mat
 
 #}}}
 
     pack $w.f.xfm $w.f.xfm2 -in $lfinput -side top -anchor w -pady 3 -padx 5
 
-    tixLabelFrame $w.f.output -label "Output"
-    set lfoutput [ $w.f.output subwidget frame ]
-
+    TitleFrame $w.f.output -text "Output" -relief groove 
+    set lfoutput [ $w.f.output getframe ]
 
     #{{{ output filename
 set entries($w,outxfm) ""
 
-FSLFileEntry $w.f.oxfm \
-	-variable entries($w,outxfm) \
-	-pattern "*.mat" \
-	-directory $PWD \
-	-label "Save Concatenated Transform (A to C)" \
-	-labelwidth 34 \
-		-title "Select" \
-		-width 50 \
-		-filterhist VARS(history)
+   FileEntry  $w.f.oxfm -textvariable entries($w,outxfm) -label  "Save Concatenated Transform (A to C)" -title "Select" -width 50 -filedialog directory  -filetypes *.mat
 
 #}}}
     pack $w.f.oxfm -in $lfoutput -side top -anchor w -pady 3 -padx 5
