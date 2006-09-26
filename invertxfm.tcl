@@ -12,8 +12,6 @@
 
 source [ file dirname [ info script ] ]/fslstart.tcl
 
-set VARS(history) {}
-
 #}}}
 #{{{ invertxfm
 
@@ -28,46 +26,27 @@ proc invertxfm { w } {
     wm title $w "InvertXFM"
     wm iconname $w "InvertXFM"
     wm iconbitmap $w @${FSLDIR}/tcl/fmrib.xbm
-    tixBalloon    $w.bhelp
     frame $w.f
 
 #}}}
-
-    tixLabelFrame $w.f.input -label "Input"
-    set lfinput [ $w.f.input subwidget frame ]
+    TitleFrame $w.f.input -text "Input"  -relief groove 
+    set lfinput [ $w.f.input getframe ]
     #{{{ input transform
 
 set entries($w,1) ""
 
-FSLFileEntry $w.f.xfm \
-	-variable entries($w,1) \
-	-pattern "*.mat" \
-	-directory $PWD \
-	-label "Transformation File for A to B   " \
-		-labelwidth 29 \
-		-title "Select" \
-		-width 40 \
-		-filterhist VARS(history)
 
-
+    FileEntry  $w.f.xfm -textvariable entries($w,1) -label "Transformation Matrix for A to B   " -title "Select" -width 40 -filedialog directory  -filetypes *.mat
 #}}}
     pack $w.f.xfm -in $lfinput -side top -anchor w -pady 3 -padx 5
 
-    tixLabelFrame $w.f.output -label "Output"
-    set lfoutput [ $w.f.output subwidget frame ]
+    TitleFrame $w.f.output -text "Output" -relief groove 
+    set lfoutput [ $w.f.output getframe ]
     #{{{ output filename
 
 set entries($w,4) ""
 
-FSLFileEntry $w.f.oxfm \
-	-variable entries($w,4) \
-	-pattern "*.mat" \
-	-directory $PWD \
-	-label "Save Inverse Transform (B to A)" \
-	-labelwidth 29 \
-		-title "Select" \
-		-width 40 \
-		-filterhist VARS(history)
+   FileEntry  $w.f.oxfm -textvariable entries($w,4) -label  "Save Inverse Transform (B to A)" -title "Select" -width 40 -filedialog directory  -filetypes *.mat
 
 #}}}
     pack $w.f.oxfm -in $lfoutput -side top -anchor w -pady 3 -padx 5

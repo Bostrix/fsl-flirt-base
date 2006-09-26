@@ -126,7 +126,9 @@ set entries($w,outvol) ""
 
     NoteBook $w.nb -side top -bd 2 -tabpady {5 10} -arcradius 3
     $w.nb insert 0 interp -text "Interpolation Method"
-    $w.nb insert 0 misc -text  "Miscellaneous"
+    $w.nb insert 1 misc -text  "Miscellaneous"
+
+    $w.nb raise interp
 
     # Interpolation
 
@@ -139,9 +141,8 @@ set entries($w,outvol) ""
     radiobutton $w.sinc -text "Sinc" \
 	    -variable entries($w,interp) -value sinc -anchor w -command "applyxfm:updateinterp $w $interplf"
 
-    LabelSpinBox $w.sincwidth -label " Width of Sinc Window (full width - voxels)" -textvariable entries($w,sincwidth) -range {1 5000 1 } 
     set entries($w,sincwidth) 7
-
+    LabelSpinBox $w.sincwidth -label " Width of Sinc Window (full width - voxels)" -textvariable entries($w,sincwidth) -range {1 5000 1 } 
     frame $w.swinopt
     label $w.swinbanner -text "Sinc Window Options"
     radiobutton $w.rectangular -text "Rectangular" \

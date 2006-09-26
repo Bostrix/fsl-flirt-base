@@ -153,7 +153,7 @@ proc nudge_update { w dummy } {
 #}}}
 #{{{ nudge_inputrange
 
-proc nudge_inputrange { dummy } {
+proc nudge_inputrange { { dummy "" } } {
     global FSLDIR nvars
 
     set minmax [ fsl:exec "${FSLDIR}/bin/avwstats++ $nvars(input) -l 0.1 -r" ]

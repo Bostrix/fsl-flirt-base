@@ -2,7 +2,7 @@
 
 # FLIRT - FMRIB's Linear Image Registration Tool
 #
-# Mark Jenkinson and Stephen Smith, FMRIB Image Analysis Group
+# Mark Jenkinson, Stephen Smith and Matthew Webster, FMRIB Image Analysis Group
 #
 # Copyright (C) 1999-2001 University of Oxford
 #
@@ -11,8 +11,6 @@
 #{{{ setup
 
 source [ file dirname [ info script ] ]/fslstart.tcl
-
-set VARS(history) {}
 
 catch { exec sh -c "${FSLDIR}/bin/flirt 2>&1 | grep -i 'flirt version' | awk '{ print \$3 }' -" } VERSION
 
@@ -32,11 +30,10 @@ proc flirt { w } {
     wm title $w "FLIRT - FMRIB's Linear Image Registration Tool - v${VERSION}"
     wm iconname $w "FLIRT"
     wm iconbitmap $w @${FSLDIR}/tcl/fmrib.xbm
-    tixBalloon    $w.bhelp
     frame $w.f
 
-    tixLabelFrame $w.f.basic
-    set lfbasic [ $w.f.basic subwidget frame ]
+    TitleFrame $w.f.basic -relief groove 
+    set lfbasic [ $w.f.basic getframe ]
 
 	set PADY 3
 	set IG  "image"
@@ -44,119 +41,89 @@ proc flirt { w } {
 
 #}}}
     #{{{ number of secondary images
+    TitleFrame $w.f.stats -relief groove 
+    set lfstats [ $w.f.stats getframe ]
 
-    tixLabelFrame $w.f.stats
-    set lfstats [ $w.f.stats subwidget frame ]
-    tixControl $w.f.nstats -label "Number of secondary $IGS to apply transform to " \
-	-variable reg($w,nstats) -step 1 -min 0 -max $reg($w,maxnstats) -command "flirt:updatestats $w"
     set reg($w,nstats) 0
+    LabelSpinBox $w.f.nstats -label "Number of secondary $IGS to apply transform to " -textvariable reg($w,nstats) -range " 0 10000 $reg($w,maxnstats) "  -command " $w.f.nstats.spin.e validate; flirt:updatestats $w" -modifycmd  " flirt:updatestats $w"
     pack $w.f.nstats -in $lfstats -side top -anchor w -pady 3 -padx 5
 
 #}}}
     #{{{ standard image
 
 	set entries($w,1) ${FSLDIR}/etc/standard/avg152T1_brain.hdr
-	FSLFileEntry $w.f.ref \
-		-variable entries($w,1) \
-		-pattern "IMAGE" \
-		-directory $PWD \
-		-label "Reference image   " \
-		-labelwidth 18 \
-		-title "Select" \
-		-width 50 \
-		-filterhist VARS(history)
+
+    FileEntry  $w.f.ref -textvariable entries($w,1) -label "Reference image   " -title "Select" -width 50 -filedialog directory  -filetypes IMAGE
 
 #}}}
 
     #{{{ DOF
+frame $w.f.dof
+label $w.f.dof.label -text "  Model/DOF (input to ref)"
+optionMenu2 $w.f.dof.menu reg($w,dof) 2Dmenu  "   2D to 2D registration" 2D "Rigid Body (3 parameter model)" 3Dmenu "   3D to 3D registration" TRANS "Translation Only (3 parameter model)" 6 "Rigid Body (6 parameter model)" 7 "Global Rescale (7 parameter model)" 9 "Traditional (9 parameter model)" 12 "Affine (12 parameter model)"
+pack $w.f.dof.label $w.f.dof.menu -in $w.f.dof -side top -side left
 
-    tixOptionMenu $w.f.dof -label "  Model/DOF (input to ref)" \
-	    -variable reg($w,dof) \
-	    -options {
-	label.anchor w
-	menubutton.width 30
-    }
-    $w.f.dof add command 2Dmenu -label "   2D to 2D registration" -state disabled -background "#555555"
-    $w.f.dof add command 2D -label "Rigid Body (3 parameter model)"
-    $w.f.dof add command 3Dmenu -label "   3D to 3D registration" -state disabled -background "#555555"
-    $w.f.dof add command TRANS -label "Translation Only (3 parameter model)"
-    $w.f.dof add command 6 -label "Rigid Body (6 parameter model)"
-    $w.f.dof add command 7 -label "Global Rescale (7 parameter model)"
-    $w.f.dof add command 9 -label "Traditional (9 parameter model)"
-    $w.f.dof add command 12 -label "Affine (12 parameter model)"
+  $w.f.dof.menu entryconfigure 0 -state disabled
+
+
+#tixOptionMenu $w.f.dof -label "  Model/DOF (input to ref)" -variable reg($w,dof) -options {label.anchor w;menubutton.width 30}
+    #$w.f.dof add command 2Dmenu -label "   2D to 2D registration" -state disabled -background "#555555"
+    #$w.f.dof add command 2D -label "Rigid Body (3 parameter model)"
+    #$w.f.dof add command 3Dmenu -label "   3D to 3D registration" -state disabled -background "#555555"
+    #$w.f.dof add command TRANS -label "Translation Only (3 parameter model)"
+    #$w.f.dof add command 6 -label "Rigid Body (6 parameter model)"
+    #$w.f.dof add command 7 -label "Global Rescale (7 parameter model)"
+    #$w.f.dof add command 9 -label "Traditional (9 parameter model)"
+    #$w.f.dof add command 12 -label "Affine (12 parameter model)"
     set reg($w,dof) 12
 
 #}}}
 
     #{{{ input/high res image
-
-	FSLFileEntry $w.f.test \
-		-variable entries($w,2) \
-		-pattern "IMAGE" \
-		-directory $PWD \
-		-label "Input image   " \
-		-labelwidth 18 \
-		-title "Select" \
-		-width 50 \
-		-filterhist VARS(history)
+    FileEntry  $w.f.test -textvariable entries($w,2) -label "Input image   " -title "Select" -width 50 -filedialog directory  -filetypes IMAGE
 
 #}}}
     #{{{ low res image
+    FileEntry  $w.f.test2 -textvariable entries($w,3) -label "Low res image   " -title "Select" -width 50 -filedialog directory  -filetypes IMAGE
 
-	FSLFileEntry $w.f.test2 \
-		-variable entries($w,3) \
-		-pattern "IMAGE" \
-		-directory $PWD \
-		-label "Low res image   " \
-		-labelwidth 18 \
-		-title "Select" \
-		-width 50 \
-		-filterhist VARS(history)
-
-
- 
 # DOF 2
+frame $w.f.doftwo
+label $w.f.doftwo.label -text "  Model/DOF (lowres to highres)"
+optionMenu2 $w.f.doftwo.menu reg($w,doftwo) 2Dmenu  "   2D to 2D registration" 2D "Rigid Body (3 parameter model)" 3Dmenu "   3D to 3D registration" TRANS "Translation Only (3 parameter model)" 6 "Rigid Body (6 parameter model)" 7 "Global Rescale (7 parameter model)" 9 "Traditional (9 parameter model)" 12 "Affine (12 parameter model)"
+pack $w.f.doftwo.label $w.f.doftwo.menu -in $w.f.doftwo -side top -side left
 
-    tixOptionMenu $w.f.doftwo -label "  Model/DOF (lowres to highres)" \
-	    -variable reg($w,doftwo) \
-	    -options {
-	label.anchor w
-	menubutton.width 30
-    }
-    $w.f.doftwo add command 2Dmenu -label "   2D to 2D registration" -state disabled -background "#555555"
-    $w.f.doftwo add command 2D -label "Rigid Body (3 parameter model)"
-    $w.f.doftwo add command 3Dmenu -label "   3D to 3D registration" -state disabled -background "#555555"
-    $w.f.doftwo add command TRANS -label "Translation Only (3 parameter model)"
-    $w.f.doftwo add command 6 -label "Rigid Body (6 parameter model)"
-    $w.f.doftwo add command 7 -label "Global Rescale (7 parameter model)"
-    $w.f.doftwo add command 9 -label "Traditional (9 parameter model)"
-    $w.f.doftwo add command 12 -label "Affine (12 parameter model)"
+
+
+
+    #tixOptionMenu $w.f.doftwo -label "  Model/DOF (lowres to highres)" -variable reg($w,doftwo) -options { label.anchor w menubutton.width 30 }
+    #$w.f.doftwo add command 2Dmenu -label "   2D to 2D registration" -state disabled -background "#555555"
+    #$w.f.doftwo add command 2D -label "Rigid Body (3 parameter model)"
+    #$w.f.doftwo add command 3Dmenu -label "   3D to 3D registration" -state disabled -background "#555555"
+    #$w.f.doftwo add command TRANS -label "Translation Only (3 parameter model)"
+    #$w.f.doftwo add command 6 -label "Rigid Body (6 parameter model)"
+    #$w.f.doftwo add command 7 -label "Global Rescale (7 parameter model)"
+    #$w.f.doftwo add command 9 -label "Traditional (9 parameter model)"
+    #$w.f.doftwo add command 12 -label "Affine (12 parameter model)"
     set reg($w,doftwo) 12
 
 #}}}
     #{{{ mode
 
     set reg($w,mode) 1
-    tixOptionMenu $w.f.mode -label "Mode " \
-	    -variable reg($w,mode) \
-	    -options {
-	label.anchor w
-    }
-    $w.f.mode add command 1 -label "Input $IG -> Reference image"
-    $w.f.mode add command 2 -label "Low res $IG -> High res $IG -> Reference image"
+
+frame $w.f.mode
+label $w.f.mode.label -text "Mode " 
+optionMenu2 $w.f.mode.menu  reg($w,mode)  -command "flirt:updatemode $w" 1 "Input $IG -> Reference image" 2 "Low res $IG -> High res $IG -> Reference image"
+pack $w.f.mode.label $w.f.mode.menu -in $w.f.mode -side top -side left
+    #tixOptionMenu $w.f.mode -label "Mode " -variable reg($w,mode) -options { label.anchor w }
+    #$w.f.mode add command 1 -label "Input $IG -> Reference image"
+    #$w.f.mode add command 2 -label "Low res $IG -> High res $IG -> Reference image"
 
 #}}}
     #{{{ output image
 
-FSLFileEntry $w.f.output \
-    -variable entries($w,4) \
-    -pattern "IMAGE" \
-    -directory $PWD \
-    -label "Output image   " \
-    -labelwidth 18 \
-    -title "Select" \
-    -width 50 \
-    -filterhist VARS(history)
+    FileEntry  $w.f.output -textvariable entries($w,4) -label "Output image   " -title "Select" -width 50 -filedialog directory  -filetypes IMAGE
+
 
 #}}}
 
@@ -167,15 +134,8 @@ FSLFileEntry $w.f.output \
 set i 1
 while { $i <= $reg($w,maxnstats) } {
 
-	FSLFileEntry $w.f.second$i \
-		-variable entries($w,[ expr $i + 4 ]) \
-		-pattern "IMAGE" \
-		-directory $PWD \
-		-label "Secondary image $i" \
-		-labelwidth 18 \
-		-title "Select" \
-		-width 50 \
-		-filterhist VARS(history)
+
+    FileEntry  $w.f.second$i -textvariable entries($w,[ expr $i + 4 ]) -label "Secondary image $i" -title "Select" -width 50 -filedialog directory  -filetypes IMAGE
 
     incr i 1
 }
@@ -188,52 +148,43 @@ while { $i <= $reg($w,maxnstats) } {
 
     collapsible frame $w.f.opts -title "Advanced Options"    
 
-    tixNoteBook $w.nb -ipadx 5 -ipady 5
 
-    $w.nb add search -label "Search"
-    $w.nb add cost -label "Cost Function"
-    $w.nb add interp -label "Interpolation"
-    $w.nb add weights -label "Weighting Volumes"
-    
+NoteBook $w.nb -side top -bd 2 -tabpady {5 10} -arcradius 3
+$w.nb insert 0 search  -text "Search"
+$w.nb insert 1 cost    -text "Cost Function"
+$w.nb insert 2 interp  -text "Interpolation"
+$w.nb insert 3 weights -text "Weighting Volumes"
+$w.nb raise search
     #{{{ Search
 
-    set lf [$w.nb subwidget search]
-
+    set lf [$w.nb getframe search]
+    set reg($w,searchrxmin) -90
+    set reg($w,searchrxmax) 90
+    set reg($w,searchrymin) -90
+    set reg($w,searchrymax) 90
+    set reg($w,searchrzmin) -90
+    set reg($w,searchrzmax) 90
     frame $w.search
     frame $w.searchf
     label $w.searchf.angleslabel -text  "Search Angles"
-
-    frame $w.searchf.rx
-    tixControl $w.searchf.rxmin -label "X-axis (degrees): min " \
-	    -variable reg($w,searchrxmin) -step 1 -min -180 -max 180 \
-	    -selectmode immediate
-    
-    tixControl $w.searchf.rxmax -label "  max" -variable reg($w,searchrxmax) \
-	    -step 1 -min -180 -max 180 -selectmode immediate
+    LabelSpinBox  $w.searchf.rxmin -label "X-axis (degrees): min " -textvariable reg($w,searchrxmin) -range {-180.0 180 1 } 
+    LabelSpinBox  $w.searchf.rxmax -label  "  max" -textvariable reg($w,searchrxmax) -range {-180.0 180 1 }  
+    frame $w.searchf.rx 
     pack $w.searchf.rxmin $w.searchf.rxmax -in $w.searchf.rx  -side left
-
+    LabelSpinBox  $w.searchf.rymin -label "Y-axis (degrees): min " -textvariable reg($w,searchrymin) -range {-180.0 180 1 } 
+    LabelSpinBox  $w.searchf.rymax -label  "  max" -textvariable reg($w,searchrymax) -range {-180.0 180 1 }   
     frame $w.searchf.ry
-    tixControl $w.searchf.rymin -label "Y-axis (degrees): min " \
-	    -variable reg($w,searchrymin) -step 1 -min -180 -max 180 \
-	    -selectmode immediate
-    tixControl $w.searchf.rymax -label "  max" -variable reg($w,searchrymax) \
-	    -step 1 -min -180 -max 180 -selectmode immediate
     pack $w.searchf.rymin $w.searchf.rymax -in $w.searchf.ry  -side left
-
-
+    LabelSpinBox  $w.searchf.rzmin -label "Z-axis (degrees): min " -textvariable reg($w,searchrzmin) -range {-180.0 180 1 } 
+    LabelSpinBox  $w.searchf.rzmax -label  "  max" -textvariable reg($w,searchrzmax) -range {-180.0 180 1 }  
     frame $w.searchf.rz
-    tixControl $w.searchf.rzmin -label "Z-axis (degrees): min " \
-	    -variable reg($w,searchrzmin) -step 1 -min -180 -max 180 \
-	    -selectmode immediate
-    tixControl $w.searchf.rzmax -label "  max" -variable reg($w,searchrzmax) \
-	    -step 1 -min -180 -max 180 -selectmode immediate
     pack $w.searchf.rzmin $w.searchf.rzmax -in $w.searchf.rz  -side left
 
-    global reg($w,search)
-    tixOptionMenu $w.search.range -label "Images: " -variable reg($w,search) -command "flirt:updatesearch $w"
-    $w.search.range add command 0 -label "Already virtually aligned (no search)"
-    $w.search.range add command 1 -label "Not aligned, but same orientation"
-    $w.search.range add command 2 -label "Incorrectly oriented"
+    frame  $w.search.range 
+    label  $w.search.range.label -text "Mode " 
+    optionMenu2 $w.search.range.menu reg($w,search) -command "flirt:updatesearch $w" 0 "Already virtually aligned (no search)" 1 "Not aligned, but same orientation" 2 "Incorrectly oriented"
+    pack $w.search.range.label $w.search.range.menu -in $w.search.range -side top -side left
+
     set reg($w,search) 1
     set reg($w,disablesearch_yn) 0
 
@@ -244,17 +195,12 @@ while { $i <= $reg($w,maxnstats) } {
 
     pack $w.search -in $lf -side top -anchor w
 
-    set reg($w,searchrxmin) -90
-    set reg($w,searchrxmax) 90
-    set reg($w,searchrymin) -90
-    set reg($w,searchrymax) 90
-    set reg($w,searchrzmin) -90
-    set reg($w,searchrzmax) 90
+
 
 #}}}
     #{{{ Cost Function
 
-    set costlf [$w.nb subwidget cost]
+    set costlf [$w.nb getframe cost]
 
     radiobutton $w.corratio -text "Correlation Ratio" \
 	    -variable reg($w,cost) -value corratio -anchor w -command "flirt:updatecost $w $costlf"
@@ -266,11 +212,8 @@ while { $i <= $reg($w,maxnstats) } {
 	    -variable reg($w,cost) -value normcorr -anchor w -command "flirt:updatecost $w $costlf"
     radiobutton $w.leastsq -text "Least Squares (intra-modal)" \
 	    -variable reg($w,cost) -value leastsq -anchor w -command "flirt:updatecost $w $costlf"
-
-    tixControl $w.bins -label "Number of Histogram Bins " \
-	    -variable reg($w,bins) -step 1 -min 1 -max 5000 -selectmode immediate
     set reg($w,bins) 256
-    
+    LabelSpinBox  $w.bins -label "Number of Histogram Bins " -textvariable reg($w,bins) -range {1 5000 1 } 
     # ---- pack ----
     pack $w.corratio $w.mutualinfo $w.nmi $w.normcorr $w.leastsq $w.bins -in $costlf -side top -anchor w -padx 3
     set reg($w,cost) corratio
@@ -278,7 +221,7 @@ while { $i <= $reg($w,maxnstats) } {
 #}}}
     #{{{ Interpolation
 
-    set interplf [$w.nb subwidget interp]
+    set interplf [$w.nb getframe interp]
 
     label $w.interpbanner -text "Final Interpolation Method (Reslice Only)"
     radiobutton $w.trilinear -text "Tri-Linear" \
@@ -287,11 +230,8 @@ while { $i <= $reg($w,maxnstats) } {
 	    -variable reg($w,interp) -value nearestneighbour -anchor w -command "flirt:updateinterp $w $interplf"
     radiobutton $w.sinc -text "Sinc" \
 	    -variable reg($w,interp) -value sinc -anchor w -command "flirt:updateinterp $w $interplf"
-
-    tixControl $w.sincwidth -label " Width of Sinc Window (full width - voxels)" \
-	    -variable reg($w,sincwidth) -step 1 -min 1 -max 5000 -selectmode immediate
     set reg($w,sincwidth) 7
-
+    LabelSpinBox $w.sincwidth -label " Width of Sinc Window (full width - voxels)" -textvariable reg($w,sincwidth) -range {1 5000 1 } 
     frame $w.swinopt
     label $w.swinbanner -text "Sinc Window Options"
     radiobutton $w.rectangular -text "Rectangular" \
@@ -313,40 +253,19 @@ while { $i <= $reg($w,maxnstats) } {
 #}}}
     #{{{ Weightings
 
-    set weightlf [$w.nb subwidget weights]
+    set weightlf [$w.nb getframe weights]
 
     set entries($w,35) ""
-	FSLFileEntry $w.wgt \
-		-variable entries($w,35) \
-		-pattern "IMAGE" \
-		-directory $PWD \
-		-label "Reference weighting   " \
-		-labelwidth 18 \
-		-title "Select" \
-		-width 50 \
-		-filterhist VARS(history)
+
+    FileEntry  $w.wgt -textvariable entries($w,35) -label "Reference weighting   " -title "Select" -width 50 -filedialog directory  -filetypes IMAGE
 
     set entries($w,36) ""
-	FSLFileEntry $w.iwgt \
-		-variable entries($w,36) \
-		-pattern "IMAGE" \
-		-directory $PWD \
-		-label "Input weighting   " \
-		-labelwidth 18 \
-		-title "Select" \
-		-width 50 \
-		-filterhist VARS(history)
+
+    FileEntry  $w.iwgt -textvariable entries($w,36) -label "Input weighting   " -title "Select" -width 50 -filedialog directory  -filetypes IMAGE
 
     set entries($w,37) ""
-	FSLFileEntry $w.iwgt2 \
-		-variable entries($w,37) \
-		-pattern "IMAGE" \
-		-directory $PWD \
-		-label "Low res weighting   " \
-		-labelwidth 18 \
-		-title "Select" \
-		-width 50 \
-		-filterhist VARS(history)
+
+    FileEntry  $w.iwgt2 -textvariable entries($w,37) -label  "Low res weighting   " -title "Select" -width 50 -filedialog directory  -filetypes IMAGE
 
     # ---- pack ----
     pack $w.wgt $w.iwgt -in $weightlf -side top -anchor w -padx 3 -pady $PADY
@@ -400,8 +319,6 @@ $w.utils.menu add command -label "Invert FLIRT transform" -command { exec sh -c 
     pack $w.f $w.btns -expand yes -fill both
 
 #}}}
-
-    $w.f.mode configure -command "flirt:updatemode $w"
 }
 
 #}}}
@@ -441,7 +358,7 @@ proc flirt:destroy { w } {
 #}}}
 #{{{ flirt:updatemode
 
-proc flirt:updatemode { w junk } {
+proc flirt:updatemode { w } {
     global reg PADY IGS
 
     if { $reg($w,mode) == 1 } {
@@ -460,7 +377,7 @@ proc flirt:updatemode { w junk } {
 	$w.iwgt.frame.label configure -text "High res weighting"
 	$w.f.nstats configure -label "Number of secondary $IGS to apply combined transform to "
 	pack $w.f.doftwo $w.f.test2 -in $w.f -side top -anchor w -pady $PADY -padx 5 -after $w.f.test
-	pack $w.iwgt2 -in [$w.nb subwidget weights] -side top -anchor w -padx 3 -pady $PADY
+	pack $w.iwgt2 -in [$w.nb getframe weights] -side top -anchor w -padx 3 -pady $PADY
 #	pack forget $w.wgt
 #	pack forget $w.iwgt
     }
@@ -469,7 +386,7 @@ proc flirt:updatemode { w junk } {
 #}}}
 #{{{ flirt:updatestats
 
-proc flirt:updatestats { w junk } {
+proc flirt:updatestats { w } {
     global reg PADY
 
     set i 1
@@ -480,11 +397,11 @@ proc flirt:updatestats { w junk } {
 
     if { $reg($w,nstats) > 0 } {
 	pack $w.f.second1 -in $w.f -side top -anchor w -pady $PADY -padx 5 -after $w.f.nstats
-	$w.f.second1.frame.label configure -text "Secondary image"
+	$w.f.second1 configure -label "Secondary image"
     }
     set i 2
     while { $i <= $reg($w,nstats) } {
-	$w.f.second1.frame.label configure -text "Secondary image 1"
+	$w.f.second1 configure -label "Secondary image 1"
 	pack $w.f.second$i -in $w.f -side top -anchor w -pady $PADY -padx 5 -after $w.f.second[ expr $i - 1 ]
 	incr i 1
     }
@@ -493,7 +410,7 @@ proc flirt:updatestats { w junk } {
 #}}}
 #{{{ flirt:updatesearch
 
-proc flirt:updatesearch { w dummy } {
+proc flirt:updatesearch { w } {
     global reg
 
     if { $reg($w,search) == 0 } {
