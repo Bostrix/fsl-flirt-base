@@ -63,7 +63,8 @@ label $w.f.dof.label -text "  Model/DOF (input to ref)"
 optionMenu2 $w.f.dof.menu reg($w,dof) 2Dmenu  "   2D to 2D registration" 2D "Rigid Body (3 parameter model)" 3Dmenu "   3D to 3D registration" TRANS "Translation Only (3 parameter model)" 6 "Rigid Body (6 parameter model)" 7 "Global Rescale (7 parameter model)" 9 "Traditional (9 parameter model)" 12 "Affine (12 parameter model)"
 pack $w.f.dof.label $w.f.dof.menu -in $w.f.dof -side top -side left
 
-  $w.f.dof.menu entryconfigure 0 -state disabled
+  $w.f.dof.menu.menu entryconfigure 0 -state disabled -background black
+  $w.f.dof.menu.menu entryconfigure 2 -state disabled -background black
 
 
 #tixOptionMenu $w.f.dof -label "  Model/DOF (input to ref)" -variable reg($w,dof) -options {label.anchor w;menubutton.width 30}
