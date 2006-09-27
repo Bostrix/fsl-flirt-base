@@ -45,7 +45,7 @@ proc flirt { w } {
     set lfstats [ $w.f.stats getframe ]
 
     set reg($w,nstats) 0
-    LabelSpinBox $w.f.nstats -label "Number of secondary $IGS to apply transform to " -textvariable reg($w,nstats) -range " 0 10000 $reg($w,maxnstats) "  -command " $w.f.nstats.spin.e validate; flirt:updatestats $w" -modifycmd  " flirt:updatestats $w"
+    LabelSpinBox $w.f.nstats -label "Number of secondary $IGS to apply transform to " -textvariable reg($w,nstats) -range " 0 $reg($w,maxnstats) 1"  -command " $w.f.nstats.spin.e validate; flirt:updatestats $w" -modifycmd  " flirt:updatestats $w"
     pack $w.f.nstats -in $lfstats -side top -anchor w -pady 3 -padx 5
 
 #}}}
@@ -155,7 +155,7 @@ $w.nb insert 0 search  -text "Search"
 $w.nb insert 1 cost    -text "Cost Function"
 $w.nb insert 2 interp  -text "Interpolation"
 $w.nb insert 3 weights -text "Weighting Volumes"
-$w.nb raise search
+
     #{{{ Search
 
     set lf [$w.nb getframe search]
@@ -189,13 +189,12 @@ $w.nb raise search
     set reg($w,search) 1
     set reg($w,disablesearch_yn) 0
 
-    pack $w.searchf.angleslabel $w.searchf.rx $w.searchf.ry $w.searchf.rz -in $w.searchf -side top \
-	    -anchor w -padx 3 -pady 3
+    pack $w.searchf.angleslabel $w.searchf.rx $w.searchf.ry $w.searchf.rz -in $w.searchf -side top -anchor w -padx 3 -pady 3
 
     pack $w.search.range $w.searchf -in $w.search -side top -anchor w -padx 3 -pady 3
 
     pack $w.search -in $lf -side top -anchor w
-
+$w.nb raise search
 
 
 #}}}
@@ -364,8 +363,8 @@ proc flirt:updatemode { w } {
 
     if { $reg($w,mode) == 1 } {
 	$w.f.dof.label configure -text "  Model/DOF (input to ref)"
-	$w.f.test.frame.label configure -text "Input image"
-	$w.iwgt.frame.label configure -text "Input weighting"
+	$w.f.test configure -label "Input image"
+	$w.iwgt configure -label "Input weighting"
 	$w.f.nstats configure -label "Number of secondary $IGS to apply transform to "
 	pack forget $w.f.test2
 	pack forget $w.f.doftwo
@@ -374,8 +373,8 @@ proc flirt:updatemode { w } {
 #	pack $w.iwgt -in [$w.nb subwidget weights] -side top -anchor w -padx 3 -pady $PADY
     } else {
 	$w.f.dof.label configure -text "  Model/DOF (highres to ref)"
-	$w.f.test.frame.label configure -text "High res image"
-	$w.iwgt.frame.label configure -text "High res weighting"
+	$w.f.test configure -label "High res image"
+	$w.iwgt configure -label "High res weighting"
 	$w.f.nstats configure -label "Number of secondary $IGS to apply combined transform to "
 	pack $w.f.doftwo $w.f.test2 -in $w.f -side top -anchor w -pady $PADY -padx 5 -after $w.f.test
 	pack $w.iwgt2 -in [$w.nb getframe weights] -side top -anchor w -padx 3 -pady $PADY
@@ -439,7 +438,9 @@ proc flirt:updatesearch { w } {
     if { $reg($w,disablesearch_yn) } {
 	pack forget $w.searchf
     } else {
+    pack $w.searchf.angleslabel $w.searchf.rx $w.searchf.ry $w.searchf.rz -in $w.lf -side top -anchor w -padx 3 -pady 3
 	pack $w.searchf -in $w.search -side top -anchor w -padx 3 -pady 3
+        $w.nb compute_size
     }
 }
 
