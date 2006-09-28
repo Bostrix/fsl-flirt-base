@@ -58,10 +58,9 @@ proc flirt { w } {
 #}}}
 
     #{{{ DOF
-frame $w.f.dof
-label $w.f.dof.label -text "  Model/DOF (input to ref)"
-optionMenu2 $w.f.dof.menu reg($w,dof) 2Dmenu  "   2D to 2D registration" 2D "Rigid Body (3 parameter model)" 3Dmenu "   3D to 3D registration" TRANS "Translation Only (3 parameter model)" 6 "Rigid Body (6 parameter model)" 7 "Global Rescale (7 parameter model)" 9 "Traditional (9 parameter model)" 12 "Affine (12 parameter model)"
-pack $w.f.dof.label $w.f.dof.menu -in $w.f.dof -side top -side left
+  LabelFrame $w.f.dof -text "  Model/DOF (input to ref)"
+  optionMenu2 $w.f.dof.menu reg($w,dof) 2Dmenu  "   2D to 2D registration" 2D "Rigid Body (3 parameter model)" 3Dmenu "   3D to 3D registration" TRANS "Translation Only (3 parameter model)" 6 "Rigid Body (6 parameter model)" 7 "Global Rescale (7 parameter model)" 9 "Traditional (9 parameter model)" 12 "Affine (12 parameter model)"
+  pack $w.f.dof.menu 
 
   $w.f.dof.menu.menu entryconfigure 0 -state disabled -background black
   $w.f.dof.menu.menu entryconfigure 2 -state disabled -background black
@@ -78,10 +77,9 @@ pack $w.f.dof.label $w.f.dof.menu -in $w.f.dof -side top -side left
     FileEntry  $w.f.test2 -textvariable entries($w,3) -label "Low res image   " -title "Select" -width 50 -filedialog directory  -filetypes IMAGE
 
 # DOF 2
-frame $w.f.doftwo
-label $w.f.doftwo.label -text "  Model/DOF (lowres to highres)"
+LabelFrame $w.f.doftwo -text "  Model/DOF (lowres to highres)"
 optionMenu2 $w.f.doftwo.menu reg($w,doftwo) 2Dmenu  "   2D to 2D registration" 2D "Rigid Body (3 parameter model)" 3Dmenu "   3D to 3D registration" TRANS "Translation Only (3 parameter model)" 6 "Rigid Body (6 parameter model)" 7 "Global Rescale (7 parameter model)" 9 "Traditional (9 parameter model)" 12 "Affine (12 parameter model)"
-pack $w.f.doftwo.label $w.f.doftwo.menu -in $w.f.doftwo -side top -side left
+pack $w.f.doftwo.menu 
 
   $w.f.doftwo.menu.menu entryconfigure 0 -state disabled -background black
   $w.f.doftwo.menu.menu entryconfigure 2 -state disabled -background black
@@ -89,17 +87,10 @@ pack $w.f.doftwo.label $w.f.doftwo.menu -in $w.f.doftwo -side top -side left
 
 #}}}
     #{{{ mode
-
-    set reg($w,mode) 1
-
-frame $w.f.mode
-label $w.f.mode.label -text "Mode " 
+set reg($w,mode) 1
+LabelFrame $w.f.mode -text "Mode " 
 optionMenu2 $w.f.mode.menu  reg($w,mode)  -command "flirt:updatemode $w" 1 "Input $IG -> Reference image" 2 "Low res $IG -> High res $IG -> Reference image"
-pack $w.f.mode.label $w.f.mode.menu -in $w.f.mode -side top -side left
-    #tixOptionMenu $w.f.mode -label "Mode " -variable reg($w,mode) -options { label.anchor w }
-    #$w.f.mode add command 1 -label "Input $IG -> Reference image"
-    #$w.f.mode add command 2 -label "Low res $IG -> High res $IG -> Reference image"
-
+pack $w.f.mode.menu 
 #}}}
     #{{{ output image
 
@@ -130,11 +121,11 @@ while { $i <= $reg($w,maxnstats) } {
     collapsible frame $w.f.opts -title "Advanced Options"    
 
 
-NoteBook $w.nb -side top -bd 2 -tabpady {5 10} -arcradius 3
-$w.nb insert 0 search  -text "Search"
-$w.nb insert 1 cost    -text "Cost Function"
-$w.nb insert 2 interp  -text "Interpolation"
-$w.nb insert 3 weights -text "Weighting Volumes"
+   NoteBook $w.nb -side top -bd 2 -tabpady {5 10} -arcradius 3
+   $w.nb insert 0 search  -text "Search"
+   $w.nb insert 1 cost    -text "Cost Function"
+   $w.nb insert 2 interp  -text "Interpolation"
+   $w.nb insert 3 weights -text "Weighting Volumes"
 
     #{{{ Search
 
@@ -155,18 +146,19 @@ $w.nb insert 3 weights -text "Weighting Volumes"
     LabelSpinBox  $w.searchf.rzmin -label "Z-axis (degrees): min " -textvariable reg($w,searchrzmin) -range {-180.0 180 1 } 
     LabelSpinBox  $w.searchf.rzmax -label  "  max" -textvariable reg($w,searchrzmax) -range {-180.0 180 1 }  
     
-    grid  $w.searchf.angleslabel -in $w.searchf -row 1 -column 1 -padx 3 -pady 3 -sticky w
-    grid  $w.searchf.rxmin -in $w.searchf -row 2 -column 1 -padx 3 -pady 3
-    grid  $w.searchf.rxmax -in $w.searchf -row 2 -column 2 -padx 3 -pady 3
-    grid  $w.searchf.rymin -in $w.searchf -row 3 -column 1 -padx 3 -pady 3
-    grid  $w.searchf.rymax -in $w.searchf -row 3 -column 2 -padx 3 -pady 3
-    grid  $w.searchf.rzmin -in $w.searchf -row 4 -column 1 -padx 3 -pady 3
-    grid  $w.searchf.rzmax -in $w.searchf -row 4 -column 2 -padx 3 -pady 3
+    grid  $w.searchf.angleslabel -row 1 -column 1 -padx 3 -pady 3 -sticky w
+    grid  $w.searchf.rxmin -row 2 -column 1 -padx 3 -pady 3
+    grid  $w.searchf.rxmax -row 2 -column 2 -padx 3 -pady 3
+    grid  $w.searchf.rymin -row 3 -column 1 -padx 3 -pady 3
+    grid  $w.searchf.rymax -row 3 -column 2 -padx 3 -pady 3
+    grid  $w.searchf.rzmin -row 4 -column 1 -padx 3 -pady 3
+    grid  $w.searchf.rzmax -row 4 -column 2 -padx 3 -pady 3
 
    
-    LabelFrame  $w.searchrange -text "Mode" -relief groove -side left
+    LabelFrame  $w.searchrange -text "Mode" 
     optionMenu2 $w.searchrange.menu reg($w,search) -command "flirt:updatesearch $w $lf" 0 "Already virtually aligned (no search)" 1 "Not aligned, but same orientation" 2 "Incorrectly oriented"
-    pack  $w.searchrange.menu -in  [$w.searchrange getframe ]
+    pack  $w.searchrange.menu 
+#-in  [$w.searchrange getframe ]
 
     set reg($w,search) 1
     set reg($w,disablesearch_yn) 0
@@ -340,24 +332,20 @@ proc flirt:updatemode { w } {
     global reg PADY IGS
 
     if { $reg($w,mode) == 1 } {
-	$w.f.dof.label configure -text "  Model/DOF (input to ref)"
+	$w.f.dof configure -text "  Model/DOF (input to ref)"
 	$w.f.test configure -label "Input image"
 	$w.iwgt configure -label "Input weighting"
 	$w.f.nstats configure -label "Number of secondary $IGS to apply transform to "
 	pack forget $w.f.test2
 	pack forget $w.f.doftwo
 	pack forget $w.iwgt2
-#	pack $w.wgt -in [$w.nb subwidget weights] -side top -anchor w -padx 3
-#	pack $w.iwgt -in [$w.nb subwidget weights] -side top -anchor w -padx 3 -pady $PADY
     } else {
-	$w.f.dof.label configure -text "  Model/DOF (highres to ref)"
+	$w.f.dof configure -text "  Model/DOF (highres to ref)"
 	$w.f.test configure -label "High res image"
 	$w.iwgt configure -label "High res weighting"
 	$w.f.nstats configure -label "Number of secondary $IGS to apply combined transform to "
 	pack $w.f.doftwo $w.f.test2 -in $w.f -side top -anchor w -pady $PADY -padx 5 -after $w.f.test
 	pack $w.iwgt2 -in [$w.nb getframe weights] -side top -anchor w -padx 3 -pady $PADY
-#	pack forget $w.wgt
-#	pack forget $w.iwgt
     }
 }
 
@@ -417,7 +405,6 @@ proc flirt:updatesearch { w lf } {
 	pack forget $w.searchf
     } else {
 	pack $w.searchf -in $lf -side top -anchor w -padx 3 -pady 3
-        $w.nb compute_size
     }
 }
 
