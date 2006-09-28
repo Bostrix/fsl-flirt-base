@@ -66,16 +66,6 @@ pack $w.f.dof.label $w.f.dof.menu -in $w.f.dof -side top -side left
   $w.f.dof.menu.menu entryconfigure 0 -state disabled -background black
   $w.f.dof.menu.menu entryconfigure 2 -state disabled -background black
 
-
-#tixOptionMenu $w.f.dof -label "  Model/DOF (input to ref)" -variable reg($w,dof) -options {label.anchor w;menubutton.width 30}
-    #$w.f.dof add command 2Dmenu -label "   2D to 2D registration" -state disabled -background "#555555"
-    #$w.f.dof add command 2D -label "Rigid Body (3 parameter model)"
-    #$w.f.dof add command 3Dmenu -label "   3D to 3D registration" -state disabled -background "#555555"
-    #$w.f.dof add command TRANS -label "Translation Only (3 parameter model)"
-    #$w.f.dof add command 6 -label "Rigid Body (6 parameter model)"
-    #$w.f.dof add command 7 -label "Global Rescale (7 parameter model)"
-    #$w.f.dof add command 9 -label "Traditional (9 parameter model)"
-    #$w.f.dof add command 12 -label "Affine (12 parameter model)"
     set reg($w,dof) 12
 
 #}}}
@@ -93,18 +83,8 @@ label $w.f.doftwo.label -text "  Model/DOF (lowres to highres)"
 optionMenu2 $w.f.doftwo.menu reg($w,doftwo) 2Dmenu  "   2D to 2D registration" 2D "Rigid Body (3 parameter model)" 3Dmenu "   3D to 3D registration" TRANS "Translation Only (3 parameter model)" 6 "Rigid Body (6 parameter model)" 7 "Global Rescale (7 parameter model)" 9 "Traditional (9 parameter model)" 12 "Affine (12 parameter model)"
 pack $w.f.doftwo.label $w.f.doftwo.menu -in $w.f.doftwo -side top -side left
 
-
-
-
-    #tixOptionMenu $w.f.doftwo -label "  Model/DOF (lowres to highres)" -variable reg($w,doftwo) -options { label.anchor w menubutton.width 30 }
-    #$w.f.doftwo add command 2Dmenu -label "   2D to 2D registration" -state disabled -background "#555555"
-    #$w.f.doftwo add command 2D -label "Rigid Body (3 parameter model)"
-    #$w.f.doftwo add command 3Dmenu -label "   3D to 3D registration" -state disabled -background "#555555"
-    #$w.f.doftwo add command TRANS -label "Translation Only (3 parameter model)"
-    #$w.f.doftwo add command 6 -label "Rigid Body (6 parameter model)"
-    #$w.f.doftwo add command 7 -label "Global Rescale (7 parameter model)"
-    #$w.f.doftwo add command 9 -label "Traditional (9 parameter model)"
-    #$w.f.doftwo add command 12 -label "Affine (12 parameter model)"
+  $w.f.doftwo.menu.menu entryconfigure 0 -state disabled -background black
+  $w.f.doftwo.menu.menu entryconfigure 2 -state disabled -background black
     set reg($w,doftwo) 12
 
 #}}}
@@ -165,35 +145,33 @@ $w.nb insert 3 weights -text "Weighting Volumes"
     set reg($w,searchrymax) 90
     set reg($w,searchrzmin) -90
     set reg($w,searchrzmax) 90
-    frame $w.search
-    frame $w.searchf
-    label $w.searchf.angleslabel -text  "Search Angles"
+    frame  $w.searchf
+
+    label $w.searchf.angleslabel -text "Search Angles"
     LabelSpinBox  $w.searchf.rxmin -label "X-axis (degrees): min " -textvariable reg($w,searchrxmin) -range {-180.0 180 1 } 
-    LabelSpinBox  $w.searchf.rxmax -label  "  max" -textvariable reg($w,searchrxmax) -range {-180.0 180 1 }  
-    frame $w.searchf.rx 
-    pack $w.searchf.rxmin $w.searchf.rxmax -in $w.searchf.rx  -side left
+    LabelSpinBox  $w.searchf.rxmax -label  "  max" -textvariable reg($w,searchrxmax) -range {-180.0 180 1 } 
     LabelSpinBox  $w.searchf.rymin -label "Y-axis (degrees): min " -textvariable reg($w,searchrymin) -range {-180.0 180 1 } 
     LabelSpinBox  $w.searchf.rymax -label  "  max" -textvariable reg($w,searchrymax) -range {-180.0 180 1 }   
-    frame $w.searchf.ry
-    pack $w.searchf.rymin $w.searchf.rymax -in $w.searchf.ry  -side left
     LabelSpinBox  $w.searchf.rzmin -label "Z-axis (degrees): min " -textvariable reg($w,searchrzmin) -range {-180.0 180 1 } 
     LabelSpinBox  $w.searchf.rzmax -label  "  max" -textvariable reg($w,searchrzmax) -range {-180.0 180 1 }  
-    frame $w.searchf.rz
-    pack $w.searchf.rzmin $w.searchf.rzmax -in $w.searchf.rz  -side left
+    
+    grid  $w.searchf.angleslabel -in $w.searchf -row 1 -column 1 -padx 3 -pady 3 -sticky w
+    grid  $w.searchf.rxmin -in $w.searchf -row 2 -column 1 -padx 3 -pady 3
+    grid  $w.searchf.rxmax -in $w.searchf -row 2 -column 2 -padx 3 -pady 3
+    grid  $w.searchf.rymin -in $w.searchf -row 3 -column 1 -padx 3 -pady 3
+    grid  $w.searchf.rymax -in $w.searchf -row 3 -column 2 -padx 3 -pady 3
+    grid  $w.searchf.rzmin -in $w.searchf -row 4 -column 1 -padx 3 -pady 3
+    grid  $w.searchf.rzmax -in $w.searchf -row 4 -column 2 -padx 3 -pady 3
 
-    frame  $w.search.range 
-    label  $w.search.range.label -text "Mode " 
-    optionMenu2 $w.search.range.menu reg($w,search) -command "flirt:updatesearch $w" 0 "Already virtually aligned (no search)" 1 "Not aligned, but same orientation" 2 "Incorrectly oriented"
-    pack $w.search.range.label $w.search.range.menu -in $w.search.range -side top -side left
+   
+    LabelFrame  $w.searchrange -text "Mode" -relief groove -side left
+    optionMenu2 $w.searchrange.menu reg($w,search) -command "flirt:updatesearch $w $lf" 0 "Already virtually aligned (no search)" 1 "Not aligned, but same orientation" 2 "Incorrectly oriented"
+    pack  $w.searchrange.menu -in  [$w.searchrange getframe ]
 
     set reg($w,search) 1
     set reg($w,disablesearch_yn) 0
 
-    pack $w.searchf.angleslabel $w.searchf.rx $w.searchf.ry $w.searchf.rz -in $w.searchf -side top -anchor w -padx 3 -pady 3
-
-    pack $w.search.range $w.searchf -in $w.search -side top -anchor w -padx 3 -pady 3
-
-    pack $w.search -in $lf -side top -anchor w
+    pack $w.searchrange $w.searchf -in $lf -side top -anchor w -padx 3 -pady 3
 $w.nb raise search
 
 
@@ -410,7 +388,7 @@ proc flirt:updatestats { w } {
 #}}}
 #{{{ flirt:updatesearch
 
-proc flirt:updatesearch { w } {
+proc flirt:updatesearch { w lf } {
     global reg
 
     if { $reg($w,search) == 0 } {
@@ -438,8 +416,7 @@ proc flirt:updatesearch { w } {
     if { $reg($w,disablesearch_yn) } {
 	pack forget $w.searchf
     } else {
-    pack $w.searchf.angleslabel $w.searchf.rx $w.searchf.ry $w.searchf.rz -in $w.lf -side top -anchor w -padx 3 -pady 3
-	pack $w.searchf -in $w.search -side top -anchor w -padx 3 -pady 3
+	pack $w.searchf -in $lf -side top -anchor w -padx 3 -pady 3
         $w.nb compute_size
     }
 }
