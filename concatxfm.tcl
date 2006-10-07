@@ -39,8 +39,8 @@ proc concatxfm { w } {
 set entries($w,xfm1) ""
 set entries($w,xfm2) ""
 
-    FileEntry  $w.f.xfm -textvariable entries($w,xfm1) -label "Transformation Matrix for A to B   " -title "Select" -width 50 -filedialog directory  -filetypes *.mat
-   FileEntry  $w.f.xfm2 -textvariable entries($w,xfm2) -label "Transformation Matrix for B to C   " -title "Select" -width 50 -filedialog directory  -filetypes *.mat
+FileEntry  $w.f.xfm -textvariable entries($w,xfm1) -label "Transformation Matrix for A to B           " -title "Select" -width 50 -filedialog directory  -filetypes *.mat
+FileEntry  $w.f.xfm2 -textvariable entries($w,xfm2) -label "Transformation Matrix for B to C           " -title "Select" -width 50 -filedialog directory  -filetypes *.mat
 
 #}}}
 
@@ -50,9 +50,10 @@ set entries($w,xfm2) ""
     set lfoutput [ $w.f.output getframe ]
 
     #{{{ output filename
+
 set entries($w,outxfm) ""
 
-   FileEntry  $w.f.oxfm -textvariable entries($w,outxfm) -label  "Save Concatenated Transform (A to C)" -title "Select" -width 50 -filedialog directory  -filetypes *.mat
+FileEntry  $w.f.oxfm -textvariable entries($w,outxfm) -label  "Save Concatenated Transform (A to C) " -title "Select" -width 50 -filedialog directory  -filetypes *.mat
 
 #}}}
     pack $w.f.oxfm -in $lfoutput -side top -anchor w -pady 3 -padx 5
@@ -66,11 +67,8 @@ set entries($w,outxfm) ""
     frame $w.btns
     frame $w.btns.b -relief raised -borderwidth 1
     
-    button $w.go     -command "Concatxfm:go $w" \
-	    -text "OK" -width 5
-
     button $w.apply     -command "Concatxfm:apply $w" \
-	    -text "Apply" -width 5
+	    -text "Go" -width 5
 
     button $w.cancel    -command "destroy $w" \
 	    -text "Exit" -width 5
@@ -79,7 +77,7 @@ set entries($w,outxfm) ""
 	    -text "Help" -width 5
 
     pack $w.btns.b -side bottom -fill x
-    pack $w.go $w.apply $w.cancel $w.help -in $w.btns.b \
+    pack $w.apply $w.cancel $w.help -in $w.btns.b \
 	    -side left -expand yes -padx 3 -pady 10 -fill y
     
     pack $w.f $w.btns -expand yes -fill both
@@ -89,13 +87,6 @@ set entries($w,outxfm) ""
 
 #}}}
 #{{{ Concatxfm:apply
-
-proc Concatxfm:go { w } {
-    global entries
-
-    catch { Concatxfm:apply $w }
-    destroy $w
-}
 
 proc Concatxfm:apply { w } {
     global entries

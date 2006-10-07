@@ -4,7 +4,7 @@
 #
 # Mark Jenkinson, Stephen Smith and Matthew Webster, FMRIB Image Analysis Group
 #
-# Copyright (C) 1999-2001 University of Oxford
+# Copyright (C) 1999-2006 University of Oxford
 #
 # TCLCOPYRIGHT
 
@@ -41,19 +41,20 @@ proc flirt { w } {
 
 #}}}
     #{{{ number of secondary images
-    TitleFrame $w.f.stats -relief groove 
-    set lfstats [ $w.f.stats getframe ]
 
-    set reg($w,nstats) 0
-    LabelSpinBox $w.f.nstats -label "Number of secondary $IGS to apply transform to " -textvariable reg($w,nstats) -range " 0 $reg($w,maxnstats) 1"  -command " $w.f.nstats.spin.e validate; flirt:updatestats $w" -modifycmd  " flirt:updatestats $w"
-    pack $w.f.nstats -in $lfstats -side top -anchor w -pady 3 -padx 5
+TitleFrame $w.f.stats -relief groove 
+set lfstats [ $w.f.stats getframe ]
+
+set reg($w,nstats) 0
+LabelSpinBox $w.f.nstats -label "Number of secondary $IGS to apply transform to " -textvariable reg($w,nstats) -range " 0 $reg($w,maxnstats) 1"  -command " $w.f.nstats.spin.e validate; flirt:updatestats $w" -modifycmd  " flirt:updatestats $w"
+pack $w.f.nstats -in $lfstats -side top -anchor w -pady 3 -padx 5
 
 #}}}
     #{{{ standard image
 
-	set entries($w,1) ${FSLDIR}/etc/standard/avg152T1_brain.hdr
+set entries($w,1) ${FSLDIR}/etc/standard/avg152T1_brain.hdr
 
-    FileEntry  $w.f.ref -textvariable entries($w,1) -label "Reference image   " -title "Select" -width 50 -filedialog directory  -filetypes IMAGE
+FileEntry  $w.f.ref -textvariable entries($w,1) -label "Reference image   " -title "Select" -width 50 -filedialog directory  -filetypes IMAGE
 
 #}}}
 
@@ -70,20 +71,22 @@ proc flirt { w } {
 #}}}
 
     #{{{ input/high res image
-    FileEntry  $w.f.test -textvariable entries($w,2) -label "Input image   " -title "Select" -width 50 -filedialog directory  -filetypes IMAGE
+
+FileEntry  $w.f.test -textvariable entries($w,2) -label "Input image          " -title "Select" -width 50 -filedialog directory  -filetypes IMAGE
 
 #}}}
     #{{{ low res image
-    FileEntry  $w.f.test2 -textvariable entries($w,3) -label "Low res image   " -title "Select" -width 50 -filedialog directory  -filetypes IMAGE
+
+FileEntry  $w.f.test2 -textvariable entries($w,3) -label "Low res image     " -title "Select" -width 50 -filedialog directory  -filetypes IMAGE
 
 # DOF 2
 LabelFrame $w.f.doftwo -text "  Model/DOF (lowres to highres)"
 optionMenu2 $w.f.doftwo.menu reg($w,doftwo) 2Dmenu  "   2D to 2D registration" 2D "Rigid Body (3 parameter model)" 3Dmenu "   3D to 3D registration" TRANS "Translation Only (3 parameter model)" 6 "Rigid Body (6 parameter model)" 7 "Global Rescale (7 parameter model)" 9 "Traditional (9 parameter model)" 12 "Affine (12 parameter model)"
 pack $w.f.doftwo.menu 
 
-  $w.f.doftwo.menu.menu entryconfigure 0 -state disabled -background black
-  $w.f.doftwo.menu.menu entryconfigure 2 -state disabled -background black
-    set reg($w,doftwo) 12
+$w.f.doftwo.menu.menu entryconfigure 0 -state disabled -background black
+$w.f.doftwo.menu.menu entryconfigure 2 -state disabled -background black
+set reg($w,doftwo) 12
 
 #}}}
     #{{{ mode
@@ -94,8 +97,7 @@ pack $w.f.mode.menu
 #}}}
     #{{{ output image
 
-    FileEntry  $w.f.output -textvariable entries($w,4) -label "Output image   " -title "Select" -width 50 -filedialog directory  -filetypes IMAGE
-
+FileEntry  $w.f.output -textvariable entries($w,4) -label "Output image       " -title "Select" -width 50 -filedialog directory  -filetypes IMAGE
 
 #}}}
 
@@ -105,10 +107,7 @@ pack $w.f.mode.menu
 
 set i 1
 while { $i <= $reg($w,maxnstats) } {
-
-
     FileEntry  $w.f.second$i -textvariable entries($w,[ expr $i + 4 ]) -label "Secondary image $i" -title "Select" -width 50 -filedialog directory  -filetypes IMAGE
-
     incr i 1
 }
 
@@ -223,22 +222,21 @@ $w.nb raise search
 #}}}
     #{{{ Weightings
 
-    set weightlf [$w.nb getframe weights]
+set weightlf [$w.nb getframe weights]
 
-    set entries($w,35) ""
+set entries($w,35) ""
 
-    FileEntry  $w.wgt -textvariable entries($w,35) -label "Reference weighting   " -title "Select" -width 50 -filedialog directory  -filetypes IMAGE
+FileEntry  $w.wgt -textvariable entries($w,35) -label "Reference weighting  " -title "Select" -width 50 -filedialog directory  -filetypes IMAGE
 
-    set entries($w,36) ""
+set entries($w,36) ""
 
-    FileEntry  $w.iwgt -textvariable entries($w,36) -label "Input weighting   " -title "Select" -width 50 -filedialog directory  -filetypes IMAGE
+FileEntry  $w.iwgt -textvariable entries($w,36) -label "Input weighting         " -title "Select" -width 50 -filedialog directory  -filetypes IMAGE
 
-    set entries($w,37) ""
+set entries($w,37) ""
 
-    FileEntry  $w.iwgt2 -textvariable entries($w,37) -label  "Low res weighting   " -title "Select" -width 50 -filedialog directory  -filetypes IMAGE
+FileEntry  $w.iwgt2 -textvariable entries($w,37) -label  "Low res weighting     " -title "Select" -width 50 -filedialog directory  -filetypes IMAGE
 
-    # ---- pack ----
-    pack $w.wgt $w.iwgt -in $weightlf -side top -anchor w -padx 3 -pady $PADY
+pack $w.wgt $w.iwgt -in $weightlf -side top -anchor w -padx 3 -pady $PADY
 
 #}}}
 
@@ -333,16 +331,16 @@ proc flirt:updatemode { w } {
 
     if { $reg($w,mode) == 1 } {
 	$w.f.dof configure -text "  Model/DOF (input to ref)"
-	$w.f.test configure -label "Input image"
-	$w.iwgt configure -label "Input weighting"
+	$w.f.test configure -label "Input image          "
+	$w.iwgt configure -label "Input weighting         "
 	$w.f.nstats configure -label "Number of secondary $IGS to apply transform to "
 	pack forget $w.f.test2
 	pack forget $w.f.doftwo
 	pack forget $w.iwgt2
     } else {
 	$w.f.dof configure -text "  Model/DOF (highres to ref)"
-	$w.f.test configure -label "High res image"
-	$w.iwgt configure -label "High res weighting"
+	$w.f.test configure -label "High res image     "
+	$w.iwgt configure -label "High res weighting    "
 	$w.f.nstats configure -label "Number of secondary $IGS to apply combined transform to "
 	pack $w.f.doftwo $w.f.test2 -in $w.f -side top -anchor w -pady $PADY -padx 5 -after $w.f.test
 	pack $w.iwgt2 -in [$w.nb getframe weights] -side top -anchor w -padx 3 -pady $PADY
@@ -363,7 +361,7 @@ proc flirt:updatestats { w } {
 
     if { $reg($w,nstats) > 0 } {
 	pack $w.f.second1 -in $w.f -side top -anchor w -pady $PADY -padx 5 -after $w.f.nstats
-	$w.f.second1 configure -label "Secondary image"
+	$w.f.second1 configure -label "Secondary image "
     }
     set i 2
     while { $i <= $reg($w,nstats) } {

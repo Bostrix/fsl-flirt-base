@@ -10,8 +10,9 @@
 
 source [ file dirname [ info script ] ]/fslstart.tcl
 
-proc applyxfm { w } {
+#{{{ applyxfm
 
+proc applyxfm { w } {
 
     global entries FSLDIR PWD
 
@@ -25,62 +26,61 @@ proc applyxfm { w } {
     TitleFrame $w.f.input -text "Input"  -relief groove 
     set lfinput [ $w.f.input getframe ]
 
-# Input image
+    # Input image
 
-set entries($w,invol) ""
+    set entries($w,invol) ""
 
     FileEntry  $w.f.invol -textvariable entries($w,invol) -label "Input Volume (3D or 4D)  " -title "Select" -width 40 -filedialog directory  -filetypes IMAGE 
 
+    # Transform matrix
 
-# Transform matrix
-
-set entries($w,transmat) ""
+    set entries($w,transmat) ""
 
     FileEntry  $w.f.xfm -textvariable entries($w,transmat)  -label "Transformation Matrix   "  -title "Select" -width 40 -filedialog directory  -filetypes *.mat
 
-# Identity and Inverse button
-frame $w.f.xfminv
+    # Identity and Inverse button
+    frame $w.f.xfminv
 
-label $w.f.xfminv.idlabel -text "Use Identity transformation       "
-set entries($w,idxfm) 0
-checkbutton $w.f.xfminv.idbutton -variable entries($w,idxfm) -command "applyxfm:updateinput $w $lfinput "
+    label $w.f.xfminv.idlabel -text "Use Identity transformation       "
+    set entries($w,idxfm) 0
+    checkbutton $w.f.xfminv.idbutton -variable entries($w,idxfm) -command "applyxfm:updateinput $w $lfinput "
 
-label $w.f.xfminv.label -text "Apply inverse transformation"
-set entries($w,invxfm) 0
-checkbutton $w.f.xfminv.button -variable entries($w,invxfm)
+    label $w.f.xfminv.label -text "Apply inverse transformation"
+    set entries($w,invxfm) 0
+    checkbutton $w.f.xfminv.button -variable entries($w,invxfm)
 
-frame $w.f.xfmid
-label $w.f.xfmid.label -text "Use Identity transformation"
-set entries($w,idxfm) 0
-checkbutton $w.f.xfmid.button -variable entries($w,idxfm)
+    frame $w.f.xfmid
+    label $w.f.xfmid.label -text "Use Identity transformation"
+    set entries($w,idxfm) 0
+    checkbutton $w.f.xfmid.button -variable entries($w,idxfm)
     pack $w.f.xfmid.button $w.f.xfmid.label -in $w.f.xfmid -side left -padx 3 -pady 3
 
     pack $w.f.xfm $w.f.xfmid $w.f.xfminv $w.f.invol -in $lfinput -side top -anchor w -pady 3 -padx 5
 
-# Reference volume
+    # Reference volume
 
-set entries($w,refvol) ""
+    set entries($w,refvol) ""
 
     TitleFrame $w.f.outsize -text "Output Size" -relief groove 
     set lfoutsize [ $w.f.outsize getframe ]
    
      FileEntry  $w.f.outsize.refvol  -textvariable entries($w,refvol) -label "Reference Volume   " -title "Select" -width 40 -filedialog directory  -filetypes IMAGE
 
- #output volume size
+    #output volume size
 
-set entries($w,refsize) 0
+    set entries($w,refsize) 0
 
-set entries($w,outsize_nx) 64
-set entries($w,outsize_ny) 64
-set entries($w,outsize_nz) 25
-set entries($w,outsize_dx) 4
-set entries($w,outsize_dy) 4
-set entries($w,outsize_dz) 6
+    set entries($w,outsize_nx) 64
+    set entries($w,outsize_ny) 64
+    set entries($w,outsize_nz) 25
+    set entries($w,outsize_dx) 4
+    set entries($w,outsize_dy) 4
+    set entries($w,outsize_dz) 6
 
-frame $w.f.outsize.volname
-label $w.f.outsize.volname.label -text "Base on: "
-optionMenu2 $w.f.outsize.volname.menu  entries($w,refsize) -command "applyxfm:updateoutsize $w $lfoutsize" 0 "Existing Volume" 1 "Voxel Dimensions"
-pack $w.f.outsize.volname.label $w.f.outsize.volname.menu -in $w.f.outsize.volname -side top -side left
+    frame $w.f.outsize.volname
+    label $w.f.outsize.volname.label -text "Base on: "
+    optionMenu2 $w.f.outsize.volname.menu  entries($w,refsize) -command "applyxfm:updateoutsize $w $lfoutsize" 0 "Existing Volume" 1 "Voxel Dimensions"
+    pack $w.f.outsize.volname.label $w.f.outsize.volname.menu -in $w.f.outsize.volname -side top -side left
 
     frame $w.f.outsize.n
     frame $w.f.outsize.d
@@ -98,20 +98,18 @@ pack $w.f.outsize.volname.label $w.f.outsize.volname.menu -in $w.f.outsize.volna
     pack $w.f.outsize.n.lab $w.f.outsize.n.x $w.f.outsize.n.y $w.f.outsize.n.z -in $w.f.outsize.n -side left -anchor w -padx 3 -pady 3
     pack $w.f.outsize.d.lab $w.f.outsize.d.x $w.f.outsize.d.y $w.f.outsize.d.z -in $w.f.outsize.d -side left -anchor w -padx 3 -pady 3
     pack $w.f.outsize.volname -in $lfoutsize -side top -anchor w -padx 3 -pady 3
-#    pack $w.f.outsize.n $w.f.outsize.d -in  $lfoutsize -side top -anchor w -padx 3 -pady 3
+    #    pack $w.f.outsize.n $w.f.outsize.d -in  $lfoutsize -side top -anchor w -padx 3 -pady 3
     pack  $w.f.outsize.refvol -in  $lfoutsize -side top -anchor w -padx 3 -pady 3
 
-
-
-# output volume
-
-set entries($w,outvol) ""
+    # output volume
+    
+    set entries($w,outvol) ""
 
     TitleFrame $w.f.output -text "Output" -relief groove 
     set lfoutput [ $w.f.output getframe ]
 
    
-     FileEntry  $w.f.outvol -textvariable entries($w,outvol) -label "Output Volume   " -title "Select" -width 40 -filedialog directory  -filetypes IMAGE
+    FileEntry  $w.f.outvol -textvariable entries($w,outvol) -label "Output Volume   " -title "Select" -width 40 -filedialog directory  -filetypes IMAGE
 
     pack $w.f.outvol -in $lfoutput -side top -anchor w -pady 3 -padx 5
     pack $w.f.input $w.f.outsize $w.f.output -in $w.f -side top -anchor w -pady 0 -padx 5
@@ -154,8 +152,7 @@ set entries($w,outvol) ""
     set entries($w,sincwindow) hanning
     
     # ---- pack ----
-    pack $w.trilinear -in $interplf -side top -anchor w -padx 3
-    pack $w.nearestneighbour $w.sinc -in $interplf -side top -anchor w -padx 3
+    pack $w.trilinear $w.nearestneighbour $w.sinc -in $interplf -side top -anchor w -padx 3
     set entries($w,interp) trilinear
 
     pack $w.swinbanner -in $w.swinopt -side top -anchor w -padx 3
@@ -194,11 +191,8 @@ set entries($w,outvol) ""
     frame $w.btns
     frame $w.btns.b -relief raised -borderwidth 1
     
-    button $w.go     -command "ApplyXFM:go $w" \
-	    -text "OK" -width 5
-
-    button $w.apply     -command "ApplyXFM:apply $w" \
-	    -text "Apply" -width 5
+    button $w.apply     -command "applyxfm:apply $w" \
+	    -text "Go" -width 5
 
     button $w.cancel    -command "destroy $w" \
 	    -text "Exit" -width 5
@@ -207,25 +201,16 @@ set entries($w,outvol) ""
 	    -text "Help" -width 5
 
     pack $w.btns.b -side bottom -fill x
-    pack $w.go $w.apply $w.cancel $w.help -in $w.btns.b \
+    pack $w.apply $w.cancel $w.help -in $w.btns.b \
 	    -side left -expand yes -padx 3 -pady 10 -fill y
     
     pack $w.f $w.btns -expand yes -fill both
-
-
 }
 
+#}}}
+#{{{ apply
 
-
-proc ApplyXFM:go { w } {
-    global entries
-
-    set status [ ApplyXFM:apply $w ]
-    destroy $w
-}
-
-
-proc ApplyXFM:apply { w } {
+proc applyxfm:apply { w } {
     global entries
 
     set status [ applyxfm:proc $entries($w,invol) $entries($w,transmat) $entries($w,outvol) $entries($w,refvol) $entries($w,invxfm) $entries($w,refsize) $entries($w,outsize_nx) $entries($w,outsize_ny) $entries($w,outsize_nz) $entries($w,outsize_dx) $entries($w,outsize_dy) $entries($w,outsize_dz) $entries($w,interp) $entries($w,sincwidth) $entries($w,sincwindow) $entries($w,datatype) $entries($w,paddingsize) $entries($w,idxfm) ]
@@ -233,6 +218,9 @@ proc ApplyXFM:apply { w } {
     update idletasks
     puts "Done"
 }
+
+#}}}
+#{{{ updateinput
 
 proc applyxfm:updateinput { w lfinput } {
     global entries
@@ -250,8 +238,10 @@ proc applyxfm:updateinput { w lfinput } {
 
 }
 
+#}}}
+#{{{ updateoutputsize
 
-proc applyxfm:updateoutsize { w lfoutsize dummy } {
+proc applyxfm:updateoutsize { w lfoutsize } {
     global entries
     
     if { $entries($w,refsize) == 1 } {
@@ -264,11 +254,13 @@ proc applyxfm:updateoutsize { w lfoutsize dummy } {
 
 }
 
+#}}}
+#{{{ updateinterp
 
 proc applyxfm:updateinterp { w interplf } {
     global entries
 
-    if { [ string match $entries($w,interp) "sinc" ] == 1 } {
+    if { [ string match $entries($w,interp) "sinc" ] } {
 	pack $w.swinopt -in $interplf -side top -anchor w -padx 40
 	pack $w.sincwidth -in $interplf -side top -anchor w -padx 40
     } else {
@@ -277,6 +269,8 @@ proc applyxfm:updateinterp { w interplf } {
     }
 }
 
+#}}}
+#{{{ proc
 
 proc applyxfm:proc { invol transmat outvol refvol invxfm refsize nx ny nz dx dy dz interp sincwidth sincwindow datatype paddingsize idxfm } {
 
@@ -330,8 +324,7 @@ proc applyxfm:proc { invol transmat outvol refvol invxfm refsize nx ny nz dx dy 
     return 0
 }
 
-
-
+#}}}
 
 wm withdraw .
 applyxfm .rename

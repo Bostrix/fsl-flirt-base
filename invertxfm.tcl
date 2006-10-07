@@ -4,7 +4,7 @@
 #
 # Mark Jenkinson, Stephen Smith and Matthew Webster, FMRIB Image Analysis Group
 #
-# Copyright (C) 2001 University of Oxford
+# Copyright (C) 2001-2006 University of Oxford
 #
 # TCLCOPYRIGHT
 
@@ -46,7 +46,7 @@ set entries($w,1) ""
 
 set entries($w,4) ""
 
-   FileEntry  $w.f.oxfm -textvariable entries($w,4) -label  "Save Inverse Transform (B to A)" -title "Select" -width 40 -filedialog directory  -filetypes *.mat
+FileEntry  $w.f.oxfm -textvariable entries($w,4) -label  "Save Inverse Transform (B to A)    " -title "Select" -width 40 -filedialog directory  -filetypes *.mat
 
 #}}}
     pack $w.f.oxfm -in $lfoutput -side top -anchor w -pady 3 -padx 5
@@ -60,11 +60,8 @@ set entries($w,4) ""
     frame $w.btns
     frame $w.btns.b -relief raised -borderwidth 1
     
-    button $w.go     -command "InvertXFM:go $w" \
-	    -text "OK" -width 5
-
     button $w.apply     -command "InvertXFM:apply $w" \
-	    -text "Apply" -width 5
+	    -text "Go" -width 5
 
     button $w.cancel    -command "destroy $w" \
 	    -text "Exit" -width 5
@@ -73,7 +70,7 @@ set entries($w,4) ""
 	    -text "Help" -width 5
 
     pack $w.btns.b -side bottom -fill x
-    pack $w.go $w.apply $w.cancel $w.help -in $w.btns.b \
+    pack $w.apply $w.cancel $w.help -in $w.btns.b \
 	    -side left -expand yes -padx 3 -pady 10 -fill y
     
     pack $w.f $w.btns -expand yes -fill both
@@ -83,13 +80,6 @@ set entries($w,4) ""
 
 #}}}
 #{{{ InvertXFM:apply
-
-proc InvertXFM:go { w } {
-    global entries
-
-    catch { InvertXFM:apply $w }
-    destroy $w
-}
 
 proc InvertXFM:apply { w } {
     global entries
