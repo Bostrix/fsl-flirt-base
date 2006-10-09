@@ -139,10 +139,13 @@ proc applyxfm { w } {
     radiobutton $w.sinc -text "Sinc" \
 	    -variable entries($w,interp) -value sinc -anchor w -command "applyxfm:updateinterp $w $interplf"
 
-    set entries($w,sincwidth) 7
-    LabelSpinBox $w.sincwidth -label " Width of Sinc Window (full width - voxels)" -textvariable entries($w,sincwidth) -range {1 5000 1 } 
+    set entries($w,sincwidth) 7    
+    #TitleFrame $w.swinopt -text "Sinc Window Options"
+
     frame $w.swinopt
     label $w.swinbanner -text "Sinc Window Options"
+
+    LabelSpinBox $w.sincwidth -label " Width of Sinc Window (full width - voxels)" -textvariable entries($w,sincwidth) -range {1 5000 1 } 
     radiobutton $w.rectangular -text "Rectangular" \
 	    -variable entries($w,sincwindow) -value rectangular -anchor w
     radiobutton $w.hanning -text "Hanning" \
@@ -267,6 +270,7 @@ proc applyxfm:updateinterp { w interplf } {
 	pack forget $w.swinopt
 	pack forget $w.sincwidth
     }
+    $w.nb compute_size
 }
 
 #}}}
