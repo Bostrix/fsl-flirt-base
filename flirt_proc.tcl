@@ -64,7 +64,7 @@ if { $interp == "sinc" } {
     set flirtinterp "$flirtinterp -sincwidth $sincwidth -sincwindow $sincwindow"
 }
 
-set outroot [ file rootname $output ]
+set outroot [ remove_ext $output ]
 
 # tell fsl:exec to pass to batch system if setup, and set job durations to 10 minutes (potentially used by batch scheduler)
 if { $regmode == 1 } {
