@@ -26,7 +26,7 @@ XFILES = flirt convert_xfm avscale rmsdiff std2imgcoord img2stdcoord \
 	img2imgcoord applyxfm4D pointflirt makerot midtrans
 TESTXFILES = 
 HFILES =
-SCRIPTS = extracttxt pairreg standard_space_roi
+SCRIPTS = extracttxt pairreg standard_space_roi flirt_average
 
 all:	${XFILES} schedule
 
