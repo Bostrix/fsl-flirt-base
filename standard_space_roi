@@ -5,110 +5,187 @@
 #
 #   Stephen Smith, FMRIB Image Analysis Group
 #
-#   Copyright (C) 2005 University of Oxford
+#   Copyright (C) 2005-2007 University of Oxford
 #
 #   SHCOPYRIGHT
 
+# {{{ Usage()
+
 Usage() {
-    echo ""
-    echo "Usage: standard_space_roi <input> <output> [options] [flirt options]"
-    echo ""
-    echo "-ssref <ref_image>  : standard space reference image to use (default $FSLDIR/etc/standard/avg152T1)"
-    echo "-ssapply <image>    : alternative input image to apply the ROI to, instead of the one used to generate the ROI"
-    echo "-ssd                : debug (don't delete intermediate files)"
-    echo ""
+    cat <<EOF
+
+Usage: standard_space_roi <input> <output> [options] [flirt options]
+
+This masks the input and/or reduces its FOV, on the basis of a
+standard space image or mask, that is transformed into the space
+of the input image.
+
+Masking options (applied before FOV-reduction):
+  -maskFOV           : mask output using transformed standard space FOV (default)
+  -maskMASK <mask>   : mask output using transformed standard space mask
+  -maskNONE          : do not mask output
+
+FOV-reduction options:
+  -roiFOV            : cut down input FOV using bounding box of the transformed standard space FOV (default)
+  -roiMASK <mask>    : cut down input FOV using nonbackground bounding box of the transformed standard space mask
+  -roiNONE           : do not cut down input FOV
+
+With either MASK option, <mask> must be in the same space as the standard space reference image.
+
+Other options:
+  -ssref <ref_image> : standard space reference image to use (default ${FSLDIR}/etc/standard/avg152T1)
+  -altinput <image>  : alternative input image to apply the ROI to (instead of the one used to register to the reference)
+  -d                 : debug (don't delete intermediate files)
+  -b                 : betpremask, equivalent to: -maskMASK ${FSLDIR}/etc/standard/avg152T1_brain_mask_dil2 -roiNONE
+
+All above options must come before any flirt options.
+
+EOF
     exit
 }
 
-if [ _$FSLDIR = _ ] ; then
-    FSLDIR=/usr/local/fsl
-    export FSLDIR
-fi
+# }}}
+
+# {{{ parse main arguments
 
 [ _$2 = _ ] && Usage
 
-in=`${FSLDIR}/bin/remove_ext $1`;
+in=`${FSLDIR}/bin/remove_ext $1`
 if [ `${FSLDIR}/bin/imtest $in` = 0 ] ; then
-    echo "standard space reference image not valid"
-    Usage
+    echo "Input image $in not valid"
+    exit
 fi
 shift
 
-out=`${FSLDIR}/bin/remove_ext $1`;
+out=`${FSLDIR}/bin/remove_ext $1`
 shift
 
-debug=0
+# }}}
+# {{{ parse other options
 
+debug=0
 standard=${FSLDIR}/etc/standard/avg152T1
 inapply=$in
+roi=1
+mask=1
 
 while [ _$1 != _ ] ; do
 
-    if [ $1 = -ssd ] ; then
+    if [ $1 = -d ] ; then
         debug=1
         shift
-
+    elif [ $1 = -b ] ; then
+        maskthr="-thr 0.5"
+	mask=2
+        maskmask=${FSLDIR}/etc/standard/avg152T1_brain_mask_dil2
+	roi=3
+        shift
     elif [ $1 = -ssref ] ; then
+	[ _$2 = _ ] && Usage
 	standard=$2
 	shift 2
-
-    elif [ $1 = -ssapply ] ; then
+	if [ `${FSLDIR}/bin/imtest $standard` = 0 ] ; then
+	    echo "standard space reference image not valid"
+	    exit
+	fi
+    elif [ $1 = -altinput ] ; then
+	[ _$2 = _ ] && Usage
 	inapply=$2
 	shift 2
+	if [ `${FSLDIR}/bin/imtest $inapply` = 0 ] ; then
+	    echo "Input image $inapply not valid"
+	    exit
+	fi
+
+    elif [ $1 = -roiFOV ] ; then
+        roi=1
+        shift
+    elif [ $1 = -roiMASK ] ; then
+        roi=2
+	[ _$2 = _ ] && Usage
+	roimask=$2
+	shift 2
+	if [ `${FSLDIR}/bin/imtest $roimask` = 0 ] ; then
+	    echo "Image $roimask not valid"
+	    exit
+	fi
+    elif [ $1 = -roiNONE ] ; then
+        roi=3
+        shift
+
+    elif [ $1 = -maskFOV ] ; then
+        mask=1
+        shift
+    elif [ $1 = -maskMASK ] ; then
+        mask=2
+	[ _$2 = _ ] && Usage
+	maskmask=$2
+	shift 2
+	if [ `${FSLDIR}/bin/imtest $maskmask` = 0 ] ; then
+	    echo "Image $maskmask not valid"
+	    exit
+	fi
+    elif [ $1 = -maskNONE ] ; then
+        mask=3
+        shift
+
+    else
+	break
     fi
 
 done
 
-if [ `${FSLDIR}/bin/imtest $standard` = 0 ] ; then
-    echo "standard space reference image not valid"
-    Usage
-fi
+# echo debug=$debug
+# echo standard=$standard
+# echo inapply=$inapply
+# echo roi=$roi
+# echo mask=$mask
+# echo roimask=$roimask
+# echo maskmask=$maskmask
+# echo flirtopts=$@
+
+# }}}
+# {{{ do the work...
 
 ${FSLDIR}/bin/flirt -in $in -ref $standard -o ${out}_tmp_to_std -omat ${out}_tmp_to_std.mat $@
-
 ${FSLDIR}/bin/convert_xfm -inverse -omat ${out}_tmp_to_std_inv.mat ${out}_tmp_to_std.mat
 
-X=`${FSLDIR}/bin/avwval $standard dim1` ; X=`echo "$X 1 - p" | dc -`
-Y=`${FSLDIR}/bin/avwval $standard dim2` ; Y=`echo "$Y 1 - p" | dc -`
-Z=`${FSLDIR}/bin/avwval $standard dim3` ; Z=`echo "$Z 1 - p" | dc -`
+X=`${FSLDIR}/bin/avwval $standard dim1` ; X=`echo "$X 2 - p" | dc -`
+Y=`${FSLDIR}/bin/avwval $standard dim2` ; Y=`echo "$Y 2 - p" | dc -`
+Z=`${FSLDIR}/bin/avwval $standard dim3` ; Z=`echo "$Z 2 - p" | dc -`
 
-xmin=$X ; xmax=0; ymin=$Y ; ymax=0; zmin=$Z ; zmax=0; 
-for c in "0 0 0" "$X 0 0" "0 $Y 0" "$X $Y 0" "0 0 $Z" "$X 0 $Z" "0 $Y $Z" "$X $Y $Z" ; do
-    x=`echo $c | img2imgcoord -src $standard -dest $in -xfm ${out}_tmp_to_std_inv.mat -vox | grep -v voxels | awk '{print "0 k " $1 " 1 / p"}' | sed 's/-/_/g' | dc -`
-    y=`echo $c | img2imgcoord -src $standard -dest $in -xfm ${out}_tmp_to_std_inv.mat -vox | grep -v voxels | awk '{print "0 k " $2 " 1 / p"}' | sed 's/-/_/g' | dc -`
-    z=`echo $c | img2imgcoord -src $standard -dest $in -xfm ${out}_tmp_to_std_inv.mat -vox | grep -v voxels | awk '{print "0 k " $3 " 1 / p"}' | sed 's/-/_/g' | dc -`
-    if [ $x -lt $xmin ] ; then xmin=$x ; fi
-    if [ $x -gt $xmax ] ; then xmax=$x ; fi
-    if [ $y -lt $ymin ] ; then ymin=$y ; fi
-    if [ $y -gt $ymax ] ; then ymax=$y ; fi
-    if [ $z -lt $zmin ] ; then zmin=$z ; fi
-    if [ $z -gt $zmax ] ; then zmax=$z ; fi
-done
+# first do masking, if requested
+if [ $mask -lt 3 ] ; then
+    if [ $mask = 1 ] ; then
+	${FSLDIR}/bin/avwmaths++ $standard -mul 0 -add 1 -roi 1 $X 1 $Y 1 $Z 0 1 ${out}_tmp_standard_mask -odt float
+    else
+	${FSLDIR}/bin/avwmaths++ $maskmask -bin ${out}_tmp_standard_mask -odt float
+    fi
+    ${FSLDIR}/bin/flirt -ref $in -in ${out}_tmp_standard_mask -o ${out}_tmp_standard_mask_to_in -applyxfm -init ${out}_tmp_to_std_inv.mat
+    ${FSLDIR}/bin/avwmaths++ ${out}_tmp_standard_mask_to_in $maskthr ${out}_tmp_standard_mask_to_in
+    ${FSLDIR}/bin/avwmaths++ $inapply -mas ${out}_tmp_standard_mask_to_in ${out}_tmp_masked
+    inapply=${out}_tmp_masked
+fi
 
-X=`${FSLDIR}/bin/avwval $in dim1` ; X=`echo "$X 1 - p" | dc -`
-Y=`${FSLDIR}/bin/avwval $in dim2` ; Y=`echo "$Y 1 - p" | dc -`
-Z=`${FSLDIR}/bin/avwval $in dim3` ; Z=`echo "$Z 1 - p" | dc -`
+# then cut down FOV, if requested
+if [ $roi -lt 3 ] ; then
+    if [ $roi = 1 ] ; then
+	${FSLDIR}/bin/avwmaths++ $standard -mul 0 -add 1 -roi 1 $X 1 $Y 1 $Z 0 1 ${out}_tmp_standard_roi -odt float
+    else
+	${FSLDIR}/bin/avwmaths++ $roimask -bin ${out}_tmp_standard_roi -odt float
+    fi
+    ${FSLDIR}/bin/flirt -ref $in -in ${out}_tmp_standard_roi -o ${out}_tmp_standard_roi_to_in -applyxfm -init ${out}_tmp_to_std_inv.mat
+    ${FSLDIR}/bin/avwroi++ $inapply $out `${FSLDIR}/bin/avwstats++ ${out}_tmp_standard_roi_to_in -w`
+else
+    ${FSLDIR}/bin/imcp $inapply $out
+fi
 
-if [ $xmin -lt 0 ] ; then xmin=0 ; fi
-if [ $xmin -gt $X ] ; then xmin=$X ; fi
-if [ $xmax -lt 0 ] ; then xmax=0 ; fi
-if [ $xmax -gt $X ] ; then xmax=$X ; fi
-if [ $ymin -lt 0 ] ; then ymin=0 ; fi
-if [ $ymin -gt $Y ] ; then ymin=$Y ; fi
-if [ $ymax -lt 0 ] ; then ymax=0 ; fi
-if [ $ymax -gt $Y ] ; then ymax=$Y ; fi
-if [ $zmin -lt 0 ] ; then zmin=0 ; fi
-if [ $zmin -gt $Z ] ; then zmin=$Z ; fi
-if [ $zmax -lt 0 ] ; then zmax=0 ; fi
-if [ $zmax -gt $Z ] ; then zmax=$Z ; fi
-
-xsize=`echo "1 $xmax + $xmin - p" | dc -`
-ysize=`echo "1 $ymax + $ymin - p" | dc -`
-zsize=`echo "1 $zmax + $zmin - p" | dc -`
-
-${FSLDIR}/bin/avwroi $inapply $out $xmin $xsize $ymin $ysize $zmin $zsize
+# }}}
+# {{{ cleanup temporary files
 
 if [ $debug = 0 ] ; then
     /bin/rm ${out}_tmp*
 fi
+
+# }}}
 
