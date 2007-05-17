@@ -154,7 +154,7 @@ while { $i <= $reg($w,maxnstats) } {
     grid  $w.searchf.rzmax -row 4 -column 2 -padx 3 -pady 3
 
    
-    LabelFrame  $w.searchrange -text "Mode" 
+    LabelFrame  $w.searchrange -text "Images" 
     optionMenu2 $w.searchrange.menu reg($w,search) -command "flirt:updatesearch $w $lf" 0 "Already virtually aligned (no search)" 1 "Not aligned, but same orientation" 2 "Incorrectly oriented"
     pack  $w.searchrange.menu 
 #-in  [$w.searchrange getframe ]
@@ -305,7 +305,6 @@ proc flirt:apply { w dialog } {
 	lappend statslist $entries($w,[ expr $i + 4 ])
 	incr i 1
     }
-
     set status [ flirt:proc $reg($w,mode) $entries($w,1) $entries($w,2) $entries($w,3) $reg($w,nstats) $statslist $entries($w,4) $reg($w,dof) $reg($w,doftwo) $reg($w,bins) $reg($w,searchrxmin) $reg($w,searchrxmax) $reg($w,searchrymin) $reg($w,searchrymax) $reg($w,searchrzmin) $reg($w,searchrzmax) $reg($w,disablesearch_yn) $reg($w,cost) $reg($w,interp) $reg($w,sincwidth) $reg($w,sincwindow) $entries($w,35) $entries($w,36) $entries($w,37) 1 ]
 
     update idletasks
