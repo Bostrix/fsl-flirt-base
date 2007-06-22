@@ -91,6 +91,11 @@ int procrustes()
     }
   }
 
+  if (verbose.value()) {
+    cout << "Input volume coordinates are (in mm)" << endl << x << endl;
+    cout << "Reference volume coordinates are (in mm)" << endl << y << endl;
+  }
+
 
   s=x*x.t();
   xbar = mean(x,2);
