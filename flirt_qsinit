@@ -1,5 +1,21 @@
 #!/bin/sh
 
+#  Description: Compute rigid body transformation using purely
+#               orientation/position information stored within nifti 
+#               file if the ones were properly converted from DICOM files
+#
+
+#*****            This code is released to the public domain.            *****
+#
+#*****  Author: Mark Jenkinson, FMRIB Centre, University of Oxford       *****
+#*****  Date:   May 2007                                                 *****
+#
+#*****  Neither the FMRIB Centre, the University of Oxford, nor any of   *****
+#*****  its employees imply any warranty of usefulness of this software  *****
+#*****  for any purpose, and do not assume any liability for damages,    *****
+#*****  incidental or otherwise, caused by any use of this document.     *****
+
+
 if [ $# -lt 3 ] ; then
   echo "Usage: $0 <inputimage> <refimage> <outputmat> [qform|sform] [qform|sform]"
   exit 0;
@@ -7,6 +23,20 @@ fi
 
 im1=`$FSLDIR/bin/remove_ext $1`
 im2=`$FSLDIR/bin/remove_ext $2`
+
+# check that both images are nifti images with valid sform/qform settings
+for fn in $im1 $im2 ; do
+    filetype=`$FSLDIR/bin/avwval $fn file_type`;
+    if [ $filetype = "ANALYZE-7.5" ] ; then
+	echo "Both images must be nifti images"
+	exit 1;
+    fi
+    if [ `$FSLDIR/bin/avwval $1 sform_code` -eq 0 -a `$FSLDIR/bin/avwval $1 qform_code` -eq 0 ] ; then
+	echo "Both images must have either the qform or the sform set"
+	exit 1;
+    fi
+done
+
 
 # extract the qform and sform and calculate the flirt vox2mm (samp) matrix
 nam=""
