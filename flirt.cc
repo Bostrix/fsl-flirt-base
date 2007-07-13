@@ -1372,9 +1372,11 @@ void no_optimise()
   } else {
     // If not matrix then use s/q form info (unless told to ignore it)
     if (globaloptions::get().initmatsqform) {
-      globaloptions::get().initmat = voxel2flirtcoord(refvol)
-	* refvol.vox2mm_mat().i() * testvol.vox2mm_mat()
-	* voxel2flirtcoord(testvol).i();
+      if ( (refvol.vox2mm_code()>0) && (testvol.vox2mm_code()>0) ) {
+	globaloptions::get().initmat = voxel2flirtcoord(refvol)
+	  * refvol.vox2mm_mat().i() * testvol.vox2mm_mat()
+	  * voxel2flirtcoord(testvol).i();
+      }
     }
   }
 
@@ -2453,9 +2455,11 @@ int main(int argc,char *argv[])
 
   // Initialise with s/q form info (disabled if a user-supplied mat is given)
   if (globaloptions::get().initmatsqform) {
-    globaloptions::get().initmat = voxel2flirtcoord(refvol)
-      * refvol.vox2mm_mat().i() * testvol.vox2mm_mat()
-      * voxel2flirtcoord(testvol).i();
+    if ( (refvol.vox2mm_code()>0) && (testvol.vox2mm_code()>0) ) {
+      globaloptions::get().initmat = voxel2flirtcoord(refvol)
+	* refvol.vox2mm_mat().i() * testvol.vox2mm_mat()
+	* voxel2flirtcoord(testvol).i();
+    }
   }
   if ( (globaloptions::get().verbose>0) || (globaloptions::get().printinit)) {
     cout << "Init Matrix = \n" << globaloptions::get().initmat << endl;
