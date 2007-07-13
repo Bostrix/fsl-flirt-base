@@ -218,11 +218,16 @@ int safe_save_volume(const volume<T>& source, const string& filename)
   return 0;
 }
 
-void save_matrix_data(const Matrix& matresult, const volume<float>& initvol, 
-		      const volume<float>& finalvol)
+void save_matrix_data(const Matrix& matresult)
 {
   Matrix outfmat = matresult;
   write_ascii_matrix(outfmat,globaloptions::get().outputmatascii);
+}
+
+void save_matrix_data(const Matrix& matresult, const volume<float>& initvol, 
+		      const volume<float>& finalvol)
+{
+  save_matrix_data(matresult);
 }
 
 float costfn(const Matrix& matresult);
@@ -1366,7 +1371,7 @@ void no_optimise()
 		globaloptions::get().initmatfname,testvol[0]);
   } else {
     // If not matrix then use s/q form info (unless told to ignore it)
-    if (globaloptions::get().initmatsorqform) {
+    if (globaloptions::get().initmatsqform) {
       globaloptions::get().initmat = voxel2flirtcoord(refvol)
 	* refvol.vox2mm_mat().i() * testvol.vox2mm_mat()
 	* voxel2flirtcoord(testvol).i();
@@ -1381,7 +1386,7 @@ void no_optimise()
     }
   }
 
-  if (globaloptions::get().verbose>=2) {
+  if ( (globaloptions::get().verbose>0) || (globaloptions::get().printinit)) {
     cout << "Init Matrix = \n" << globaloptions::get().initmat << endl;
   }
   
@@ -1391,31 +1396,36 @@ void no_optimise()
 
   float min_sampling_ref=1.0;
   min_sampling_ref = Min(refvol.xdim(),Min(refvol.ydim(),refvol.zdim()));
-
-  volume4D<float> outputvol;
-  for (int t0=testvol.mint(); t0<=testvol.maxt(); t0++) {
-    int tref=t0-testvol.mint();
-    outputvol.addvolume(refvol);
-    if (globaloptions::get().interpmethod != NearestNeighbour) {
-      testvol[t0] = blur(testvol[t0],min_sampling_ref);
+  
+  if (globaloptions::get().outputfname.size()>0) {
+    volume4D<float> outputvol;
+    for (int t0=testvol.mint(); t0<=testvol.maxt(); t0++) {
+      int tref=t0-testvol.mint();
+      outputvol.addvolume(refvol);
+      if (globaloptions::get().interpmethod != NearestNeighbour) {
+	testvol[t0] = blur(testvol[t0],min_sampling_ref);
+      }
+      
+      if (globaloptions::get().verbose>=2) { 
+	print_volume_info(refvol,"refvol"); 
+	print_volume_info(testvol,"inputvol"); 
+      }
+      
+      final_transform(testvol[t0],outputvol[tref],globaloptions::get().initmat);
     }
-    
-    if (globaloptions::get().verbose>=2) { 
-      print_volume_info(refvol,"refvol"); 
-      print_volume_info(testvol,"inputvol"); 
+    outputvol.setLRorder(refLRorder);
+    int outputdtype = output_dtype(outputvol);
+    save_volume4D_dtype(outputvol,globaloptions::get().outputfname.c_str(),
+			outputdtype,globaloptions::get().vinfo);
+    if (globaloptions::get().verbose>=2) {
+      print_volume_info(outputvol,"Resampled volume");
     }
-    
-    final_transform(testvol[t0],outputvol[tref],globaloptions::get().initmat);
   }
-  outputvol.setLRorder(refLRorder);
-  int outputdtype = output_dtype(outputvol);
-  save_volume4D_dtype(outputvol,globaloptions::get().outputfname.c_str(),
-		      outputdtype,globaloptions::get().vinfo);
 
-  if (globaloptions::get().verbose>=2) {
-    save_matrix_data(globaloptions::get().initmat, testvol[0], outputvol[0]);
-    print_volume_info(outputvol,"Resampled volume");
+  if (globaloptions::get().outputmatascii.size()>0) {
+    save_matrix_data(globaloptions::get().initmat);
   }
+
   exit(0);
 }
 
@@ -2442,10 +2452,13 @@ int main(int argc,char *argv[])
   }
 
   // Initialise with s/q form info (disabled if a user-supplied mat is given)
-  if (globaloptions::get().initmatsorqform) {
+  if (globaloptions::get().initmatsqform) {
     globaloptions::get().initmat = voxel2flirtcoord(refvol)
       * refvol.vox2mm_mat().i() * testvol.vox2mm_mat()
       * voxel2flirtcoord(testvol).i();
+  }
+  if ( (globaloptions::get().verbose>0) || (globaloptions::get().printinit)) {
+    cout << "Init Matrix = \n" << globaloptions::get().initmat << endl;
   }
 
   float min_sampling_ref=1.0, min_sampling_test=1.0, min_sampling=1.0;
