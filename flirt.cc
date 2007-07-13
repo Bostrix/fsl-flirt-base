@@ -153,6 +153,27 @@ int FLIRT_read_volume(volume<float>& target, const string& filename)
 }
 
 
+// support function to deal with the radiological swapping
+template <class T>
+Matrix voxel2flirtcoord(const volume<T>& vol) {
+  Matrix v2f(4,4);
+  v2f=vol.sampling_mat();
+  if (vol.left_right_order()==FSL_NEUROLOGICAL) {
+    Matrix swapx(4,4);
+    Identity(swapx);
+    swapx(1,1)=-1;
+    swapx(1,4)=vol.xsize()-1;
+    v2f = v2f * swapx;
+  }
+  return v2f;
+}
+
+template <class T>
+Matrix voxel2flirtcoord(const volume4D<T>& vol) {
+  return voxel2flirtcoord(vol[0]);
+}
+
+
 //------------------------------------------------------------------------//
 
 void setupsinc(const volume<float>& invol)
@@ -1331,7 +1352,6 @@ void no_optimise()
        (testvol[0].sform_code()!=NIFTI_XFORM_UNKNOWN) ) {
     if (globaloptions::get().verbose>0) {
       cerr << "WARNING: Both reference and input images have an sform matrix set" << endl;
-      cerr << "  The output image will use the transformed sform from the reference image" << endl;
     }
   }
 
@@ -1340,9 +1360,17 @@ void no_optimise()
   if (!globaloptions::get().forcedatatype)
     globaloptions::get().datatype = dtype;
 
+  // Initialise with user-supplied matrix
   if (globaloptions::get().initmatfname.size()>0) {
     read_matrix(globaloptions::get().initmat,
 		globaloptions::get().initmatfname,testvol[0]);
+  } else {
+    // If not matrix then use s/q form info (unless told to ignore it)
+    if (globaloptions::get().initmatsorqform) {
+      globaloptions::get().initmat = voxel2flirtcoord(refvol)
+	* refvol.vox2mm_mat().i() * testvol.vox2mm_mat()
+	* voxel2flirtcoord(testvol).i();
+    }
   }
 
   if (globaloptions::get().verbose>0) {
@@ -2401,7 +2429,6 @@ int main(int argc,char *argv[])
        (testvol.sform_code()!=NIFTI_XFORM_UNKNOWN) ) {
     if (globaloptions::get().verbose>0) {
       cerr << "WARNING: Both reference and input images have an sform matrix set" << endl;
-      cerr << "  The output image will use the sform from the reference image" << endl;
     }
   }
 
@@ -2414,6 +2441,12 @@ int main(int argc,char *argv[])
     }
   }
 
+  // Initialise with s/q form info (disabled if a user-supplied mat is given)
+  if (globaloptions::get().initmatsorqform) {
+    globaloptions::get().initmat = voxel2flirtcoord(refvol)
+      * refvol.vox2mm_mat().i() * testvol.vox2mm_mat()
+      * voxel2flirtcoord(testvol).i();
+  }
 
   float min_sampling_ref=1.0, min_sampling_test=1.0, min_sampling=1.0;
   min_sampling_ref = Min(refvol.xdim(),Min(refvol.ydim(),refvol.zdim()));

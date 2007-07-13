@@ -235,35 +235,22 @@ int main(int argc,char *argv[])
   Matrix vox2std(4,4);
 
   if (use_sform) {
-
     // set the main matrix
-    vox2std = imgvol.sform_mat();
-
-    if (imgvol.sform_code()==NIFTI_XFORM_UNKNOWN) { 
-      if (globalopts.verbose>0) {
-	cerr << "WARNING:: standard coordinates not set in img" << endl; 
-      }
-      // using sform = sampling_mat
-      vox2std = imgvol.sampling_mat();
+    vox2std = imgvol.vox2mm_mat();
+    if (imgvol.vox2mm_code()==NIFTI_XFORM_UNKNOWN) { 
+      cerr << "WARNING:: standard coordinates not set in img" << endl; 
     }
   } else {
-
     // set the main matrix
-    vox2std = stdvol.sform_mat() * stdvol.sampling_mat().i() * affmat * imgvol.sampling_mat();
-
-    if (stdvol.sform_code()==NIFTI_XFORM_UNKNOWN) { 
+    vox2std = stdvol.vox2mm_mat() * Vox2VoxMatrix(affmat,imgvol,stdvol);
+    if (stdvol.vox2mm_code()==NIFTI_XFORM_UNKNOWN) { 
       if (globalopts.verbose>0) {
 	cerr << "WARNING:: standard coordinates not set in standard image" << endl; 
       }
-      // using sform = sampling_mat
-      vox2std = affmat * imgvol.sampling_mat();
     }
-    
     if (globalopts.verbose>3) {
-      cout << " stdvox2world =" << endl << stdvol.sform_mat() << endl << endl;
+      cout << " stdvox2world =" << endl << stdvol.vox2mm_mat() << endl << endl;
     }
-
-
   }
 
 
@@ -320,7 +307,7 @@ int main(int argc,char *argv[])
     }
 
     if (globalopts.mm) {  // in mm
-      imgcoord = imgvol.sampling_mat() * vox2std.i() * stdcoord;
+      imgcoord = imgvol.vox2mm_mat() * vox2std.i() * stdcoord;
     } else { // in voxels
       imgcoord = vox2std.i() * stdcoord; 
     }
@@ -332,11 +319,4 @@ int main(int argc,char *argv[])
 
   return 0;
 }
-
-
-
-
-
-
-
 
