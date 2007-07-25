@@ -150,32 +150,32 @@ done
 ${FSLDIR}/bin/flirt -in $in -ref $standard -o ${out}_tmp_to_std -omat ${out}_tmp_to_std.mat $@
 ${FSLDIR}/bin/convert_xfm -inverse -omat ${out}_tmp_to_std_inv.mat ${out}_tmp_to_std.mat
 
-X=`${FSLDIR}/bin/avwval $standard dim1` ; X=`echo "$X 2 - p" | dc -`
-Y=`${FSLDIR}/bin/avwval $standard dim2` ; Y=`echo "$Y 2 - p" | dc -`
-Z=`${FSLDIR}/bin/avwval $standard dim3` ; Z=`echo "$Z 2 - p" | dc -`
+X=`${FSLDIR}/bin/fslval $standard dim1` ; X=`echo "$X 2 - p" | dc -`
+Y=`${FSLDIR}/bin/fslval $standard dim2` ; Y=`echo "$Y 2 - p" | dc -`
+Z=`${FSLDIR}/bin/fslval $standard dim3` ; Z=`echo "$Z 2 - p" | dc -`
 
 # first do masking, if requested
 if [ $mask -lt 3 ] ; then
     if [ $mask = 1 ] ; then
-	${FSLDIR}/bin/avwmaths++ $standard -mul 0 -add 1 -roi 1 $X 1 $Y 1 $Z 0 1 ${out}_tmp_standard_mask -odt float
+	${FSLDIR}/bin/fslmaths $standard -mul 0 -add 1 -roi 1 $X 1 $Y 1 $Z 0 1 ${out}_tmp_standard_mask -odt float
     else
-	${FSLDIR}/bin/avwmaths++ $maskmask -bin ${out}_tmp_standard_mask -odt float
+	${FSLDIR}/bin/fslmaths $maskmask -bin ${out}_tmp_standard_mask -odt float
     fi
     ${FSLDIR}/bin/flirt -ref $in -in ${out}_tmp_standard_mask -o ${out}_tmp_standard_mask_to_in -applyxfm -init ${out}_tmp_to_std_inv.mat
-    ${FSLDIR}/bin/avwmaths++ ${out}_tmp_standard_mask_to_in $maskthr ${out}_tmp_standard_mask_to_in
-    ${FSLDIR}/bin/avwmaths++ $inapply -mas ${out}_tmp_standard_mask_to_in ${out}_tmp_masked
+    ${FSLDIR}/bin/fslmaths ${out}_tmp_standard_mask_to_in $maskthr ${out}_tmp_standard_mask_to_in
+    ${FSLDIR}/bin/fslmaths $inapply -mas ${out}_tmp_standard_mask_to_in ${out}_tmp_masked
     inapply=${out}_tmp_masked
 fi
 
 # then cut down FOV, if requested
 if [ $roi -lt 3 ] ; then
     if [ $roi = 1 ] ; then
-	${FSLDIR}/bin/avwmaths++ $standard -mul 0 -add 1 -roi 1 $X 1 $Y 1 $Z 0 1 ${out}_tmp_standard_roi -odt float
+	${FSLDIR}/bin/fslmaths $standard -mul 0 -add 1 -roi 1 $X 1 $Y 1 $Z 0 1 ${out}_tmp_standard_roi -odt float
     else
-	${FSLDIR}/bin/avwmaths++ $roimask -bin ${out}_tmp_standard_roi -odt float
+	${FSLDIR}/bin/fslmaths $roimask -bin ${out}_tmp_standard_roi -odt float
     fi
     ${FSLDIR}/bin/flirt -ref $in -in ${out}_tmp_standard_roi -o ${out}_tmp_standard_roi_to_in -applyxfm -init ${out}_tmp_to_std_inv.mat
-    ${FSLDIR}/bin/avwroi++ $inapply $out `${FSLDIR}/bin/avwstats++ ${out}_tmp_standard_roi_to_in -w`
+    ${FSLDIR}/bin/fslroi $inapply $out `${FSLDIR}/bin/fslstats ${out}_tmp_standard_roi_to_in -w`
 else
     ${FSLDIR}/bin/imcp $inapply $out
 fi

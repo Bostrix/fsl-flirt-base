@@ -59,8 +59,8 @@ for input in $imagelist ; do
     fi
 done
 
-avwmerge -t $output $outlist
-avwmaths++ $output -Tmean $output
+fslmerge -t $output $outlist
+fslmaths $output -Tmean $output
 
 /bin/rm *_2ref*
 

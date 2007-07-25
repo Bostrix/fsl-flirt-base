@@ -156,7 +156,7 @@ proc nudge_update { w dummy } {
 proc nudge_inputrange { { dummy "" } } {
     global FSLDIR nvars
 
-    set minmax [ fsl:exec "${FSLDIR}/bin/avwstats++ $nvars(input) -l 0.1 -r" ]
+    set minmax [ fsl:exec "${FSLDIR}/bin/fslstats $nvars(input) -l 0.1 -r" ]
     set nvars(fslview_input) "-l Red-Yellow -b [ lindex $minmax 0 ],[ lindex $minmax 1 ]"
 }
 

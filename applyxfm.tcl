@@ -307,10 +307,10 @@ proc applyxfm:proc { invol transmat outvol refvol invxfm refsize nx ny nz dx dy 
     }
 
     if { $refsize == 1 } {
-	set dtype [ exec sh -c "${FSLDIR}/bin/avwval $invol datatype" ]
+	set dtype [ exec sh -c "${FSLDIR}/bin/fslval $invol datatype" ]
 	set tmpnm ${outvol}_tmp
 	set tmpfiles "$tmpfiles $tmpnm"
-	set flirtcommand "${FSLDIR}/bin/avwcreatehd $nx $ny $nz 1 $dx $dy $dz 1 0 0 0 $dtype ${tmpnm}.nii.gz ; $flirtcommand -ref ${tmpnm}"
+	set flirtcommand "${FSLDIR}/bin/fslcreatehd $nx $ny $nz 1 $dx $dy $dz 1 0 0 0 $dtype ${tmpnm}.nii.gz ; $flirtcommand -ref ${tmpnm}"
     } else {
 	set flirtcommand "$flirtcommand -ref $refvol"
     }
