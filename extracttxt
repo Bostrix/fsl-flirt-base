@@ -3,7 +3,7 @@ if [ $# -le 1 ]; then
 	echo "Usage: $0 search_word file [num_trailing_lines [relative_start]]"
 	exit -1
 fi
-num=`grep -n $1 $2 | head -1 | cut -d':' -f1 ` ; export num
+num=`grep -n $1 $2 | head -n 1 | cut -d':' -f1 ` ; export num
 if [ X${num}X != XX ] ; then
   if [ $# -ge 4 ]; then
     if [ $4 -ge 0 ] ; then
