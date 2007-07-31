@@ -98,7 +98,7 @@ image.
 <section title="Template Images">
 
 <p>MNI152 template images (whole head, extracted brain, brain
-mask and skull) are included in fsl/etc/standard, courtesy of the
+mask and skull) are included in fsl/data/standard, courtesy of the
 <link url="http://www.mni.mcgill.ca/">MNI</link>.</p>
 
 </section>
