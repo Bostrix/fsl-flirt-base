@@ -154,7 +154,7 @@ inline globaloptions::globaloptions()
   refweightfname = "";
   testweightfname = "";
   initmat = Identity(4);
-  initmatsqform = true;
+  initmatsqform = false;
   printinit = false;
 
   schedulefname = "";

@@ -81,8 +81,8 @@ void globaloptions::parse_command_line(int argc,char** argv,
       mode2D = true;
       n++;
       continue;
-    } else if ( arg == "-ignoresqform") {
-      initmatsqform = false;
+    } else if ( arg == "-usesqform") {
+      initmatsqform = true;
       n++;
       continue;    
     } else if ( arg == "-printinit") {
@@ -360,7 +360,7 @@ void globaloptions::print_usage(int argc, char *argv[])
        << "        -datatype {char,short,int,float,double}                    (force output data type)\n"
        << "        -cost {mutualinfo,corratio,normcorr,normmi,leastsq}        (default is corratio)\n"
        << "        -searchcost {mutualinfo,corratio,normcorr,normmi,leastsq}  (default is corratio)\n"
-       << "        -ignoresqform                      (do not initialise using sform or qform)\n"
+       << "        -usesqform                         (initialise using appropriate sform or qform)\n"
        << "        -displayinit                       (display initial matrix)\n"
        << "        -anglerep {quaternion,euler}       (default is euler)\n"
        << "        -interp {trilinear,nearestneighbour,sinc}  (final interpolation: def - trilinear)\n"
