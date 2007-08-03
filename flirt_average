@@ -21,7 +21,7 @@ Usage() {
     exit 1
 }
 
-[ _$5 = _ ] && Usage
+[ _$4 = _ ] && Usage
 
 N=$1
 shift
