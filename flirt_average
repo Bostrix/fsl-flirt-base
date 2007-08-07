@@ -16,7 +16,7 @@ Usage() {
     echo " -FAref <ref_image> : reference image to use instead of first input"
     echo ""
     echo "e.g.  flirt_average 3 rawT1_1 rawT1_2 rawT1_3 averageT1"
-    echo "e.g.  flirt_average 2 rawT1_1 rawT1_2 averageT1 -FAref /usr/local/fsl/data/standard/avg152T1 -FAdim 1 -cost normcorr"
+    echo "e.g.  flirt_average 2 rawT1_1 rawT1_2 averageT1 -FAref /usr/local/fsl/data/standard/MNI152_T1_2mm -FAdim 1 -cost normcorr"
     echo ""
     exit 1
 }

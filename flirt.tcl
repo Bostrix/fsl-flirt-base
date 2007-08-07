@@ -52,7 +52,7 @@ pack $w.f.nstats -in $lfstats -side top -anchor w -pady 3 -padx 5
 #}}}
     #{{{ standard image
 
-set entries($w,1) ${FSLDIR}/data/standard/avg152T1_brain.hdr
+set entries($w,1) ${FSLDIR}/data/standard/MNI152_2mm_T1_brain
 
 FileEntry  $w.f.ref -textvariable entries($w,1) -label "Reference image   " -title "Select" -width 50 -filedialog directory  -filetypes IMAGE
 
