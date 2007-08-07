@@ -36,7 +36,7 @@ Other options:
   -ssref <ref_image> : standard space reference image to use (default ${FSLDIR}/data/standard/MNI152_T1)
   -altinput <image>  : alternative input image to apply the ROI to (instead of the one used to register to the reference)
   -d                 : debug (don't delete intermediate files)
-  -b                 : betpremask, equivalent to: -maskMASK ${FSLDIR}/data/standard/MNI152_T1_2mm_brain_mask_dil2 -roiNONE
+  -b                 : betpremask, equivalent to: -maskMASK ${FSLDIR}/data/standard/MNI152_T1_2mm_brain_mask_dil -roiNONE
 
 All above options must come before any flirt options.
 
@@ -77,7 +77,7 @@ while [ _$1 != _ ] ; do
     elif [ $1 = -b ] ; then
         maskthr="-thr 0.5"
 	mask=2
-        maskmask=${FSLDIR}/data/standard/MNI152_T1_2mm_brain_mask_dil2
+        maskmask=${FSLDIR}/data/standard/MNI152_T1_2mm_brain_mask_dil
 	roi=3
         shift
     elif [ $1 = -ssref ] ; then
