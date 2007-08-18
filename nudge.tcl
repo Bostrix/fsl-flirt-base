@@ -4,7 +4,7 @@
 #
 #   Stephen Smith and Matthew Webster FMRIB Image Analysis Group
 #
-#   Copyright (C) 2005-2006 University of Oxford
+#   Copyright (C) 2005-2007 University of Oxford
 #
 #   TCLCOPYRIGHT
 
@@ -133,20 +133,20 @@ pack $w.btns.apply -in $w.btns -padx 5 -pady 5 -side left -expand yes
 #}}}
 #{{{ nudge_update
 
-proc nudge_update { w dummy } {
+proc nudge_update { w } {
     global FSLDIR nvars
 
-    $w.nudge.rot.x configure  -range "-10000.0 10000 $nvars(rotinc)" 
-    $w.nudge.rot.y configure  -range "-10000.0 10000 $nvars(rotinc)" 
-    $w.nudge.rot.z configure  -range "-10000.0 10000 $nvars(rotinc)" 
+    $w.nudge.rot.x configure   -range "-10000.0 10000 $nvars(rotinc)" 
+    $w.nudge.rot.y configure   -range "-10000.0 10000 $nvars(rotinc)" 
+    $w.nudge.rot.z configure   -range "-10000.0 10000 $nvars(rotinc)" 
 
     $w.nudge.trans.x configure -range "-10000.0 10000 $nvars(transinc)"
     $w.nudge.trans.y configure -range "-10000.0 10000 $nvars(transinc)"
     $w.nudge.trans.z configure -range "-10000.0 10000 $nvars(transinc)"
 
-    $w.nudge.scale.x configure  "-10000.0 10000 $nvars(scaleinc)"
-    $w.nudge.scale.y configure  "-10000.0 10000 $nvars(scaleinc)"
-    $w.nudge.scale.z configure  "-10000.0 10000 $nvars(scaleinc)"
+    $w.nudge.scale.x configure -range "-10000.0 10000 $nvars(scaleinc)"
+    $w.nudge.scale.y configure -range "-10000.0 10000 $nvars(scaleinc)"
+    $w.nudge.scale.z configure -range "-10000.0 10000 $nvars(scaleinc)"
 }
 
 
