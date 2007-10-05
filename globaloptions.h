@@ -97,6 +97,8 @@ class globaloptions {
   bool resample;
   bool useweights;
   bool mode2D;
+  bool clamping;
+  bool interpblur;
   interps interpmethod;
   float sincwidth;
   windowtype sincwindow;
@@ -209,6 +211,8 @@ inline globaloptions::globaloptions()
   resample = true;
   useweights = false;
   mode2D = false;
+  clamping = true;
+  interpblur = true;
   interpmethod = TriLinear;
   sincwidth = 7.0; // voxels
   sincwindow = Hanning;

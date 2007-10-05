@@ -81,6 +81,14 @@ void globaloptions::parse_command_line(int argc,char** argv,
       mode2D = true;
       n++;
       continue;
+    } else if ( arg == "-noclamp") {
+      clamping = false;
+      n++;
+      continue;
+    } else if ( arg == "-noresampblur") {
+      interpblur = false;
+      n++;
+      continue;
     } else if ( arg == "-usesqform") {
       initmatsqform = true;
       n++;
@@ -222,6 +230,8 @@ void globaloptions::parse_command_line(int argc,char** argv,
 	  maincostfn = NormMI;
 	} else if (costarg == "leastsq") {
 	  maincostfn = LeastSq;
+	} else if (costarg == "labeldiff") {
+	  maincostfn = LabelDiff;
 	} else {
 	  cerr << "Unrecognised cost function type: " << costarg << endl;
 	  exit(-1);
@@ -244,6 +254,8 @@ void globaloptions::parse_command_line(int argc,char** argv,
 	  searchcostfn = NormMI;
 	} else if (costarg == "leastsq") {
 	  searchcostfn = LeastSq;
+	} else if (costarg == "labeldiff") {
+	  searchcostfn = LabelDiff;
 	} else {
 	  cerr << "Unrecognised cost function type: " << costarg << endl;
 	  exit(-1);
@@ -358,8 +370,8 @@ void globaloptions::print_usage(int argc, char *argv[])
        << "        -omat <matrix-filename>            (output in 4x4 ascii format)\n"
        << "        -out, -o <outputvol>               (default is none)\n"
        << "        -datatype {char,short,int,float,double}                    (force output data type)\n"
-       << "        -cost {mutualinfo,corratio,normcorr,normmi,leastsq}        (default is corratio)\n"
-       << "        -searchcost {mutualinfo,corratio,normcorr,normmi,leastsq}  (default is corratio)\n"
+       << "        -cost {mutualinfo,corratio,normcorr,normmi,leastsq,labeldiff}        (default is corratio)\n"
+       << "        -searchcost {mutualinfo,corratio,normcorr,normmi,leastsq,labeldiff}  (default is corratio)\n"
        << "        -usesqform                         (initialise using appropriate sform or qform)\n"
        << "        -displayinit                       (display initial matrix)\n"
        << "        -anglerep {quaternion,euler}       (default is euler)\n"
@@ -386,6 +398,8 @@ void globaloptions::print_usage(int argc, char *argv[])
        << "        -schedule <schedule-file>          (replaces default schedule)\n"
        << "        -refweight <volume>                (use weights for reference volume)\n"
        << "        -inweight <volume>                 (use weights for input volume)\n"
+       << "        -noclamp                           (do not use intensity clamping)\n"
+       << "        -noresampblur                      (do not use blurring on downsampling)\n"
        << "        -2D                                (use 2D rigid body mode - ignores dof)\n"
        << "        -verbose <num>                     (0 is least and default)\n"
        << "        -v                                 (same as -verbose 1)\n"

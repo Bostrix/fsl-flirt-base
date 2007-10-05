@@ -1225,7 +1225,7 @@ int get_testvol(volume<float>& testvol)
   float minval=0.0, maxval=0.0;
   minval = testvol.robustmin();
   maxval = testvol.robustmax();
-  clamp(testvol,minval,maxval);
+  if (globaloptions::get().clamping) clamp(testvol,minval,maxval);
 
   if (globaloptions::get().useweights) {
     if (globaloptions::get().testweightfname.length()>0) {
@@ -1243,8 +1243,12 @@ int get_testvol(volume<float>& testvol)
     cout << "Init Matrix = \n" << globaloptions::get().initmat << endl;
     cout << "Testvol sampling matrix =\n" << testvol.sampling_mat() << endl;
     cout << "Testvol Data Type = " << dtype << endl;
-    cout << "Testvol intensity clamped between " 
-	 << minval << " and " << maxval << endl;
+    cout << "Testvol intensity ";
+    if (globaloptions::get().clamping) {
+      cout << "clamped between " << minval << " and " << maxval << endl;
+    } else {
+      cout << "between " << testvol.min() << " and " << testvol.max() << endl;
+    }
   }
   return 0;
 }  
@@ -1261,7 +1265,7 @@ int get_refvol(volume<float>& refvol)
   float minval=0.0, maxval=0.0;
   minval = refvol.robustmin();
   maxval = refvol.robustmax();
-  clamp(refvol,minval,maxval);
+  if (globaloptions::get().clamping) clamp(refvol,minval,maxval);
 
   if (globaloptions::get().useweights) {
     if (globaloptions::get().refweightfname.length()>0) {
@@ -1276,8 +1280,12 @@ int get_refvol(volume<float>& refvol)
   }
 
   if (globaloptions::get().verbose>=2) {
-    cout << "Refvol intensity clamped between " 
-	 << minval << " and " << maxval << endl;
+    cout << "Refvol intensity ";
+    if (globaloptions::get().clamping) {
+      cout << "clamped between " << minval << " and " << maxval << endl;
+    } else {
+      cout << "between " << refvol.min() << " and " << refvol.max() << endl;
+    }
   }
   return 0;
 }
@@ -1404,7 +1412,8 @@ void no_optimise()
     for (int t0=testvol.mint(); t0<=testvol.maxt(); t0++) {
       int tref=t0-testvol.mint();
       outputvol.addvolume(refvol);
-      if (globaloptions::get().interpmethod != NearestNeighbour) {
+      if ((globaloptions::get().interpmethod != NearestNeighbour) &&
+	  (globaloptions::get().interpblur)) {
 	testvol[t0] = blur(testvol[t0],min_sampling_ref);
       }
       
@@ -2637,7 +2646,8 @@ int main(int argc,char *argv[])
       volume<float> newtestvol = refvol;
       float min_sampling_ref=1.0;
       min_sampling_ref = Min(refvol.xdim(),Min(refvol.ydim(),refvol.zdim()));
-      if (globaloptions::get().interpmethod != NearestNeighbour) {
+      if ((globaloptions::get().interpmethod != NearestNeighbour) &&
+	  (globaloptions::get().interpblur)) {
 	testvol = blur(testvol,min_sampling_ref);
       }
       final_transform(testvol,newtestvol,finalmat);      
