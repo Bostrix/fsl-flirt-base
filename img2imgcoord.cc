@@ -184,9 +184,8 @@ int main(int argc,char *argv[])
 
   // read matrices
   Matrix affmat(4,4);
-  int returnval;
-  returnval = read_matrix(affmat,globalopts.xfmfname,srcvol,destvol);
-  if (returnval<0) {
+  affmat = read_ascii_matrix(globalopts.xfmfname);
+  if (affmat.Nrows()<4) {
     cerr << "Cannot read transform file" << endl;
     return -2;
   }
@@ -225,9 +224,9 @@ int main(int argc,char *argv[])
 	matfile >> srccoord(j);
       }
       if (globalopts.mm) {  // in mm
-	destcoord = destvol.vox2mm_mat() * Vox2VoxMatrix(affmat,srcvol,destvol) * srcvol.vox2mm_mat().i() * srccoord; 
+	destcoord = destvol.newimagevox2mm_mat() * NewimageVox2NewimageVoxMatrix(affmat,srcvol,destvol) * srcvol.newimagevox2mm_mat().i() * srccoord; 
       } else { // in voxels
-	destcoord = Vox2VoxMatrix(affmat,srcvol,destvol) * srccoord; 
+	destcoord = destvol.niftivox2newimagevox_mat().i() * NewimageVox2NewimageVoxMatrix(affmat,srcvol,destvol) * srcvol.niftivox2newimagevox_mat() * srccoord; 
       }
       cout << destcoord(1) << "  " << destcoord(2) << "  " << destcoord(3) << endl;
     }
@@ -247,9 +246,9 @@ int main(int argc,char *argv[])
       if (oldsrc == srccoord)  return 0;
       oldsrc = srccoord;
       if (globalopts.mm) {  // in mm
-	destcoord = destvol.vox2mm_mat() * Vox2VoxMatrix(affmat,srcvol,destvol) * srcvol.vox2mm_mat().i() * srccoord; 
+	destcoord = destvol.newimagevox2mm_mat() * NewimageVox2NewimageVoxMatrix(affmat,srcvol,destvol) * srcvol.newimagevox2mm_mat().i() * srccoord; 
       } else { // in voxels
-	destcoord = Vox2VoxMatrix(affmat,srcvol,destvol) * srccoord; 
+	destcoord = destvol.niftivox2newimagevox_mat().i() * NewimageVox2NewimageVoxMatrix(affmat,srcvol,destvol) * srcvol.niftivox2newimagevox_mat() * srccoord;
       }
       cout << destcoord(1) << "  " << destcoord(2) << "  " << destcoord(3) << endl;
     }

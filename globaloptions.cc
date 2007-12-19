@@ -30,13 +30,8 @@ void globaloptions::parse_command_line(int argc,char** argv,
     if (arg.size()<1) { n++; continue; }
     first = arg[0];
     if (first!='-') {
-      inputfname = arg;
-      n++;
-      cerr << "WARNING: change in option usage" << endl << endl;
-      cerr << "To specify the input volume the option -in should be used" 
-	   << endl << "Accepting the filename for now, but please update "
-	   << "to new syntax in future." << endl << endl;
-      continue;
+      cerr << "Unrecognised option " << first << endl;
+      exit(-1);
     }
     
     // put options without arguments here

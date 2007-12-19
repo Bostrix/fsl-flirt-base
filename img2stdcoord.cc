@@ -13,6 +13,8 @@
 #define WANT_STREAM
 #define WANT_MATH
 
+#define EXPOSE_TREACHEROUS 1
+
 #include "newmatap.h"
 #include "newmatio.h"
 #include "miscmaths/miscmaths.h"
@@ -204,12 +206,11 @@ int main(int argc,char *argv[])
 
   // read matrices
   Matrix affmat(4,4);
-  int returnval;
   bool use_sform=false;
   if (globalopts.xfmfname.length()>0) {
-    returnval = read_matrix(affmat,globalopts.xfmfname,imgvol,stdvol);
+    affmat = read_ascii_matrix(globalopts.xfmfname);
     use_sform = false;
-    if (returnval<0) {
+    if (affmat.Nrows()<4) {
       cerr << "Cannot read transform file" << endl;
       return -2;
     }
@@ -229,18 +230,21 @@ int main(int argc,char *argv[])
 
   if (use_sform) {
     // set the main matrix
-    vox2std = imgvol.vox2mm_mat();
-    if (imgvol.vox2mm_code()==NIFTI_XFORM_UNKNOWN) { 
+    vox2std = imgvol.newimagevox2mm_mat();
+    if ( (imgvol.sform_code()==NIFTI_XFORM_UNKNOWN) && 
+	 (imgvol.qform_code()==NIFTI_XFORM_UNKNOWN) ) { 
       cerr << "WARNING:: standard coordinates not set in image" << endl; 
     }
   } else {
     // set the main matrix
-    vox2std = stdvol.vox2mm_mat() * Vox2VoxMatrix(affmat,imgvol,stdvol);
-    if (stdvol.vox2mm_code()==NIFTI_XFORM_UNKNOWN) { 
+    vox2std = stdvol.newimagevox2mm_mat() * 
+      NewimageVox2NewimageVoxMatrix(affmat,imgvol,stdvol);
+    if ( (stdvol.sform_code()==NIFTI_XFORM_UNKNOWN) &&
+	 (stdvol.qform_code()==NIFTI_XFORM_UNKNOWN) ) { 
       cerr << "WARNING:: standard coordinates not set in standard image" << endl; 
     }
     if (globalopts.verbose>3) {
-      cout << " stdvox2world =" << endl << stdvol.vox2mm_mat() << endl << endl;
+      cout << " stdvox2world =" << endl << stdvol.newimagevox2mm_mat() << endl << endl;
     }
   }
 
@@ -296,9 +300,9 @@ int main(int argc,char *argv[])
     }
     
     if (globalopts.mm) {  // in mm
-      stdcoord = vox2std * imgvol.vox2mm_mat().i() * imgcoord;
+      stdcoord = vox2std * imgvol.newimagevox2mm_mat().i() * imgcoord;
     } else { // in voxels
-      stdcoord = vox2std * imgcoord; 
+      stdcoord = vox2std * imgvol.niftivox2newimagevox_mat() * imgcoord; 
     }
     cout << stdcoord(1) << "  " << stdcoord(2) << "  " << stdcoord(3) << endl;
   }

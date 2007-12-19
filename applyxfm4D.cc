@@ -42,7 +42,7 @@ int fmrib_main(int argc, char* argv[])
 
     Matrix affmat(4,4);
     string matname;
-    if (singlematrix) { read_matrix(affmat,transname,invol[0]); }
+    if (singlematrix) { affmat = read_ascii_matrix(transname); }
 
     if (invol.maxt() - invol.mint() > 10000) {
       cerr << "WARNING:: More than 10000 volumes - only doing first 10000" << endl;
@@ -62,7 +62,7 @@ int fmrib_main(int argc, char* argv[])
 	n -= (n/10)*10;
 	matname += (nc + (char) n);
 	cout << matname << endl;
-	read_matrix(affmat,matname,invol[0]);
+	affmat = read_ascii_matrix(matname);
       }
       
       dummy = refvol;
@@ -83,7 +83,7 @@ int fmrib_main(int argc, char* argv[])
     invol.definesincinterpolation("r",9);
 
     Matrix affmat(4,4);
-    read_matrix(affmat,transname,invol);
+    affmat = read_ascii_matrix(transname);
     
     affine_transform(invol,outvol,affmat);
     save_volume(outvol,oname,vinfo);

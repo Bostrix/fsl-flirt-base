@@ -2,7 +2,7 @@
 
     Mark Jenkinson, FMRIB Image Analysis Group
 
-    Copyright (C) 1999-2006 University of Oxford  */
+    Copyright (C) 1999-2007 University of Oxford  */
 
 /*  CCOPYRIGHT  */
 
@@ -73,14 +73,13 @@ void print_usage(int argc, char *argv[])
 
   cout << "convert_xfm (Version " << version << ")" << endl
        << "Tool for manipulating FSL transformation matrices" << endl
-       << "Copyright(c) 1999, University of Oxford (Mark Jenkinson)" << endl
+       << "Copyright(c) 1999-2007, University of Oxford (Mark Jenkinson)" << endl
        << endl 
        << "Usage: " << argv[0] << " [options] <input-matrix-filename>" << endl
        << "  e.g. " << argv[0] << " -omat <outmat> -inverse <inmat>" << endl
        << "       " << argv[0] << " -omat <outmat_AtoC> -concat <mat_BtoC> <mat_AtoB>" << endl << endl
        << "  Available options are:" << endl
        << "        -omat <matrix-filename>            (4x4 ascii format)" << endl
-    //       << "        -ominc <matrix-filename>           (MINC format)" << endl
        << "        -concat <second-matrix-filename>" << endl
        << "        -fixscaleskew <second-matrix-filename>" << endl
        << "        -inverse                           (Reference image must be the one originally used)" << endl
@@ -118,10 +117,6 @@ void parse_command_line(int argc, char* argv[])
       globalopts.inverse = true;
       n++;
       continue;
-    } else if ( arg == "-matonly" ) {
-      globalopts.matonly = true;
-      n++;
-      continue;
     } else if ( arg == "-v" ) {
       globalopts.verbose = 5;
       n++;
@@ -135,27 +130,12 @@ void parse_command_line(int argc, char* argv[])
       }
 
     // put options with 1 argument here
-    if ( arg == "-ref") {
-      globalopts.reffname = argv[n+1];
-      globalopts.matonly = false;
-      n+=2;
-      continue;
-    } else if ( arg == "-in") {
-      globalopts.testfname = argv[n+1];
-      globalopts.matonly = false;
-      n+=2;
-      continue;
-    } else if ( arg == "-concat") {
+    if ( arg == "-concat") {
       globalopts.concatfname = argv[n+1];
       n+=2;
       continue;
     } else if ( arg == "-fixscaleskew") {
       globalopts.fixfname = argv[n+1];
-      n+=2;
-      continue;
-    } else if ( arg == "-middlevol") {
-      globalopts.intervolfname = argv[n+1];
-      globalopts.matonly = false;
       n+=2;
       continue;
     } else if ( arg == "-omat") {
@@ -177,15 +157,6 @@ void parse_command_line(int argc, char* argv[])
     cerr << "Input matrix filename not found" << endl << endl;
     print_usage(argc,argv);
     exit(2);
-  }
-  if (!globalopts.matonly) {
-    cerr << "WARNING:: Using old style options - please update usage" << endl;
-  }
-  if ((!globalopts.matonly) && (globalopts.testfname.size()<1)) {
-    cerr << "ERROR:: Inputvol filename not found" << endl << endl;
-  }
-  if ((!globalopts.matonly) && (globalopts.reffname.size()<1)) {
-    cerr << "ERROR:: Reference volume filename not found" << endl << endl;
   }
 }
 
@@ -220,39 +191,11 @@ int main(int argc,char *argv[])
 
 
   volume<float> testvol, refvol, intervol;
-  if (! globalopts.matonly) {
-    // read volumes
-    if (read_volume_hdr_only(testvol,globalopts.testfname)<0) {
-      cerr << "Cannot read input volume" << endl;
-      return -1;
-    }
-    if (read_volume_hdr_only(refvol,globalopts.reffname)<0) {
-      cerr << "Cannot read reference volume" << endl;
-      return -1;
-    }
-    if (globalopts.intervolfname.size()>=1) {
-      if (read_volume_hdr_only(intervol,globalopts.intervolfname)<0) {
-	cerr << "Cannot read intermediary volume" << endl;
-	return -1;
-      }
-    } else {
-      intervol = refvol;
-    }
-    
-    if (globalopts.verbose>3) {
-      print_volume_info(refvol,"Reference Volume");
-      print_volume_info(testvol,"Input Volume");
-    }
-  }
 
   // read matrices
   Matrix affmat(4,4);
-  int returnval;
-  if (globalopts.matonly)
-    returnval = read_ascii_matrix(affmat,globalopts.initmatfname);
-  else 
-    returnval = read_matrix(affmat,globalopts.initmatfname,testvol,intervol);
-  if (returnval<0) {
+  affmat = read_ascii_matrix(globalopts.initmatfname);
+  if (affmat.Nrows()<4) {
     cerr << "Cannot read input-matrix" << endl;
     return -2;
   }
@@ -260,12 +203,9 @@ int main(int argc,char *argv[])
 
   if (globalopts.fixfname.size() >= 1) {
     Matrix fixmat(4,4);
-    if (globalopts.matonly)
-      returnval = read_ascii_matrix(fixmat,globalopts.fixfname);
-    else 
-      returnval = read_matrix(fixmat,globalopts.fixfname,intervol,refvol);
+    fixmat = read_ascii_matrix(globalopts.fixfname);
     
-    if (returnval<0) {
+    if (fixmat.Nrows()<4) {
       cerr << "Cannot read fixscaleskew-matrix" << endl;
       return -3;
     } else {
@@ -286,12 +226,9 @@ int main(int argc,char *argv[])
   
   if (globalopts.concatfname.size() >= 1) {
     Matrix concatmat(4,4);
-    if (globalopts.matonly)
-      returnval = read_ascii_matrix(concatmat,globalopts.concatfname);
-    else 
-      returnval = read_matrix(concatmat,globalopts.concatfname,intervol,refvol);
+    concatmat = read_ascii_matrix(globalopts.concatfname);
     
-    if (returnval<0) {
+    if (concatmat.Nrows()<4) {
       cerr << "Cannot read concat-matrix" << endl;
       return -3;
     } else {
@@ -320,5 +257,3 @@ int main(int argc,char *argv[])
 
   return 0;
 }
-
-

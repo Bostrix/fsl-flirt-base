@@ -39,11 +39,13 @@ int main(int argc,char *argv[])
   }
   
   Matrix affmat1(4,4), affmat2(4,4);
-  if (read_ascii_matrix(affmat1,argv[1])<0) {
+  affmat1 = read_ascii_matrix(argv[1]);
+  if (affmat1.Nrows()<4) {
     cerr << "Could not read matrix " << argv[1] << endl;
     return -2;
   }
-  if (read_ascii_matrix(affmat2,argv[2])<0) {
+  affmat2 = read_ascii_matrix(argv[2]);
+  if (affmat2.Nrows()<4) {
     cerr << "Could not read matrix " << argv[2] << endl;
     return -2;
   }

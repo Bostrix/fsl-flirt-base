@@ -53,14 +53,16 @@ int main(int argc,char *argv[])
 	// NB: need to read all of volume to get cog() - may not need always
         if (read_volume(testvol,argv[2 + offset])<0)  return -1;
       }
-      if (read_matrix(affmat,argv[1 + offset],testvol)<0)   return -2;
-      cor = testvol.cog();
+      affmat = read_ascii_matrix(argv[1 + offset]);
+      if (affmat.Nrows()<4)   return -2;
+      cor = testvol.cog("scaled_mm");
       // the following is for when I get around to offering a cov option
       //cor(1) = (testvol.xsize() - 1.0) * testvol.xdim() / 2.0;
       //cor(2) = (testvol.ysize() - 1.0) * testvol.ydim() / 2.0;
       //cor(3) = (testvol.zsize() - 1.0) * testvol.zdim() / 2.0;
     } else {
-      if (read_ascii_matrix(affmat,argv[1 + offset])<0)   return -2;
+      affmat = read_ascii_matrix(argv[1 + offset]);
+      if (affmat.Nrows()<4) return -2;
     }
 
     //cout << affmat << endl;
