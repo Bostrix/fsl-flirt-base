@@ -18,7 +18,9 @@
 #define WANT_STREAM
 #define WANT_MATH
 
+#ifndef EXPOSE_TREACHEROUS
 #define EXPOSE_TREACHEROUS
+#endif
 
 #include "newmatap.h"
 #include "newmatio.h"
