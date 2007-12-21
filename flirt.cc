@@ -81,7 +81,7 @@ void set_basescale(const string& filenameA, const string& filenameB)
 
 
 int FLIRT_read_volume4D(volume4D<float>& target, const string& filename, 
-			volumeinfo& vinfo, int& LRorder)
+			volumeinfo& vinfo)
 {
   // make voxels bigger if basescale is smaller than 1.0 (and vice versa)
   int retval = read_volume4D(target,filename,vinfo);  // as radiological
@@ -95,7 +95,7 @@ int FLIRT_read_volume4D(volume4D<float>& target, const string& filename,
 }
 
 int FLIRT_read_volume(volume<float>& target, const string& filename, 
-		      volumeinfo& vinfo, int& LRorder)
+		      volumeinfo& vinfo)
 {
   // make voxels bigger if basescale is smaller than 1.0 (and vice versa)
   int retval = read_volume(target,filename,vinfo);  // as radiological
@@ -106,20 +106,6 @@ int FLIRT_read_volume(volume<float>& target, const string& filename,
     target.setzdim(target.zdim() / globaloptions::get().basescale);
   }
   return retval;
-}
-
-int FLIRT_read_volume4D(volume4D<float>& target, const string& filename, 
-			volumeinfo& vinfo)
-{
-  int LRorder;
-  return FLIRT_read_volume4D(target,filename,vinfo,LRorder);
-}
-
-int FLIRT_read_volume(volume<float>& target, const string& filename, 
-		      volumeinfo& vinfo)
-{
-  int LRorder;
-  return FLIRT_read_volume(target,filename,vinfo,LRorder);
 }
 
 int FLIRT_read_volume(volume<float>& target, const string& filename)
@@ -1299,7 +1285,7 @@ int output_dtype(const V& outvol)
 
 ////////////////////////////////////////////////////////////////////////////
 
-
+// this does the applyxfm!
 void no_optimise()
 {
   Tracer tr("no_optimise");
@@ -1311,9 +1297,8 @@ void no_optimise()
 
   // set up image pair and global pointer
   
-  int refLRorder;
   volumeinfo dummy;
-  FLIRT_read_volume(refvol,globaloptions::get().reffname,dummy,refLRorder);
+  FLIRT_read_volume(refvol,globaloptions::get().reffname,dummy);
   FLIRT_read_volume4D(testvol,globaloptions::get().inputfname,
 	      globaloptions::get().vinfo);
 
@@ -1381,7 +1366,6 @@ void no_optimise()
       
       final_transform(testvol[t0],outputvol[tref],globaloptions::get().initmat);
     }
-    outputvol.setLRorder(refLRorder);
     int outputdtype = output_dtype(outputvol);
     save_volume4D_dtype(outputvol,globaloptions::get().outputfname.c_str(),
 			outputdtype,globaloptions::get().vinfo);
@@ -2581,10 +2565,9 @@ int main(int argc,char *argv[])
     float oldbasescale = globaloptions::get().basescale;
     globaloptions::get().basescale = 1.0;
 
-    int refLRorder;
     volumeinfo dummy;
     FLIRT_read_volume(testvol,globaloptions::get().inputfname);
-    FLIRT_read_volume(refvol,globaloptions::get().reffname,dummy,refLRorder);
+    FLIRT_read_volume(refvol,globaloptions::get().reffname,dummy);
     if (globaloptions::get().verbose>=2) {
       print_volume_info(testvol,"testvol");
       print_volume_info(testvol,"refvol");
@@ -2612,7 +2595,6 @@ int main(int argc,char *argv[])
       if (globaloptions::get().verbose>=2) {
 	print_volume_info(newtestvol,"Transformed testvol");
       }
-      newtestvol.setLRorder(refLRorder);
       int outputdtype = output_dtype(newtestvol);
       save_volume_dtype(newtestvol,globaloptions::get().outputfname.c_str(),
 			outputdtype, globaloptions::get().vinfo);
