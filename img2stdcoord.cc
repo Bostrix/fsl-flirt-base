@@ -22,6 +22,7 @@
 #include "miscmaths/miscmaths.h"
 #include "newimage/newimageall.h"
 #include "warpfns/warpfns.h"
+#include "warpfns/fnirt_file_reader.h"
 
 #ifndef NO_NAMESPACE
  using namespace MISCMATHS;
@@ -194,16 +195,17 @@ void print_info(const volume<float>& vol, const string& name) {
 
 ////////////////////////////////////////////////////////////////////////////
 
-ColumnVector NewimageVox2NewimageVox(FnirtFileReader& fnirtfile, const Matrix& affmat,
-				     const volume<float>& srcvol, const volume<float>& destvol,
-				     const ColumnVector& srccoord)
+ColumnVector NewimageCoord2NewimageCoord(const FnirtFileReader& fnirtfile, const Matrix& affmat,
+					 const volume<float>& srcvol, const volume<float>& destvol,
+					 const ColumnVector& srccoord)
 {
   ColumnVector retvec;
   if (fnirtfile.IsValid()) {
-    retvec = NewimageVox2NewimageVox(affmat,fnirtfile.AffineMat(),
-				     fnirtfile.FieldAsNewimageVolume4D(),srcvol,destvol,srccoord);
+    // in the following affmat=example_func2highres.mat, fnirtfile=highres2standard_warp.nii.gz
+    retvec = NewimageCoord2NewimageCoord(affmat,
+					 fnirtfile.FieldAsNewimageVolume4D(true),true,srcvol,destvol,srccoord);
   } else {
-    retvec = NewimageVox2NewimageVox(affmat,srcvol,destvol,srccoord);
+    retvec = NewimageCoord2NewimageCoord(affmat,srcvol,destvol,srccoord);
   }
   return retvec;
 }
@@ -256,10 +258,10 @@ int main(int argc,char *argv[])
   AbsOrRelWarps    wt = UnknownWarps;
   if (globalopts.warpfname != "") {
     try {
-      fnirtfile.Read(warpfname,wt,globalopts.verbose>3);
+      fnirtfile.Read(globalopts.warpfname,wt,globalopts.verbose>3);
     }
     catch (...) {
-      cerr << "An error occured while reading file: " << warpfname << endl;
+      cerr << "An error occured while reading file: " << globalopts.warpfname << endl;
       exit(EXIT_FAILURE);
     }
   }
@@ -327,10 +329,10 @@ int main(int argc,char *argv[])
     
     if (globalopts.mm) {  // in mm
       stdcoord = stdvol.newimagevox2mm_mat() * 
-	NewimageVox2NewimageVox(fnirtfile,affmat,imgvol,stdvol,imgvol.newimagevox2mm_mat().i() * imgcoord);
+	NewimageCoord2NewimageCoord(fnirtfile,affmat,imgvol,stdvol,imgvol.newimagevox2mm_mat().i() * imgcoord);
     } else { // in voxels
       stdcoord = stdvol.newimagevox2mm_mat() * 
-	NewimageVox2NewimageVox(fnirtfile,affmat,imgvol,stdvol,imgvol.niftivox2newimagevox_mat() * imgcoord); 
+	NewimageCoord2NewimageCoord(fnirtfile,affmat,imgvol,stdvol,imgvol.niftivox2newimagevox_mat() * imgcoord); 
     }
     cout << stdcoord(1) << "  " << stdcoord(2) << "  " << stdcoord(3) << endl;
   }

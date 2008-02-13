@@ -21,6 +21,8 @@
 #include "newmatio.h"
 #include "miscmaths/miscmaths.h"
 #include "newimage/newimageall.h"
+#include "warpfns/warpfns.h"
+#include "warpfns/fnirt_file_reader.h"
 
 #ifndef NO_NAMESPACE
  using namespace MISCMATHS;
@@ -193,16 +195,17 @@ void print_info(const volume<float>& vol, const string& name) {
 
 ////////////////////////////////////////////////////////////////////////////
 
-ColumnVector NewimageVox2NewimageVox(FnirtFileReader& fnirtfile, const Matrix& affmat,
-				     const volume<float>& srcvol, const volume<float>& destvol,
-				     const ColumnVector& srccoord)
+ColumnVector NewimageCoord2NewimageCoord(const FnirtFileReader& fnirtfile, const Matrix& affmat,
+					 const volume<float>& srcvol, const volume<float>& destvol,
+					 const ColumnVector& srccoord)
 {
   ColumnVector retvec;
   if (fnirtfile.IsValid()) {
-    retvec = NewimageVox2NewimageVox(affmat,fnirtfile.AffineMat(),
-				     fnirtfile.FieldAsNewimageVolume4D(),srcvol,destvol,srccoord);
+    // in the following affmat=highres2example_func.mat, fnirtfile=highres2standard_warp.nii.gz
+    retvec = NewimageCoord2NewimageCoord(fnirtfile.FieldAsNewimageVolume4D(true),false,
+				     affmat,srcvol,destvol,srccoord);
   } else {
-    retvec = NewimageVox2NewimageVox(affmat,srcvol,destvol,srccoord);
+    retvec = NewimageCoord2NewimageCoord(affmat,srcvol,destvol,srccoord);
   }
   return retvec;
 }
@@ -263,10 +266,10 @@ int main(int argc,char *argv[])
   AbsOrRelWarps    wt = UnknownWarps;
   if (globalopts.warpfname != "") {
     try {
-      fnirtfile.Read(warpfname,wt,globalopts.verbose>3);
+      fnirtfile.Read(globalopts.warpfname,wt,globalopts.verbose>3);
     }
     catch (...) {
-      cerr << "An error occured while reading file: " << warpfname << endl;
+      cerr << "An error occured while reading file: " << globalopts.warpfname << endl;
       exit(EXIT_FAILURE);
     }
   }
@@ -335,11 +338,8 @@ int main(int argc,char *argv[])
       oldstd = stdcoord;
     }
 
-    // map from stdvol space to middlevol space (assume middlevol=imgvol for mm<->vox conversion purposes)
-    imgcoord = NewimageVox2NewimageVox(fnirtfile,Identity(4),stdvol,imgvol,stdvol.newimagevox2mm_mat().i() * stdcoord);
-    // map from middlevol to imgvol space (just affine (mid2img although img2mid is what is read in)
-    //  it also factors out the mm->vox with vox->mm in line above (converting back to the imgvol mm space)
-    imgcoord = NewimageVox2NewimageVox(affmat.i(),imgvol,imgvol,imgcoord);
+    // map from stdvol space to img space 
+    imgcoord = NewimageCoord2NewimageCoord(fnirtfile,affmat.i(),stdvol,imgvol,stdvol.newimagevox2mm_mat().i() * stdcoord);
     // now have imgcoord in newimage voxels in imgvol space
     if (globalopts.mm) {  // in mm
       imgcoord = imgvol.newimagevox2mm_mat() * imgcoord;

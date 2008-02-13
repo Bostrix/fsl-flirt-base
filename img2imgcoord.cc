@@ -13,11 +13,16 @@
 #define WANT_STREAM
 #define WANT_MATH
 
+#ifndef EXPOSE_TREACHEROUS
+#define EXPOSE_TREACHEROUS
+#endif
+
 #include "newmatap.h"
 #include "newmatio.h"
 #include "miscmaths/miscmaths.h"
 #include "newimage/newimageall.h"
 #include "warpfns/warpfns.h"
+#include "warpfns/fnirt_file_reader.h"
 
 
 #ifndef NO_NAMESPACE
@@ -172,16 +177,17 @@ void print_info(const volume<float>& vol, const string& name) {
 
 ////////////////////////////////////////////////////////////////////////////
 
-ColumnVector NewimageVox2NewimageVox(FnirtFileReader& fnirtfile, const Matrix& affmat,
-				     const volume<float>& srcvol, const volume<float>& destvol,
-				     const ColumnVector& srccoord)
+ColumnVector NewimageCoord2NewimageCoord(const FnirtFileReader& fnirtfile, const Matrix& affmat,
+					 const volume<float>& srcvol, const volume<float>& destvol,
+					 const ColumnVector& srccoord)
 {
   ColumnVector retvec;
   if (fnirtfile.IsValid()) {
-    retvec = NewimageVox2NewimageVox(affmat,fnirtfile.AffineMat(),
-				     fnirtfile.FieldAsNewimageVolume4D(),srcvol,destvol,srccoord);
+    // in the following affmat=src2middle.mat, fnirtfile=middle2dest_warp.nii.gz
+    retvec = NewimageCoord2NewimageCoord(affmat,
+				     fnirtfile.FieldAsNewimageVolume4D(true),true,srcvol,destvol,srccoord);
   } else {
-    retvec = NewimageVox2NewimageVox(affmat,srcvol,destvol,srccoord);
+    retvec = NewimageCoord2NewimageCoord(affmat,srcvol,destvol,srccoord);
   }
   return retvec;
 }
@@ -230,10 +236,10 @@ int main(int argc,char *argv[])
   AbsOrRelWarps    wt = UnknownWarps;
   if (globalopts.warpfname != "") {
     try {
-      fnirtfile.Read(warpfname,wt,globalopts.verbose>3);
+      fnirtfile.Read(globalopts.warpfname,wt,globalopts.verbose>3);
     }
     catch (...) {
-      cerr << "An error occured while reading file: " << warpfname << endl;
+      cerr << "An error occured while reading file: " << globalopts.warpfname << endl;
       exit(EXIT_FAILURE);
     }
   }
@@ -268,9 +274,9 @@ int main(int argc,char *argv[])
 	matfile >> srccoord(j);
       }
       if (globalopts.mm) {  // in mm
-	destcoord = destvol.newimagevox2mm_mat() * NewimageVox2NewimageVox(fnirtfile,affmat,srcvol,destvol,srcvol.newimagevox2mm_mat().i() * srccoord); 
+	destcoord = destvol.newimagevox2mm_mat() * NewimageCoord2NewimageCoord(fnirtfile,affmat,srcvol,destvol,srcvol.newimagevox2mm_mat().i() * srccoord); 
       } else { // in voxels
-	destcoord = destvol.niftivox2newimagevox_mat().i() * NewimageVox2NewimageVox(fnirtfile,affmat,srcvol,destvol,srcvol.niftivox2newimagevox_mat() * srccoord); 
+	destcoord = destvol.niftivox2newimagevox_mat().i() * NewimageCoord2NewimageCoord(fnirtfile,affmat,srcvol,destvol,srcvol.niftivox2newimagevox_mat() * srccoord); 
       }
       cout << destcoord(1) << "  " << destcoord(2) << "  " << destcoord(3) << endl;
     }
@@ -290,9 +296,9 @@ int main(int argc,char *argv[])
       if (oldsrc == srccoord)  return 0;
       oldsrc = srccoord;
       if (globalopts.mm) {  // in mm
-	destcoord = destvol.newimagevox2mm_mat() * NewimageVox2NewimageVox(fnirtfile,affmat,srcvol,destvol,srccoord) * srcvol.newimagevox2mm_mat().i(); 
+	destcoord = destvol.newimagevox2mm_mat() * NewimageCoord2NewimageCoord(fnirtfile,affmat,srcvol,destvol,srccoord) * srcvol.newimagevox2mm_mat().i(); 
       } else { // in voxels
-	destcoord = destvol.niftivox2newimagevox_mat().i() * NewimageVox2NewimageVox(fnirtfile,affmat,srcvol,destvol,srccoord) * srcvol.niftivox2newimagevox_mat();
+	destcoord = destvol.niftivox2newimagevox_mat().i() * NewimageCoord2NewimageCoord(fnirtfile,affmat,srcvol,destvol,srccoord) * srcvol.niftivox2newimagevox_mat();
       }
       cout << destcoord(1) << "  " << destcoord(2) << "  " << destcoord(3) << endl;
     }
