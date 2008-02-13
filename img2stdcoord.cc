@@ -78,7 +78,7 @@ void print_usage(int argc, char *argv[])
        << "  Options are:\n"
        << "        -img <filename of input image>\n"
        << "        -std <filename of standard image>\n"
-       << "        -xfm <filename of affine transform   (e.g. img2std.mat)>\n"
+       << "        -xfm <filename of affine transform   (e.g. example_func2standard.mat)>\n"
        << "        -warp <filename of warpfield (e.g. highres2standard_warp.nii.gz)>\n"
        << "        -premat <filename of pre-warp affine transform  (e.g. example_func2highres.mat)>   (default=identity)\n"
        << "        -vox                                 (input coordinates in voxels - default)\n"
