@@ -4,7 +4,7 @@ include ${FSLCONFDIR}/default.mk
 
 PROJNAME = flirt
 
-USRINCFLAGS = -I${INC_NEWMAT} -I${INC_ZLIB}
+USRINCFLAGS = -I${INC_NEWMAT} -I${INC_ZLIB} -I${INC_BOOST}
 USRLDFLAGS = -L${LIB_NEWMAT} -L${LIB_ZLIB}
 
 LIBS = -lwarpfns -lbasisfield -lnewimage -lmiscmaths -lprob -lfslio -lniftiio -lznz -lnewmat -lutils -lm -lz
