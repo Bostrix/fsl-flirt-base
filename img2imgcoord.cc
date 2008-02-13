@@ -74,8 +74,8 @@ void print_usage(int argc, char *argv[])
        << "        -src <filename of source image>        \n"
        << "        -dest <filename of destination image>  \n"
        << "        -xfm <filename of affine transform     (e.g. source2dest.mat)>\n"
-       << "        -warp <filename of *INVERSE* warpfield (e.g. dest2image_warp.nii.gz)>\n"
-       << "        -premat <filename of pre-warp affine transform  (e.g. source2image.mat)>   (default=identity)\n"
+       << "        -warp <filename of warpfield (e.g. intermediate2dest_warp.nii.gz)>\n"
+       << "        -premat <filename of pre-warp affine transform  (e.g. source2intermediate.mat)>   (default=identity)\n"
        << "        -vox                                   (all coordinates in voxels - default)\n"
        << "        -mm                                    (all coordinates in mm)\n"
        << "        -v                                     (verbose)\n"
@@ -296,9 +296,9 @@ int main(int argc,char *argv[])
       if (oldsrc == srccoord)  return 0;
       oldsrc = srccoord;
       if (globalopts.mm) {  // in mm
-	destcoord = destvol.newimagevox2mm_mat() * NewimageCoord2NewimageCoord(fnirtfile,affmat,srcvol,destvol,srccoord) * srcvol.newimagevox2mm_mat().i(); 
+	destcoord = destvol.newimagevox2mm_mat() * NewimageCoord2NewimageCoord(fnirtfile,affmat,srcvol,destvol,srcvol.newimagevox2mm_mat().i() * srccoord); 
       } else { // in voxels
-	destcoord = destvol.niftivox2newimagevox_mat().i() * NewimageCoord2NewimageCoord(fnirtfile,affmat,srcvol,destvol,srccoord) * srcvol.niftivox2newimagevox_mat();
+	destcoord = destvol.niftivox2newimagevox_mat().i() * NewimageCoord2NewimageCoord(fnirtfile,affmat,srcvol,destvol,srcvol.niftivox2newimagevox_mat() * srccoord);
       }
       cout << destcoord(1) << "  " << destcoord(2) << "  " << destcoord(3) << endl;
     }
