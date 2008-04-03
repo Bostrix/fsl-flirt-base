@@ -844,7 +844,7 @@ void alignpaxes(Matrix& affmat)
     paxref.SubMatrix(1,3,3,3) = -paxref.SubMatrix(1,3,3,3);
   if (paxtest.Determinant()<0) 
     paxtest.SubMatrix(1,3,3,3) = -paxtest.SubMatrix(1,3,3,3);
-  affmat = Identity(4);
+  affmat = IdentityMatrix(4);
   affmat.SubMatrix(1,3,1,3) = paxref * paxtest.t();
   aligncog(affmat);
 }

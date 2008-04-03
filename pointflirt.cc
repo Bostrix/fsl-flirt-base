@@ -119,7 +119,7 @@ int procrustes()
   b.SubMatrix(7,9,7,9) = s;
   b.SubMatrix(1,9,10,12) = n*w;
   b.SubMatrix(10,12,1,9) = w.t();
-  b.SubMatrix(10,12,10,12) = Identity(3);
+  b.SubMatrix(10,12,10,12) = IdentityMatrix(3);
 
   Matrix uu, vv;
   DiagonalMatrix dd;

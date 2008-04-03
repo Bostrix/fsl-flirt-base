@@ -218,7 +218,7 @@ int main(int argc,char *argv[])
   // read matrices
   Matrix affmat(4,4);
   if (globalopts.prexfmfname == "") {
-    affmat = Identity(4);
+    affmat = IdentityMatrix(4);
   } else {
     affmat = read_ascii_matrix(globalopts.prexfmfname);
   }

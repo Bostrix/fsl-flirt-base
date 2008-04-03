@@ -247,7 +247,7 @@ int main(int argc,char *argv[])
     }
   } else {
     use_sform = true;
-    affmat = Identity(4);
+    affmat = IdentityMatrix(4);
   }
 
     

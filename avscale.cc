@@ -88,17 +88,17 @@ int main(int argc,char *argv[])
     else { cout << "swapped" << endl; }
     cout << endl;
 
-    Matrix swapmat(4,4);
-    swapmat = Identity(4);
+    Matrix swapmat;
+    swapmat = IdentityMatrix(4);
     if (affmat.Determinant()<0) swapmat(1,1) = -1;
     Matrix m2 = sqrtaff(affmat * swapmat);
     Matrix m0 = m2*affmat.i();
     cout << "Forward half transform =\n" << m2 << endl;
     cout << "Backward half transform =\n" << m0 << endl;
 
-    Matrix scale(4,4), skew(4,4);
-    Identity(scale);
-    Identity(skew);
+    Matrix scale,skew;
+    scale=IdentityMatrix(4);
+    skew=IdentityMatrix(4);
     scale(1,1) = params(7);
     scale(2,2) = params(8);
     scale(3,3) = params(9);

@@ -106,7 +106,7 @@ int main(void)
 
   for(theta = 0; theta < 360.0; theta += 4.0)
     {
-      Matrix tr1(4,4), tr2(4,4), rot(4,4);
+      Matrix tr1, tr2, rot(4,4);
       ColumnVector angl(3), trans(3);
       trans = 0;
       angl = 0;
@@ -114,11 +114,11 @@ int main(void)
 
       make_rot(angl,trans,rot);
 
-      Identity(tr1);
+      tr1=IdentityMatrix(4);
       tr1(1,4) = -(test.xsize())/2.0;
       tr1(2,4) = -(test.ysize())/2.0;
       tr1(3,4) = -(test.zsize())/2.0;
-      Identity(tr2);
+      tr2=IdentityMatrix(4);
       tr2(1,4) = (test.xsize())/2.0;
       tr2(2,4) = (test.ysize())/2.0;
       tr2(3,4) = (test.zsize())/2.0;
