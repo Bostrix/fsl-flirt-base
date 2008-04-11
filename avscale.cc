@@ -33,7 +33,7 @@ int main(int argc,char *argv[])
   try {
 
     if (argc<2) { 
-      cerr << "Usage: " << argv[0] << " [--allparams] matrixfile [non-reference-volume]\n"; 
+      cerr << "Usage: " << argv[0] << " [--allparams/--inverteddies] matrixfile [non-reference-volume]\n"; 
       return -1; 
     }
 
@@ -107,8 +107,23 @@ int main(int argc,char *argv[])
     skew(2,3) = params(12);
     Matrix ans;
     ans = affmat.i() * rotmat * skew * scale;
-    //cout << endl << "Matrix check: mat^-1 * rotmat * skew * scale =\n";
-    //cout << ans << endl;
+
+    if (optionarg=="--inverteddies") {
+      cout << endl << "Matrix check: mat^-1 * rotmat * skew * scale =\n";
+      cout << ans << endl;
+
+      // reconstitute scale and skew matrices with the inverse effect in y
+      scale(1,1) = params(7);
+      scale(2,2) = 1.0/params(8);
+      scale(3,3) = params(9);
+      skew(1,2) = -params(10);
+      skew(1,3) = params(11);
+      skew(2,3) = -params(12);
+      Matrix newxfm;
+      newxfm = rotmat * skew * scale;
+      cout << "Inverted eddy matrix:" << endl << newxfm << endl;
+    }
+    
 
     return 0;
   }
