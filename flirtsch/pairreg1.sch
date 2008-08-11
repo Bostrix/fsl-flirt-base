@@ -23,21 +23,25 @@ dualsort US UP
 clear U
 optimise 7 US:1-3  0.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 4
 optimise 7 UP:1-3  0.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 4
+# also try the identity transform as a starting point at this resolution
+clear UQ
+setrow UQ  1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1
+optimise 7 UQ  0.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 4
 sort U
 copy U UA
-# select best 3 optimised solutions and try perturbations of these
+# select best 4 optimised solutions and try perturbations of these
 clear U
-copy UA:1-3 U
-optimise 7 UA:1-3  1.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 4
-optimise 7 UA:1-3 -1.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 4
-optimise 7 UA:1-3  0.0   1.0   0.0   0.0   0.0   0.0   0.0  rel 4
-optimise 7 UA:1-3  0.0  -1.0   0.0   0.0   0.0   0.0   0.0  rel 4
-optimise 7 UA:1-3  0.0   0.0   1.0   0.0   0.0   0.0   0.0  rel 4
-optimise 7 UA:1-3  0.0   0.0  -1.0   0.0   0.0   0.0   0.0  rel 4
-optimise 7 UA:1-3  0.0   0.0   0.0   0.0   0.0   0.0   0.1  abs 4
-optimise 7 UA:1-3  0.0   0.0   0.0   0.0   0.0   0.0  -0.1  abs 4
-optimise 7 UA:1-3  0.0   0.0   0.0   0.0   0.0   0.0   0.2  abs 4
-optimise 7 UA:1-3  0.0   0.0   0.0   0.0   0.0   0.0  -0.2  abs 4
+copy UA:1-4 U
+optimise 7 UA:1-4  1.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 4
+optimise 7 UA:1-4 -1.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 4
+optimise 7 UA:1-4  0.0   1.0   0.0   0.0   0.0   0.0   0.0  rel 4
+optimise 7 UA:1-4  0.0  -1.0   0.0   0.0   0.0   0.0   0.0  rel 4
+optimise 7 UA:1-4  0.0   0.0   1.0   0.0   0.0   0.0   0.0  rel 4
+optimise 7 UA:1-4  0.0   0.0  -1.0   0.0   0.0   0.0   0.0  rel 4
+optimise 7 UA:1-4  0.0   0.0   0.0   0.0   0.0   0.0   0.1  abs 4
+optimise 7 UA:1-4  0.0   0.0   0.0   0.0   0.0   0.0  -0.1  abs 4
+optimise 7 UA:1-4  0.0   0.0   0.0   0.0   0.0   0.0   0.2  abs 4
+optimise 7 UA:1-4  0.0   0.0   0.0   0.0   0.0   0.0  -0.2  abs 4
 sort U
 copy U UB
 # 2mm scale

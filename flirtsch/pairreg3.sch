@@ -22,5 +22,8 @@ setscale 1
 setoption smoothing 1
 setoption boundguess 1
 clear U
-optimise 12 UF:1  0.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 1
+# also try the identity transform as a starting point at this resolution
+setrow UF  1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1
+optimise 12 UF:1-2  0.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 1
 sort U
+

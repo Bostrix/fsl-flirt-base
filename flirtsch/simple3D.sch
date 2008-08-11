@@ -11,7 +11,7 @@ setscale 4
 setoption smoothing 4
 clear U
 clear UB
-# optimise best 3 candidates (pre and post 8mm optimisations)
+# optimise best 1 candidate (pre and post 8mm optimisations)
 clear U
 optimise 7 UA:1  0.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 4
 sort U
@@ -48,5 +48,8 @@ setscale 1
 setoption smoothing 1
 setoption boundguess 1
 clear U
-optimise 12 UF:1  0.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 1
+# also try the identity transform as a starting point at this resolution
+setrow UF  1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1
+optimise 12 UF:1-2  0.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 1
 sort U
+

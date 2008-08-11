@@ -66,6 +66,10 @@ copy U UL
 # optimise best 3 candidates
 clear U
 optimise 12 UL:1-3  0.0   0.0   0.0   0.0   0.0   0.0   0.0  abs 4
+# also try the identity transform as a starting point at this resolution
+clear UQ
+setrow UQ  1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1
+optimise 7 UQ  0.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 4
 clear UB
 copy U UB
 
@@ -91,5 +95,7 @@ setoption smoothing 1
 setoption boundguess 1
 setoption paramsubset 1  0 0 0 0 0 1 0 0 0 0 0 0
 clear U
-optimise 12 UF:1  0.0   0.0   0.0   0.0   0.0   0.0   0.0  abs 1
+# also try the identity transform as a starting point at this resolution
+setrow UF  1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1
+optimise 12 UF:1-2  0.0   0.0   0.0   0.0   0.0   0.0   0.0  abs 1
 sort U
