@@ -2,12 +2,13 @@
 
     Mark Jenkinson, FMRIB Image Analysis Group
 
-    Copyright (C) 1999-2000 University of Oxford  */
+    Copyright (C) 1999-2008 University of Oxford  */
 
 /*  CCOPYRIGHT  */
 
 // Set default schedule file
 //  Written by Mark Jenkinson  11/10/99
+//  Modified by Mark Jenkinson    08/08
 
 #if !defined(__defaultschedule_h)
 #define __defaultschedule_h
@@ -46,22 +47,26 @@ void setdefaultschedule(std::vector<string>& comms)
   comms.push_back("clear U");
   comms.push_back("optimise 7 US:1-3  0.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 4");
   comms.push_back("optimise 7 UP:1-3  0.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 4");
+  comms.push_back("# also try the identity transform as a starting point at this resolution");
+  comms.push_back("clear UQ");
+  comms.push_back("setrow UQ  1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1");
+  comms.push_back("optimise 7 UQ  0.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 4");
   comms.push_back("sort U");
   comms.push_back("copy U UA");
 
-  comms.push_back("# select best 3 optimised solutions and try perturbations of these");
+  comms.push_back("# select best 4 optimised solutions and try perturbations of these");
   comms.push_back("clear U");
-  comms.push_back("copy UA:1-3 U");
-  comms.push_back("optimise 7 UA:1-3  1.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 4");
-  comms.push_back("optimise 7 UA:1-3 -1.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 4");
-  comms.push_back("optimise 7 UA:1-3  0.0   1.0   0.0   0.0   0.0   0.0   0.0  rel 4");
-  comms.push_back("optimise 7 UA:1-3  0.0  -1.0   0.0   0.0   0.0   0.0   0.0  rel 4");
-  comms.push_back("optimise 7 UA:1-3  0.0   0.0   1.0   0.0   0.0   0.0   0.0  rel 4");
-  comms.push_back("optimise 7 UA:1-3  0.0   0.0  -1.0   0.0   0.0   0.0   0.0  rel 4");
-  comms.push_back("optimise 7 UA:1-3  0.0   0.0   0.0   0.0   0.0   0.0   0.1  abs 4");
-  comms.push_back("optimise 7 UA:1-3  0.0   0.0   0.0   0.0   0.0   0.0  -0.1  abs 4");
-  comms.push_back("optimise 7 UA:1-3  0.0   0.0   0.0   0.0   0.0   0.0   0.2  abs 4");
-  comms.push_back("optimise 7 UA:1-3  0.0   0.0   0.0   0.0   0.0   0.0  -0.2  abs 4");
+  comms.push_back("copy UA:1-4 U");
+  comms.push_back("optimise 7 UA:1-4  1.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 4");
+  comms.push_back("optimise 7 UA:1-4 -1.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 4");
+  comms.push_back("optimise 7 UA:1-4  0.0   1.0   0.0   0.0   0.0   0.0   0.0  rel 4");
+  comms.push_back("optimise 7 UA:1-4  0.0  -1.0   0.0   0.0   0.0   0.0   0.0  rel 4");
+  comms.push_back("optimise 7 UA:1-4  0.0   0.0   1.0   0.0   0.0   0.0   0.0  rel 4");
+  comms.push_back("optimise 7 UA:1-4  0.0   0.0  -1.0   0.0   0.0   0.0   0.0  rel 4");
+  comms.push_back("optimise 7 UA:1-4  0.0   0.0   0.0   0.0   0.0   0.0   0.1  abs 4");
+  comms.push_back("optimise 7 UA:1-4  0.0   0.0   0.0   0.0   0.0   0.0  -0.1  abs 4");
+  comms.push_back("optimise 7 UA:1-4  0.0   0.0   0.0   0.0   0.0   0.0   0.2  abs 4");
+  comms.push_back("optimise 7 UA:1-4  0.0   0.0   0.0   0.0   0.0   0.0  -0.2  abs 4");
   comms.push_back("sort U");
   comms.push_back("copy U UB");
 
@@ -100,7 +105,9 @@ void setdefaultschedule(std::vector<string>& comms)
   comms.push_back("setoption smoothing 1");
   comms.push_back("setoption boundguess 1");
   comms.push_back("clear U");
-  comms.push_back("optimise 12 UF:1  0.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 1");
+  comms.push_back("# also try the identity transform as a starting point at this resolution");
+  comms.push_back("setrow UF  1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1");
+  comms.push_back("optimise 12 UF:1-2  0.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 1");
   comms.push_back("sort U");
 }
 
@@ -132,12 +139,17 @@ void set2Ddefaultschedule(std::vector<string>& comms)
   comms.push_back("# optimise best 3 candidates");
   comms.push_back("clear U");
   comms.push_back("optimise 12 UL:1-3  0.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 4");
+  comms.push_back("# also try the identity transform as a starting point at this resolution");
+  comms.push_back("clear UQ");
+  comms.push_back("setrow UQ  1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1");
+  comms.push_back("optimise 7 UQ  0.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 4");
+  comms.push_back("sort U");
   comms.push_back("copy U UM");
-  comms.push_back("# select best 3 optimised solutions and try perturbations of these");
+  comms.push_back("# select best 4 optimised solutions and try perturbations of these");
   comms.push_back("clear U");
-  comms.push_back("copy UM:1-3 U");
-  comms.push_back("optimise 12 UM:1-3  0.0   0.0   1.0   0.0   0.0   0.0   0.0  rel 4");
-  comms.push_back("optimise 12 UM:1-3  0.0   0.0  -1.0   0.0   0.0   0.0   0.0  rel 4");
+  comms.push_back("copy UM:1-4 U");
+  comms.push_back("optimise 12 UM:1-4  0.0   0.0   1.0   0.0   0.0   0.0   0.0  rel 4");
+  comms.push_back("optimise 12 UM:1-4  0.0   0.0  -1.0   0.0   0.0   0.0   0.0  rel 4");
   comms.push_back("sort U");
   comms.push_back("clear UB");
   comms.push_back("copy U UB");
@@ -177,7 +189,9 @@ void set2Ddefaultschedule(std::vector<string>& comms)
   comms.push_back("setoption boundguess 1");
   comms.push_back("setoption paramsubset 3  0 0 1 0 0 0 0 0 0 0 0 0  0 0 0 1 0 0 0 0 0 0 0 0  0 0 0 0 1 0 0 0 0 0 0 0");
   comms.push_back("clear U");
-  comms.push_back("optimise 12 UF:1  0.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 1");
+  comms.push_back("# also try the identity transform as a starting point at this resolution");
+  comms.push_back("setrow UF  1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1");
+  comms.push_back("optimise 12 UF:1-2  0.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 1");
   comms.push_back("sort U");
 }
 
