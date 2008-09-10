@@ -20,6 +20,7 @@ X_OBJS = applyxfm4D.o
 P_OBJS = pointflirt.o
 M_OBJS = makerot.o
 MID_OBJS = midtrans.o
+I_OBJS = midtrans.o
 
 RUNTCLS = Flirt InvertXFM ApplyXFM ConcatXFM Nudge
 XFILES = flirt convert_xfm avscale rmsdiff std2imgcoord img2stdcoord \
@@ -68,4 +69,7 @@ makerot:	${M_OBJS}
 
 midtrans:	${MID_OBJS}
 		${CXX}  ${CXXFLAGS} ${LDFLAGS} -o $@  ${MID_OBJS} ${LIBS}
+
+imapper:	${I_OBJS}
+		${CXX}  ${CXXFLAGS} ${LDFLAGS} -o $@  ${I_OBJS} ${LIBS}
 
