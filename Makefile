@@ -20,7 +20,7 @@ X_OBJS = applyxfm4D.o
 P_OBJS = pointflirt.o
 M_OBJS = makerot.o
 MID_OBJS = midtrans.o
-I_OBJS = midtrans.o
+I_OBJS = imapper.o
 
 RUNTCLS = Flirt InvertXFM ApplyXFM ConcatXFM Nudge
 XFILES = flirt convert_xfm avscale rmsdiff std2imgcoord img2stdcoord \

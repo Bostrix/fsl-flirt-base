@@ -70,7 +70,7 @@ int do_work(int argc, char* argv[])
   Matrix aff;
   aff = read_ascii_matrix(affmatname.value());
   // convert aff into a voxel-voxel matrix
-  aff = vref.sampling_mat().i() * aff * vin.sampling_mat(); 
+  aff = NewimageVox2NewimageVoxMatrix(aff,vin,vref);
   Costfn *cost;
   cost = new Costfn(vref,vin,vrefweight,vinweight);
   cost->set_costfn(CorrRatio);
