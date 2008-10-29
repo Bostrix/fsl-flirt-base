@@ -86,7 +86,6 @@ class globaloptions {
   float coarsedelta;
   float finedelta;
 
-  volumeinfo vinfo;
   short datatype;
   bool forcedatatype;
   int verbose;
@@ -199,7 +198,6 @@ inline globaloptions::globaloptions()
   coarsedelta = 60.0*M_PI/180.0;
   finedelta = 18.0*M_PI/180.0;
 
-  // vinfo = 0;
   datatype = -1;
   forcedatatype = false;
   verbose = 0;

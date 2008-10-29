@@ -80,25 +80,10 @@ void set_basescale(const string& filenameA, const string& filenameB)
 }
 
 
-int FLIRT_read_volume4D(volume4D<float>& target, const string& filename, 
-			volumeinfo& vinfo)
+int FLIRT_read_volume4D(volume4D<float>& target, const string& filename)
 {
   // make voxels bigger if basescale is smaller than 1.0 (and vice versa)
-  int retval = read_volume4D(target,filename,vinfo);  // as radiological
-  // if basescale != 1.0
-  if (fabs(globaloptions::get().basescale - 1.0)>1e-5) {
-    target.setxdim(target.xdim() / globaloptions::get().basescale);
-    target.setydim(target.ydim() / globaloptions::get().basescale);
-    target.setzdim(target.zdim() / globaloptions::get().basescale);
-  }
-  return retval;
-}
-
-int FLIRT_read_volume(volume<float>& target, const string& filename, 
-		      volumeinfo& vinfo)
-{
-  // make voxels bigger if basescale is smaller than 1.0 (and vice versa)
-  int retval = read_volume(target,filename,vinfo);  // as radiological
+  int retval = read_volume4D(target,filename);  // as radiological
   // if basescale != 1.0
   if (fabs(globaloptions::get().basescale - 1.0)>1e-5) {
     target.setxdim(target.xdim() / globaloptions::get().basescale);
@@ -110,11 +95,16 @@ int FLIRT_read_volume(volume<float>& target, const string& filename,
 
 int FLIRT_read_volume(volume<float>& target, const string& filename)
 {
-  volumeinfo vinfo;
-  return FLIRT_read_volume(target,filename,vinfo);
+  // make voxels bigger if basescale is smaller than 1.0 (and vice versa)
+  int retval = read_volume(target,filename);  // as radiological
+  // if basescale != 1.0
+  if (fabs(globaloptions::get().basescale - 1.0)>1e-5) {
+    target.setxdim(target.xdim() / globaloptions::get().basescale);
+    target.setydim(target.ydim() / globaloptions::get().basescale);
+    target.setzdim(target.zdim() / globaloptions::get().basescale);
+  }
+  return retval;
 }
-
-
 
 //------------------------------------------------------------------------//
 
@@ -154,8 +144,8 @@ template <class T>
 int safe_save_volume(const volume<T>& source, const string& filename)
 {
   if (!globaloptions::get().nosave) {
-    save_volume_dtype(source,filename,globaloptions::get().datatype,
-		      globaloptions::get().vinfo);
+    const_cast< volume<T>& >(source).setDisplayMaximumMinimum(0,0);
+    save_volume_dtype(source,filename,globaloptions::get().datatype);
   }
   return 0;
 }
@@ -1150,8 +1140,7 @@ void double_end_slices(volume<float>& testvol)
 int get_testvol(volume<float>& testvol)
 {
   Tracer tr("get_testvol");
-  FLIRT_read_volume(testvol,globaloptions::get().inputfname,
-	      globaloptions::get().vinfo);
+  FLIRT_read_volume(testvol,globaloptions::get().inputfname);
   short dtype;
   dtype = NEWIMAGE::dtype(globaloptions::get().inputfname);
   if (!globaloptions::get().forcedatatype)
@@ -1297,10 +1286,8 @@ void no_optimise()
 
   // set up image pair and global pointer
   
-  volumeinfo dummy;
-  FLIRT_read_volume(refvol,globaloptions::get().reffname,dummy);
-  FLIRT_read_volume4D(testvol,globaloptions::get().inputfname,
-	      globaloptions::get().vinfo);
+  FLIRT_read_volume(refvol,globaloptions::get().reffname);
+  FLIRT_read_volume4D(testvol,globaloptions::get().inputfname);
 
   if ( (refvol.sform_code()!=NIFTI_XFORM_UNKNOWN) && 
        (testvol[0].sform_code()!=NIFTI_XFORM_UNKNOWN) ) {
@@ -1367,8 +1354,9 @@ void no_optimise()
       final_transform(testvol[t0],outputvol[tref],globaloptions::get().initmat);
     }
     int outputdtype = output_dtype(outputvol);
+    outputvol.setDisplayMaximumMinimum(0,0);
     save_volume4D_dtype(outputvol,globaloptions::get().outputfname.c_str(),
-			outputdtype,globaloptions::get().vinfo);
+			outputdtype);
     if (globaloptions::get().verbose>=2) {
       print_volume_info(outputvol,"Resampled volume");
     }
@@ -2377,7 +2365,6 @@ int main(int argc,char *argv[])
   if (!globaloptions::get().do_optimise) {   
     no_optimise();
   }
-    
   // reset the basescale for images where voxels are quite different from the
   //   usual human brain size
   set_basescale(globaloptions::get().reffname,globaloptions::get().inputfname);
@@ -2565,9 +2552,8 @@ int main(int argc,char *argv[])
     float oldbasescale = globaloptions::get().basescale;
     globaloptions::get().basescale = 1.0;
 
-    volumeinfo dummy;
     FLIRT_read_volume(testvol,globaloptions::get().inputfname);
-    FLIRT_read_volume(refvol,globaloptions::get().reffname,dummy);
+    FLIRT_read_volume(refvol,globaloptions::get().reffname);
     if (globaloptions::get().verbose>=2) {
       print_volume_info(testvol,"testvol");
       print_volume_info(testvol,"refvol");
@@ -2596,8 +2582,9 @@ int main(int argc,char *argv[])
 	print_volume_info(newtestvol,"Transformed testvol");
       }
       int outputdtype = output_dtype(newtestvol);
+      newtestvol.setDisplayMaximumMinimum(0,0);
       save_volume_dtype(newtestvol,globaloptions::get().outputfname.c_str(),
-			outputdtype, globaloptions::get().vinfo);
+			outputdtype);
     }
     if ( (globaloptions::get().outputmatascii.size()<=0) ) {
       cout << endl << "Final result: " << endl << finalmat << endl;
