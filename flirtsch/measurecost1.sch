@@ -7,4 +7,3 @@ setrow UA  1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1
 measurecost 7 UA 0 0 0 0 0 0 abs
 printparams U
 
-
