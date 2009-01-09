@@ -26,8 +26,7 @@ int fmrib_main(int argc, char* argv[])
     // 4D mode
     volume4D<T> invol, outvol;
     volume<T> refvol, dummy;
-    volumeinfo vinfo;
-    read_volume4D(invol,iname,vinfo);
+    read_volume4D(invol,iname);
     for (int t=0; t<invol.tsize(); t++) {
       invol[t].setpadvalue(invol[t].backgroundval());
     }
@@ -69,14 +68,14 @@ int fmrib_main(int argc, char* argv[])
       affine_transform(invol[m],dummy,affmat);
       outvol.addvolume(dummy);
     }
-    save_volume4D(outvol,oname,vinfo);
+    outvol.setDisplayMaximumMinimum(0,0);
+    save_volume4D(outvol,oname);
 
   } else {
     // 3D mode
     volume<T> invol, outvol;
-    volumeinfo vinfo;
     
-    read_volume(invol,iname,vinfo);
+    read_volume(invol,iname);
     read_volume(outvol,refname);
     invol.setextrapolationmethod(extraslice);
     invol.setinterpolationmethod(sinc);
@@ -86,7 +85,8 @@ int fmrib_main(int argc, char* argv[])
     affmat = read_ascii_matrix(transname);
     
     affine_transform(invol,outvol,affmat);
-    save_volume(outvol,oname,vinfo);
+    outvol.setDisplayMaximumMinimum(0,0);
+    save_volume(outvol,oname);
   }
 
   return 0;
