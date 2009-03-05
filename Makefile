@@ -19,12 +19,11 @@ IMG_OBJS = img2imgcoord.o
 X_OBJS = applyxfm4D.o
 P_OBJS = pointflirt.o
 M_OBJS = makerot.o
-MID_OBJS = midtrans.o
 I_OBJS = imapper.o
 
 RUNTCLS = Flirt InvertXFM ApplyXFM ConcatXFM Nudge
 XFILES = flirt convert_xfm avscale rmsdiff std2imgcoord img2stdcoord \
-	img2imgcoord applyxfm4D pointflirt makerot midtrans
+	img2imgcoord applyxfm4D pointflirt makerot
 TESTXFILES = 
 HFILES =
 SCRIPTS = extracttxt pairreg standard_space_roi flirt_average
@@ -66,9 +65,6 @@ pointflirt:	${P_OBJS}
 
 makerot:	${M_OBJS}
 		${CXX}  ${CXXFLAGS} ${LDFLAGS} -o $@  ${M_OBJS} ${LIBS}
-
-midtrans:	${MID_OBJS}
-		${CXX}  ${CXXFLAGS} ${LDFLAGS} -o $@  ${MID_OBJS} ${LIBS}
 
 imapper:	${I_OBJS}
 		${CXX}  ${CXXFLAGS} ${LDFLAGS} -o $@  ${I_OBJS} ${LIBS}
