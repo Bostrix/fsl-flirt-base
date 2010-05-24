@@ -1115,6 +1115,41 @@ void set_perturbations(Matrix& delta, Matrix& perturbmask)
 
 ////////////////////////////////////////////////////////////////////////////
 
+void set_initmat(const volume<float>& refvol, const volume<float>& testvol)
+{
+  // Initialise with user-supplied matrix
+  if (globaloptions::get().initmatfname.size()>0) {
+    globaloptions::get().initmat =
+      read_ascii_matrix(globaloptions::get().initmatfname);
+  } else {
+    // If not matrix then use s/q form info (unless told to ignore it)
+    if (globaloptions::get().initmatsqform) {
+      if ( ((refvol.qform_code() + refvol.sform_code())>0) && 
+	   ((testvol.qform_code() + testvol.sform_code())>0) ) {
+	globaloptions::get().initmat = refvol.sampling_mat()
+	  * refvol.newimagevox2mm_mat().i() * testvol.newimagevox2mm_mat()
+	  * testvol.sampling_mat().i();
+      }
+    }
+  }
+
+  // Adjust for scaled coordinates
+  //   e.g. basescale=0.1mm => orig coord = 0.2 --> scaled coord = 2
+  //   all external matrices in orig coord (mm) but internally work in
+  //   scaled coords as the input volumes have their voxel size scaled
+  Matrix orig2scaled_coord(4,4);
+  orig2scaled_coord=IdentityMatrix(4);
+  orig2scaled_coord(1,1)=1/globaloptions::get().basescale;
+  orig2scaled_coord(2,2)=1/globaloptions::get().basescale;
+  orig2scaled_coord(3,3)=1/globaloptions::get().basescale;
+  //  need internal version of initmat to go to/from scaled coords
+  globaloptions::get().initmat = orig2scaled_coord * globaloptions::get().initmat * orig2scaled_coord.i();
+
+  if (globaloptions::get().verbose>=2) {
+    cout << "Init Matrix = \n" << globaloptions::get().initmat << endl;
+  }
+}
+
 
 void double_end_slices(volume<float>& testvol)
 {
@@ -1148,11 +1183,7 @@ int get_testvol(volume<float>& testvol)
   if (testvol.zsize()==1) {
     double_end_slices(testvol);
   }
-  if (globaloptions::get().initmatfname.size()>0) {
-    globaloptions::get().initmat = 
-      read_ascii_matrix(globaloptions::get().initmatfname);
-  }
-  
+
   float minval=0.0, maxval=0.0;
   minval = testvol.robustmin();
   maxval = testvol.robustmax();
@@ -1171,7 +1202,6 @@ int get_testvol(volume<float>& testvol)
   }
 
   if (globaloptions::get().verbose>=2) {
-    cout << "Init Matrix = \n" << globaloptions::get().initmat << endl;
     cout << "Testvol sampling matrix =\n" << testvol.sampling_mat() << endl;
     cout << "Testvol Data Type = " << dtype << endl;
     cout << "Testvol intensity ";
@@ -1300,22 +1330,9 @@ void no_optimise()
   dtype = NEWIMAGE::dtype(globaloptions::get().inputfname);
   if (!globaloptions::get().forcedatatype)
     globaloptions::get().datatype = dtype;
+  
 
-  // Initialise with user-supplied matrix
-  if (globaloptions::get().initmatfname.size()>0) {
-    globaloptions::get().initmat =
-      read_ascii_matrix(globaloptions::get().initmatfname);
-  } else {
-    // If not matrix then use s/q form info (unless told to ignore it)
-    if (globaloptions::get().initmatsqform) {
-      if ( ((refvol.qform_code() + refvol.sform_code())>0) && 
-	   ((testvol.qform_code() + testvol.sform_code())>0) ) {
-	globaloptions::get().initmat = refvol.sampling_mat()
-	  * refvol.newimagevox2mm_mat().i() * testvol.newimagevox2mm_mat()
-	  * testvol.sampling_mat().i();
-      }
-    }
-  }
+  set_initmat(refvol,testvol[0]);
 
   if (globaloptions::get().verbose>0) {
     if (refvol.sform_code()!=NIFTI_XFORM_UNKNOWN) {
@@ -2373,6 +2390,7 @@ int main(int argc,char *argv[])
   volume<float> refvol, testvol;
   get_refvol(refvol);
   get_testvol(testvol);
+  set_initmat(refvol,testvol);
 
   if ( (refvol.sform_code()!=NIFTI_XFORM_UNKNOWN) && 
        (testvol.sform_code()!=NIFTI_XFORM_UNKNOWN) ) {
@@ -2390,15 +2408,6 @@ int main(int argc,char *argv[])
     }
   }
 
-  // Initialise with s/q form info (disabled if a user-supplied mat is given)
-  if (globaloptions::get().initmatsqform) {
-    if ( ((refvol.qform_code() + refvol.sform_code())>0) && 
-	 ((testvol.qform_code() + testvol.sform_code())>0) ) {
-      globaloptions::get().initmat = refvol.sampling_mat()
-	* refvol.newimagevox2mm_mat().i() * testvol.newimagevox2mm_mat()
-	* testvol.sampling_mat().i();
-    }
-  }
   if ( (globaloptions::get().verbose>0) || (globaloptions::get().printinit)) {
     cout << "Init Matrix = \n" << globaloptions::get().initmat << endl;
   }
