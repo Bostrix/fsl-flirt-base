@@ -38,7 +38,7 @@
 #endif
 
 // Put current version number here:
-const string version = "5.5";
+const string version = "6.0";
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -46,7 +46,9 @@ const string version = "5.5";
 
 volume<float> global_refweight, global_testweight, global_refweight1;
 volume<float> global_refweight2, global_refweight4, global_refweight8;
-bool global_scale1OK=true;
+volume<float> global_seg, global_init_testvol, global_init_testweight;
+Matrix global_coords, global_norms;
+bool global_scale1OK=true, read_testvol=false;
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -313,6 +315,18 @@ float costfn(const Matrix& uninitaffmat)
   Matrix affmat = uninitaffmat * globaloptions::get().initmat;  // apply initial matrix
   float retval = 0.0;
   globaloptions::get().impair->set_costfn(globaloptions::get().currentcostfn);
+  if ((globaloptions::get().impair->get_costfn()==BBR) && (!globaloptions::get().impair->is_bbr_set())) {
+    cerr << "Setting bbr seg 1" << endl;
+    cerr << "Cost is set to " << globaloptions::get().impair->get_costfn() << endl;
+    cerr << "Cost == BBR is " << (globaloptions::get().impair->get_costfn() == BBR) << endl;
+    cerr << "Result (pre) of is_bbr_set is " << globaloptions::get().impair->is_bbr_set() << endl;
+    if (globaloptions::get().usecoords) {
+      globaloptions::get().impair->set_bbr_coords(global_coords,global_norms);
+    } else {
+      globaloptions::get().impair->set_bbr_seg(global_seg); 
+    }
+    cerr << "Result (post) of is_bbr_set is " << globaloptions::get().impair->is_bbr_set() << endl;
+  }
   retval = globaloptions::get().impair->cost(affmat);
   return retval;
 }
@@ -1115,6 +1129,38 @@ void set_perturbations(Matrix& delta, Matrix& perturbmask)
 
 ////////////////////////////////////////////////////////////////////////////
 
+Matrix scalemat(const Matrix& mat)
+{
+  // Adjust for scaled coordinates
+  //   e.g. basescale=0.1mm => orig coord = 0.2 --> scaled coord = 2
+  //   all external matrices in orig coord (mm) but internally work in
+  //   scaled coords as the input volumes have their voxel size scaled
+  Matrix orig2scaled_coord(4,4), returnmat;
+  orig2scaled_coord=IdentityMatrix(4);
+  orig2scaled_coord(1,1)=1/globaloptions::get().basescale;
+  orig2scaled_coord(2,2)=1/globaloptions::get().basescale;
+  orig2scaled_coord(3,3)=1/globaloptions::get().basescale;
+  //  need internal version of initmat to go to/from scaled coords
+  returnmat = orig2scaled_coord * mat * orig2scaled_coord.i();
+  return returnmat;
+}
+
+
+Matrix qsform_init_mat(const volume<float>& refvol, const volume<float>& testvol) 
+{
+  Matrix returnmat;
+  returnmat = IdentityMatrix(4);
+  if ( ((refvol.qform_code() + refvol.sform_code())>0) && 
+       ((testvol.qform_code() + testvol.sform_code())>0) ) {
+    returnmat = refvol.sampling_mat()
+      * refvol.newimagevox2mm_mat().i() * testvol.newimagevox2mm_mat()
+      * testvol.sampling_mat().i();
+    returnmat = scalemat(returnmat);
+  }
+  return returnmat;
+}
+
+
 void set_initmat(const volume<float>& refvol, const volume<float>& testvol)
 {
   // Initialise with user-supplied matrix
@@ -1124,26 +1170,12 @@ void set_initmat(const volume<float>& refvol, const volume<float>& testvol)
   } else {
     // If not matrix then use s/q form info (unless told to ignore it)
     if (globaloptions::get().initmatsqform) {
-      if ( ((refvol.qform_code() + refvol.sform_code())>0) && 
-	   ((testvol.qform_code() + testvol.sform_code())>0) ) {
-	globaloptions::get().initmat = refvol.sampling_mat()
-	  * refvol.newimagevox2mm_mat().i() * testvol.newimagevox2mm_mat()
-	  * testvol.sampling_mat().i();
-      }
+      globaloptions::get().initmat = qsform_init_mat(refvol,testvol);
     }
   }
 
   // Adjust for scaled coordinates
-  //   e.g. basescale=0.1mm => orig coord = 0.2 --> scaled coord = 2
-  //   all external matrices in orig coord (mm) but internally work in
-  //   scaled coords as the input volumes have their voxel size scaled
-  Matrix orig2scaled_coord(4,4);
-  orig2scaled_coord=IdentityMatrix(4);
-  orig2scaled_coord(1,1)=1/globaloptions::get().basescale;
-  orig2scaled_coord(2,2)=1/globaloptions::get().basescale;
-  orig2scaled_coord(3,3)=1/globaloptions::get().basescale;
-  //  need internal version of initmat to go to/from scaled coords
-  globaloptions::get().initmat = orig2scaled_coord * globaloptions::get().initmat * orig2scaled_coord.i();
+  globaloptions::get().initmat = scalemat(globaloptions::get().initmat);
 
   if (globaloptions::get().verbose>=2) {
     cout << "Init Matrix = \n" << globaloptions::get().initmat << endl;
@@ -1175,30 +1207,38 @@ void double_end_slices(volume<float>& testvol)
 int get_testvol(volume<float>& testvol)
 {
   Tracer tr("get_testvol");
-  FLIRT_read_volume(testvol,globaloptions::get().inputfname);
-  short dtype;
-  dtype = NEWIMAGE::dtype(globaloptions::get().inputfname);
-  if (!globaloptions::get().forcedatatype)
-    globaloptions::get().datatype = dtype;
-  if (testvol.zsize()==1) {
-    double_end_slices(testvol);
-  }
-
+  short dtype=0;
   float minval=0.0, maxval=0.0;
-  minval = testvol.robustmin();
-  maxval = testvol.robustmax();
-  if (globaloptions::get().clamping) clamp(testvol,minval,maxval);
-
-  if (globaloptions::get().useweights) {
-    if (globaloptions::get().testweightfname.length()>0) {
-      FLIRT_read_volume(global_testweight,globaloptions::get().testweightfname);
-      if (global_testweight.zsize()==1) {
-	double_end_slices(global_testweight);
-      }
-    } else {
-      global_testweight = testvol;  // Fix size and dimensions
-      global_testweight = 1.0;      // Set all elements to unity weighting
+  if (!read_testvol) {
+    FLIRT_read_volume(testvol,globaloptions::get().inputfname);
+    dtype = NEWIMAGE::dtype(globaloptions::get().inputfname);
+    if (!globaloptions::get().forcedatatype)
+      globaloptions::get().datatype = dtype;
+    if (testvol.zsize()==1) {
+      double_end_slices(testvol);
     }
+
+    minval = testvol.robustmin();
+    maxval = testvol.robustmax();
+    if (globaloptions::get().clamping) clamp(testvol,minval,maxval);
+    
+    if (globaloptions::get().useweights) {
+      if (globaloptions::get().testweightfname.length()>0) {
+	FLIRT_read_volume(global_testweight,globaloptions::get().testweightfname);
+	if (global_testweight.zsize()==1) {
+	  double_end_slices(global_testweight);
+	}
+      } else {
+	global_testweight = testvol;  // Fix size and dimensions
+	global_testweight = 1.0;      // Set all elements to unity weighting
+      }
+    }
+    global_init_testvol = testvol;
+    global_init_testweight = global_testweight;
+    read_testvol = true;
+  } else {
+    testvol = global_init_testvol;
+    global_testweight = global_init_testweight;
   }
 
   if (globaloptions::get().verbose>=2) {
@@ -1240,6 +1280,25 @@ int get_refvol(volume<float>& refvol)
     }
   }
 
+  if (globaloptions::get().useseg) {
+    cerr << "Reading GLOBAL SEG" << endl;
+    if (!globaloptions::get().usecoords) {
+      FLIRT_read_volume(global_seg,globaloptions::get().wmsegfname);
+      if (global_seg.zsize()==1) { 
+	double_end_slices(global_seg);
+      }
+    } else {
+      global_coords = read_ascii_matrix(globaloptions::get().wmcoordsfname);
+      global_norms = read_ascii_matrix(globaloptions::get().wmnormsfname);
+      if ( (global_coords.Nrows()==0) || (global_norms.Nrows()==0) || 
+	   (global_coords.Nrows() != global_norms.Nrows()) ) 
+	{
+	  cerr << "Coordinate and Normal matrices " << globaloptions::get().wmcoordsfname << " and " << globaloptions::get().wmnormsfname << " are either zero size or different sizes" << endl; 
+	  exit(1);
+	}
+    }
+  }
+  
   if (globaloptions::get().verbose>=2) {
     cout << "Refvol intensity ";
     if (globaloptions::get().clamping) {
@@ -1643,6 +1702,31 @@ int usrsetrow(MatVecPtr usrsrcmat,const std::vector<string> &words)
   return 0;
 }
 
+int usrsetrowqsform(MatVecPtr usrsrcmat, const volume<float>& refvol, 
+		    const volume<float>& testvol)
+{
+  Tracer tr("usrsetrowqsform");
+  // SETROWQSFORM mat
+
+  Matrix qsinitmat(4,4);
+  // set the qsform initialisation matrix (if not already the -init)
+  if (globaloptions::get().initmatsqform) {
+    qsinitmat = IdentityMatrix(4);
+  } else {
+    qsinitmat = qsform_init_mat(refvol,testvol);
+  }
+  RowVector currow(17);
+  currow = 0.0;
+  unsigned int c=2;
+  for (unsigned int row=1; row<=4; row++) {
+    for (unsigned int col=1; col<=4; col++) {
+      currow(c++) = qsinitmat(row,col);
+    }
+  }
+  usrsrcmat->push_back(currow);
+  return 0;
+}
+
 int usrsetrowparams(MatVecPtr usrsrcmat,const std::vector<string> &words)
 {
   Tracer tr("usrsetrowparams");
@@ -2019,12 +2103,17 @@ void usrsetscale(float usrscale,
   Costfn *globalpair=0;
   if (usrscale > 0.0) globaloptions::get().requestedscale = usrscale;
   
+  cerr << "MJ DEBUG OUTPUT: scale = " << scale << endl;
+  cerr << "MJ DEBUG OUTPUT: min_sampling = " << globaloptions::get().min_sampling << endl;
+  print_volume_info(testvol,"testvol DEBUG");
+
+  // refresh the testvol (get rid of previous blurred version)
+  get_testvol(testvol);
+
   if ( (globaloptions::get().force_scaling) || 
        (globaloptions::get().min_sampling<=1.25 * scale) ) {
     globaloptions::get().lastsampling = scale;
     // blur test volume to correct scale
-    get_testvol(testvol);
-
     volume<float> testvolnew;
     testvolnew = blur(testvol,scale);
     if (globaloptions::get().useweights) {
@@ -2077,6 +2166,15 @@ void usrsetscale(float usrscale,
     globalpair->set_no_bins(int(globaloptions::get().no_bins/scale));
     globalpair->smoothsize = globaloptions::get().smoothsize;
     globalpair->fuzzyfrac = globaloptions::get().fuzzyfrac;
+    if ((globalpair->get_costfn()==BBR) && (!globalpair->is_bbr_set())) {
+      cerr << "Setting bbr seg 2" << endl;
+      cerr << "Cost is set to " << globalpair->get_costfn() << endl;
+      if (globaloptions::get().usecoords) {
+	globalpair->set_bbr_coords(global_coords,global_norms);
+      } else {
+	globalpair->set_bbr_seg(global_seg); // this shouldn't normally be done at repeated scales - it should be done directly on the unresampled image
+      }
+    }
     if (globaloptions::get().verbose>=3) {
       if (globaloptions::get().impair) {
 	cout << "Previous scale used " << globaloptions::get().impair->count()
@@ -2086,6 +2184,8 @@ void usrsetscale(float usrscale,
     if (globaloptions::get().impair)  delete globaloptions::get().impair;
     globaloptions::get().impair = globalpair;
   }
+  cerr << "DEBUG:: End of usrsetscale" << endl;
+  save_volume(testvol,"debug_testvol");
 }
 
 
@@ -2320,6 +2420,16 @@ void interpretcommand(const string& comline, bool& skip,
     int d1, d2;
     parsematname(words[1],src,d1,d2);
     usrsetrow(src,words);
+  } else if (words[0]=="setrowqsform") {
+    // SETROWQSFORM
+    if (words.size()<2) {
+      cerr << "Wrong number of args to SETROWQSFORM" << endl;
+      exit(-1);
+    }
+    MatVecPtr src;
+    int d1, d2;
+    parsematname(words[1],src,d1,d2);
+    usrsetrowqsform(src,refvol,testvol);
   } else if (words[0]=="setrowparams") {
     // SETROWPARAMS
     if (words.size()<14) {
@@ -2434,6 +2544,7 @@ int main(int argc,char *argv[])
       cout << "Subsampling the volumes" << endl;
       
     resample_refvol(refvol,globaloptions::get().min_sampling);
+    // the following tests enforce a maximum subsampling (i.e. for large voxel sizes, do not subsample as much as if the voxels are small)
     if (globaloptions::get().min_sampling < 1.9) {
       refvol_2 = subsample_by_2(refvol);
     } else {
@@ -2482,7 +2593,7 @@ int main(int argc,char *argv[])
     }
 
   } else {
-    // if no resampling chosen, then refvol is simply copied
+    // if no resampling chosen, then refvol is simply copied and nothing done to testvol
     refvol_8 = refvol;
     refvol_4 = refvol;
     refvol_2 = refvol;
@@ -2508,9 +2619,18 @@ int main(int argc,char *argv[])
   globaloptions::get().impair->set_no_bins(globaloptions::get().no_bins/8);
   globaloptions::get().impair->smoothsize = globaloptions::get().smoothsize;
   globaloptions::get().impair->fuzzyfrac = globaloptions::get().fuzzyfrac;
-
+  if ((globaloptions::get().impair->get_costfn()==BBR) && (!globaloptions::get().impair->is_bbr_set())) {
+    cerr << "Setting bbr seg 3" << endl;
+    cerr << "Cost is set to " << globaloptions::get().impair->get_costfn() << endl;
+    if (globaloptions::get().usecoords) {
+      globaloptions::get().impair->set_bbr_coords(global_coords,global_norms);
+    } else {
+      globaloptions::get().impair->set_bbr_seg(global_seg); // MJ: a bit wasteful doing this repeatedly - should find a way to copy across the points and norms
+    }
+  }
+  
   if (globaloptions::get().verbose>=2) print_volume_info(testvol,"TESTVOL");
-
+  
 
   Matrix matresult(4,4);
   ColumnVector params_8(12), param_tol(12);

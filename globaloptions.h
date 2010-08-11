@@ -50,6 +50,9 @@ class globaloptions {
   string initmatfname;
   string refweightfname;
   string testweightfname;
+  string wmsegfname;
+  string wmcoordsfname;
+  string wmnormsfname;
   bool initmatsqform;
   bool printinit;
   Matrix initmat;
@@ -95,6 +98,8 @@ class globaloptions {
   bool iso;
   bool resample;
   bool useweights;
+  bool useseg;
+  bool usecoords;
   bool mode2D;
   bool clamping;
   bool interpblur;
@@ -207,6 +212,8 @@ inline globaloptions::globaloptions()
   iso = true;
   resample = true;
   useweights = false;
+  useseg = false;
+  usecoords = false;
   mode2D = false;
   clamping = true;
   interpblur = true;

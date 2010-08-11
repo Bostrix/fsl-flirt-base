@@ -140,6 +140,23 @@ void globaloptions::parse_command_line(int argc,char** argv,
       useweights = true;
       n+=2;
       continue;
+    } else if ( arg == "-wmseg") {
+      wmsegfname = argv[n+1];
+      useseg = true;
+      n+=2;
+      continue;
+    } else if ( arg == "-wmcoords") {
+      wmcoordsfname = argv[n+1];
+      useseg = true;
+      usecoords = true;
+      n+=2;
+      continue;
+    } else if ( arg == "-wmnorms") {
+      wmnormsfname = argv[n+1];
+      useseg = true;
+      usecoords = true;
+      n+=2;
+      continue;
     } else if ( arg == "-omat") {
       outputmatascii = argv[n+1];
       n+=2;
@@ -227,6 +244,8 @@ void globaloptions::parse_command_line(int argc,char** argv,
 	  maincostfn = LeastSq;
 	} else if (costarg == "labeldiff") {
 	  maincostfn = LabelDiff;
+	} else if (costarg == "bbr") {
+	  maincostfn = BBR;
 	} else {
 	  cerr << "Unrecognised cost function type: " << costarg << endl;
 	  exit(-1);
@@ -251,6 +270,8 @@ void globaloptions::parse_command_line(int argc,char** argv,
 	  searchcostfn = LeastSq;
 	} else if (costarg == "labeldiff") {
 	  searchcostfn = LabelDiff;
+	} else if (costarg == "bbr") {
+	  searchcostfn = BBR;
 	} else {
 	  cerr << "Unrecognised cost function type: " << costarg << endl;
 	  exit(-1);
@@ -365,8 +386,8 @@ void globaloptions::print_usage(int argc, char *argv[])
        << "        -omat <matrix-filename>            (output in 4x4 ascii format)\n"
        << "        -out, -o <outputvol>               (default is none)\n"
        << "        -datatype {char,short,int,float,double}                    (force output data type)\n"
-       << "        -cost {mutualinfo,corratio,normcorr,normmi,leastsq,labeldiff}        (default is corratio)\n"
-       << "        -searchcost {mutualinfo,corratio,normcorr,normmi,leastsq,labeldiff}  (default is corratio)\n"
+       << "        -cost {mutualinfo,corratio,normcorr,normmi,leastsq,labeldiff,bbr}        (default is corratio)\n"
+       << "        -searchcost {mutualinfo,corratio,normcorr,normmi,leastsq,labeldiff,bbr}  (default is corratio)\n"
        << "        -usesqform                         (initialise using appropriate sform or qform)\n"
        << "        -displayinit                       (display initial matrix)\n"
        << "        -anglerep {quaternion,euler}       (default is euler)\n"
@@ -393,6 +414,9 @@ void globaloptions::print_usage(int argc, char *argv[])
        << "        -schedule <schedule-file>          (replaces default schedule)\n"
        << "        -refweight <volume>                (use weights for reference volume)\n"
        << "        -inweight <volume>                 (use weights for input volume)\n"
+       << "        -wmseg <volume>                    (white matter segmentation volume needed by BBR cost function)\n"
+       << "        -wmcoords <text matrix>            (white matter boundary coordinates for BBR cost function)\n"
+       << "        -wmnorms <text matrix>             (white matter boundary normals for BBR cost function)\n"
        << "        -noclamp                           (do not use intensity clamping)\n"
        << "        -noresampblur                      (do not use blurring on downsampling)\n"
        << "        -2D                                (use 2D rigid body mode - ignores dof)\n"
