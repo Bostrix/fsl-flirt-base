@@ -10,6 +10,7 @@
 
 globaloptions* globaloptions::gopt = NULL;
 
+
 void globaloptions::parse_command_line(int argc,char** argv,
 				       const string &p_version)
 {
@@ -94,6 +95,10 @@ void globaloptions::parse_command_line(int argc,char** argv,
       continue;    
     } else if ( arg == "-debugsave") {
       nosave = false;
+      n++;
+      continue;
+   } else if ( arg == "-debug" ) {
+      debug = true;
       n++;
       continue;
    } else if ( arg == "-v" ) {
@@ -230,23 +235,8 @@ void globaloptions::parse_command_line(int argc,char** argv,
     } else if ( arg == "-cost") {
       {
 	string costarg = argv[n+1];
-	if (costarg == "mutualinfo") {
-	  maincostfn = MutualInfo;
-	} else if (costarg == "corratio") {
-	  maincostfn = CorrRatio;
-	} else if (costarg == "woods") {
-	  maincostfn = Woods;
-	} else if (costarg == "normcorr") {
-	  maincostfn = NormCorr;
-	} else if (costarg == "normmi") {
-	  maincostfn = NormMI;
-	} else if (costarg == "leastsq") {
-	  maincostfn = LeastSq;
-	} else if (costarg == "labeldiff") {
-	  maincostfn = LabelDiff;
-	} else if (costarg == "bbr") {
-	  maincostfn = BBR;
-	} else {
+	maincostfn = costfn_type(costarg);
+	if (maincostfn == Unknown) {
 	  cerr << "Unrecognised cost function type: " << costarg << endl;
 	  exit(-1);
 	}
@@ -256,23 +246,8 @@ void globaloptions::parse_command_line(int argc,char** argv,
     } else if ( arg == "-searchcost") {
       {
 	string costarg = argv[n+1];
-	if (costarg == "mutualinfo") {
-	  searchcostfn = MutualInfo;
-	} else if (costarg == "corratio") {
-	  searchcostfn = CorrRatio;
-	} else if (costarg == "woods") {
-	  searchcostfn = Woods;
-	} else if (costarg == "normcorr") {
-	  searchcostfn = NormCorr;
-	} else if (costarg == "normmi") {
-	  searchcostfn = NormMI;
-	} else if (costarg == "leastsq") {
-	  searchcostfn = LeastSq;
-	} else if (costarg == "labeldiff") {
-	  searchcostfn = LabelDiff;
-	} else if (costarg == "bbr") {
-	  searchcostfn = BBR;
-	} else {
+	searchcostfn = costfn_type(costarg);
+	if (searchcostfn == Unknown) {
 	  cerr << "Unrecognised cost function type: " << costarg << endl;
 	  exit(-1);
 	}

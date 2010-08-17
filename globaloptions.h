@@ -30,8 +30,6 @@ using namespace NEWIMAGE;
   typedef MatVec* MatVecPtr;
 
 
-
-
 class globaloptions {
  public:
   static globaloptions& get();
@@ -70,6 +68,7 @@ class globaloptions {
   costfns maincostfn;
   costfns searchcostfn;
   costfns currentcostfn;
+  string optimisationtype;
   anglereps anglerep;
   float isoscale;
   float min_sampling;
@@ -92,6 +91,7 @@ class globaloptions {
   short datatype;
   bool forcedatatype;
   int verbose;
+  bool debug;
   bool interactive;
   bool do_optimise;
   bool nosave;
@@ -178,6 +178,7 @@ inline globaloptions::globaloptions()
   maincostfn = CorrRatio;
   searchcostfn = CorrRatio;
   currentcostfn = CorrRatio;
+  optimisationtype = "brent";
   anglerep = Euler;
   isoscale = 1.0;
   min_sampling = 1.0;
@@ -206,6 +207,7 @@ inline globaloptions::globaloptions()
   datatype = -1;
   forcedatatype = false;
   verbose = 0;
+  debug = false;
   interactive = false;
   do_optimise = true;
   nosave = true;

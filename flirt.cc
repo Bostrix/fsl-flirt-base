@@ -300,7 +300,8 @@ void optimise(ColumnVector& params, int no_params, ColumnVector& param_tol,
   for (int i=1; i<=no_params; i++) { ptol[i] = param_tol(i); }
   
   *fans = MISCMATHS::optimise(params,no_params,param_tol,costfunc,no_its,itmax,
-			      globaloptions::get().boundguess);
+			      globaloptions::get().boundguess,
+			      globaloptions::get().optimisationtype);
 }
 
 
@@ -308,25 +309,40 @@ void optimise(ColumnVector& params, int no_params, ColumnVector& param_tol,
 
 // OPTIMISATION SUPPORT (cost function interfaces)
 
+int setcostfntype(costfns ctype) {
+  if (globaloptions::get().impair) {  // only do this if impair is set
+    globaloptions::get().impair->set_costfn(ctype);
+    if ((globaloptions::get().impair->get_costfn()==BBR) && (!globaloptions::get().impair->is_bbr_set())) {
+      if (globaloptions::get().debug) {
+	cerr << "Setting bbr seg 1" << endl;
+	cerr << "Cost is set to " << globaloptions::get().impair->get_costfn() << endl;
+	cerr << "Cost == BBR is " << (globaloptions::get().impair->get_costfn() == BBR) << endl;
+	cerr << "Result (pre) of is_bbr_set is " << globaloptions::get().impair->is_bbr_set() << endl;
+      }
+      if (globaloptions::get().usecoords) {
+	globaloptions::get().impair->set_bbr_coords(global_coords,global_norms);
+      } else {
+	globaloptions::get().impair->set_bbr_seg(global_seg); 
+      }
+      if (globaloptions::get().debug) {
+	cerr << "Result (post) of is_bbr_set is " << globaloptions::get().impair->is_bbr_set() << endl;
+      }
+    }
+  }
+  return 0;
+}
+
+int setcostfntype(const string& cname) {
+  return setcostfntype(costfn_type(cname));
+}
+
 
 float costfn(const Matrix& uninitaffmat)
 {
   Tracer tr("costfn");
   Matrix affmat = uninitaffmat * globaloptions::get().initmat;  // apply initial matrix
+  setcostfntype(globaloptions::get().currentcostfn);
   float retval = 0.0;
-  globaloptions::get().impair->set_costfn(globaloptions::get().currentcostfn);
-  if ((globaloptions::get().impair->get_costfn()==BBR) && (!globaloptions::get().impair->is_bbr_set())) {
-    cerr << "Setting bbr seg 1" << endl;
-    cerr << "Cost is set to " << globaloptions::get().impair->get_costfn() << endl;
-    cerr << "Cost == BBR is " << (globaloptions::get().impair->get_costfn() == BBR) << endl;
-    cerr << "Result (pre) of is_bbr_set is " << globaloptions::get().impair->is_bbr_set() << endl;
-    if (globaloptions::get().usecoords) {
-      globaloptions::get().impair->set_bbr_coords(global_coords,global_norms);
-    } else {
-      globaloptions::get().impair->set_bbr_seg(global_seg); 
-    }
-    cerr << "Result (post) of is_bbr_set is " << globaloptions::get().impair->is_bbr_set() << endl;
-  }
   retval = globaloptions::get().impair->cost(affmat);
   return retval;
 }
@@ -1281,7 +1297,6 @@ int get_refvol(volume<float>& refvol)
   }
 
   if (globaloptions::get().useseg) {
-    cerr << "Reading GLOBAL SEG" << endl;
     if (!globaloptions::get().usecoords) {
       FLIRT_read_volume(global_seg,globaloptions::get().wmsegfname);
       if (global_seg.zsize()==1) { 
@@ -1547,7 +1562,9 @@ int setscalarvariable(const string& name, float& namedscalar)
     namedscalar = (float) globaloptions::get().min_sampling;
     return 0;
   } else if (isalpha(name[0])) {
-    cerr << "Cannot interpret " << name << " as a scalar variable name" << endl;
+    if (globaloptions::get().verbose>20) {
+      cerr << "Cannot interpret " << name << " as a scalar variable name" << endl;
+    }
     namedscalar = 0.0;
     return -1;
   } else {
@@ -1787,6 +1804,20 @@ int usrsetoption(const std::vector<string> &words)
     globaloptions::get().fuzzyfrac = fvalues(1);
     if (globaloptions::get().impair)
       globaloptions::get().impair->fuzzyfrac = globaloptions::get().fuzzyfrac;
+    return 0;
+  } else if (option=="optimisationtype") {
+    globaloptions::get().optimisationtype = words[2];
+    return 0;
+  } else if (option=="costfunction") {
+    if (costfn_type(words[2])==Unknown) {
+      cerr << "Unrecognised cost function: " << words[2] << endl;
+      exit(-1);
+    }
+    globaloptions::get().currentcostfn = costfn_type(words[2]);
+    globaloptions::get().maincostfn = costfn_type(words[2]);
+    globaloptions::get().searchcostfn = costfn_type(words[2]);
+    if (globaloptions::get().impair)
+      setcostfntype(globaloptions::get().currentcostfn);
     return 0;
   } else if (option=="tolerance") {
     globaloptions::get().tolerance 
@@ -2102,10 +2133,12 @@ void usrsetscale(float usrscale,
   float scale = usrscale;
   Costfn *globalpair=0;
   if (usrscale > 0.0) globaloptions::get().requestedscale = usrscale;
-  
-  cerr << "MJ DEBUG OUTPUT: scale = " << scale << endl;
-  cerr << "MJ DEBUG OUTPUT: min_sampling = " << globaloptions::get().min_sampling << endl;
-  print_volume_info(testvol,"testvol DEBUG");
+
+  if (globaloptions::get().debug) {
+    cerr << "MJ DEBUG OUTPUT: scale = " << scale << endl;
+    cerr << "MJ DEBUG OUTPUT: min_sampling = " << globaloptions::get().min_sampling << endl;
+    print_volume_info(testvol,"testvol DEBUG");
+  }
 
   // refresh the testvol (get rid of previous blurred version)
   get_testvol(testvol);
@@ -2167,8 +2200,6 @@ void usrsetscale(float usrscale,
     globalpair->smoothsize = globaloptions::get().smoothsize;
     globalpair->fuzzyfrac = globaloptions::get().fuzzyfrac;
     if ((globalpair->get_costfn()==BBR) && (!globalpair->is_bbr_set())) {
-      cerr << "Setting bbr seg 2" << endl;
-      cerr << "Cost is set to " << globalpair->get_costfn() << endl;
       if (globaloptions::get().usecoords) {
 	globalpair->set_bbr_coords(global_coords,global_norms);
       } else {
@@ -2184,8 +2215,6 @@ void usrsetscale(float usrscale,
     if (globaloptions::get().impair)  delete globaloptions::get().impair;
     globaloptions::get().impair = globalpair;
   }
-  cerr << "DEBUG:: End of usrsetscale" << endl;
-  save_volume(testvol,"debug_testvol");
 }
 
 
@@ -2620,8 +2649,6 @@ int main(int argc,char *argv[])
   globaloptions::get().impair->smoothsize = globaloptions::get().smoothsize;
   globaloptions::get().impair->fuzzyfrac = globaloptions::get().fuzzyfrac;
   if ((globaloptions::get().impair->get_costfn()==BBR) && (!globaloptions::get().impair->is_bbr_set())) {
-    cerr << "Setting bbr seg 3" << endl;
-    cerr << "Cost is set to " << globaloptions::get().impair->get_costfn() << endl;
     if (globaloptions::get().usecoords) {
       globaloptions::get().impair->set_bbr_coords(global_coords,global_norms);
     } else {
