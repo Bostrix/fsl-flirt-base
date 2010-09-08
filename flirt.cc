@@ -49,6 +49,7 @@ volume<float> global_refweight2, global_refweight4, global_refweight8;
 volume<float> global_seg, global_init_testvol, global_init_testweight;
 Matrix global_coords, global_norms;
 bool global_scale1OK=true, read_testvol=false;
+float global_sampling=1.0f;
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -59,6 +60,19 @@ void print_vector(float x, float y, float z)
 
 
 //------------------------------------------------------------------------//
+
+void setupsinc(const volume<float>& invol)
+{
+  // the following full-width is in voxels
+  int w = round(globaloptions::get().sincwidth);
+  if (globaloptions::get().sincwindow==Hanning) {
+    invol.definesincinterpolation("hanning",w);
+  } else if (globaloptions::get().sincwindow==Blackman) {
+    invol.definesincinterpolation("blackman",w);
+  } else if (globaloptions::get().sincwindow==Rect) {
+    invol.definesincinterpolation("rectangular",w);
+  }
+}
 
 
 void set_basescale(const string& filenameA, const string& filenameB)
@@ -110,20 +124,6 @@ int FLIRT_read_volume(volume<float>& target, const string& filename)
 
 //------------------------------------------------------------------------//
 
-void setupsinc(const volume<float>& invol)
-{
-  // the following full-width is in voxels
-  int w = round(globaloptions::get().sincwidth);
-  if (globaloptions::get().sincwindow==Hanning) {
-    invol.definesincinterpolation("hanning",w);
-  } else if (globaloptions::get().sincwindow==Blackman) {
-    invol.definesincinterpolation("blackman",w);
-  } else if (globaloptions::get().sincwindow==Rect) {
-    invol.definesincinterpolation("rectangular",w);
-  }
-}
-
-
 void final_transform(const volume<float>& testvol, volume<float>& outputvol,
 		     const Matrix& finalmat) 
 {
@@ -164,7 +164,7 @@ void save_matrix_data(const Matrix& matresult, const volume<float>& initvol,
   save_matrix_data(matresult);
 }
 
-float costfn(const Matrix& matresult);
+//----------------------------------------------------------------------------//
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -305,35 +305,52 @@ void optimise(ColumnVector& params, int no_params, ColumnVector& param_tol,
 }
 
 
+
 ////////////////////////////////////////////////////////////////////////////
 
 // OPTIMISATION SUPPORT (cost function interfaces)
 
-int setcostfntype(costfns ctype) {
-  if (globaloptions::get().impair) {  // only do this if impair is set
-    globaloptions::get().impair->set_costfn(ctype);
-    if ((globaloptions::get().impair->get_costfn()==BBR) && (!globaloptions::get().impair->is_bbr_set())) {
-      if (globaloptions::get().debug) {
-	cerr << "Setting bbr seg 1" << endl;
-	cerr << "Cost is set to " << globaloptions::get().impair->get_costfn() << endl;
-	cerr << "Cost == BBR is " << (globaloptions::get().impair->get_costfn() == BBR) << endl;
-	cerr << "Result (pre) of is_bbr_set is " << globaloptions::get().impair->is_bbr_set() << endl;
-      }
-      if (globaloptions::get().usecoords) {
-	globaloptions::get().impair->set_bbr_coords(global_coords,global_norms);
-      } else {
-	globaloptions::get().impair->set_bbr_seg(global_seg); 
-      }
-      if (globaloptions::get().debug) {
-	cerr << "Result (post) of is_bbr_set is " << globaloptions::get().impair->is_bbr_set() << endl;
-      }
+int setcostfntype(Costfn* imagepair, costfns ctype) {
+  imagepair->set_costfn(ctype);
+  if ((imagepair->get_costfn()==BBR) && (!imagepair->is_bbr_set())) {
+    if (globaloptions::get().debug) {
+      cerr << "Setting bbr seg 1" << endl;
+      cerr << "Cost is set to " << imagepair->get_costfn() << endl;
+      cerr << "Cost == BBR is " << (imagepair->get_costfn() == BBR) << endl;
+      cerr << "Result (pre) of is_bbr_set is " << imagepair->is_bbr_set() << endl;
+    }
+    if (globaloptions::get().usecoords) {
+      imagepair->set_bbr_coords(global_coords,global_norms);
+    } else {
+      imagepair->set_bbr_seg(global_seg);  // only run BBR at one scale so not wasteful
+    }
+    if (globaloptions::get().debug) {
+      cerr << "Result (post) of is_bbr_set is " << imagepair->is_bbr_set() << endl;
     }
   }
   return 0;
 }
 
+int setcostfntype(costfns ctype) {
+  if (globaloptions::get().impair) {  // only do this if impair is set
+    return setcostfntype(globaloptions::get().impair, ctype);
+  }
+  return -1;
+}
+
 int setcostfntype(const string& cname) {
   return setcostfntype(costfn_type(cname));
+}
+
+
+
+int setup_costfn(Costfn* imagepair, costfns curcostfn, int no_bins, float smoothsize, float fuzzyfrac)
+{
+  setcostfntype(imagepair,curcostfn);
+  imagepair->set_no_bins(no_bins);
+  imagepair->smoothsize = smoothsize;
+  imagepair->fuzzyfrac = fuzzyfrac;
+  return 0;
 }
 
 
@@ -402,7 +419,6 @@ float subset_costfn(const ColumnVector& params)
   }
   return retval;
 }
-
 
 //------------------------------------------------------------------------//
 
@@ -1144,6 +1160,10 @@ void set_perturbations(Matrix& delta, Matrix& perturbmask)
 
 
 ////////////////////////////////////////////////////////////////////////////
+// SUPPORT FUNCTIONS FOR READING AND INITIALISING IMAGES AND MATRICES 
+//  - VERY FLIRT SPECIFIC
+////////////////////////////////////////////////////////////////////////////
+
 
 Matrix scalemat(const Matrix& mat)
 {
@@ -1325,6 +1345,100 @@ int get_refvol(volume<float>& refvol)
   return 0;
 }
 
+volume<float> filter_subsample_by_2(const volume<float>& vin)
+{
+  return subsample_by_2(vin);
+}
+
+volume<float> filter_blur(const volume<float>& vin)
+{
+  volume<float> tmpvol;
+  tmpvol = blur(vin,global_sampling);
+  return tmpvol;
+}
+
+volume<float> filter_resamp_blur(const volume<float>& vin)
+{
+  volume<float> tmpvol;
+  tmpvol = blur(vin,global_sampling);
+  tmpvol = isotropic_resample(tmpvol,global_sampling);
+  return tmpvol;
+}
+
+int filter_weight(volume<float>& blur_w, const volume<float>& weight,
+		  volume<float> (*filter_func)(const volume<float>&))
+{
+  // implements filter(W).*Thresh(filter(B)) 
+  //                  where W is the weight and B is a binarised weight
+  // filter(...) = isotropic_resample(blur(...))
+  float thresh1=0.01, thresh2=0.9;
+  volume<float> tmpvol;
+  // form B
+  tmpvol = binarise(weight,thresh1);
+  // form filter(B)
+  tmpvol = (*filter_func)(tmpvol);
+  // form Thresh(filter(B))
+  tmpvol.binarise(thresh2);
+  // now form filter(W)
+  // NB: if blur_w = weight on input, then the following changes weight!
+  blur_w = (*filter_func)(weight);
+  // now form filter(W).*Thresh(filter(B))
+  blur_w *= tmpvol;
+  return 0;
+}
+
+
+int filter_weight(volume<float>& blur_w, const volume<float>& weight, float sampling,
+		  volume<float> (*filter_func)(const volume<float>&))
+{
+  global_sampling = sampling;
+  return filter_weight(blur_w,weight,filter_func);
+}
+
+
+int filter_image(volume<float>& blur_im, const volume<float>& orig_im,
+		 const volume<float>& weight, 
+		 volume<float> (*filter_func)(const volume<float>&))
+{
+  // implements filter(I.*B)./filter(B) where I in the image and B is a binarised weight
+  // filter(...) = isotropic_resample(blur(...))
+  // form B then filter(I.*B)
+  float thresh=0.01;
+  volume<float> tmpvol;
+  tmpvol = binarise(weight,thresh);
+  // NB: if blur_im = orig_im on input, then the following line changes orig_im!
+  blur_im = (*filter_func)(orig_im*tmpvol);  
+  // form filter(B)
+  tmpvol = binarise(weight,thresh);
+  tmpvol = (*filter_func)(tmpvol);
+  // now form filter(I.*B)./filter(B) - with safe (non-zero) division
+  blur_im = divide(blur_im,tmpvol,tmpvol);
+  return 0;
+}
+
+
+int filter_image(volume<float>& blur_im, const volume<float>& orig_im,
+		 const volume<float>& weight, bool useweight,
+		 volume<float> (*filter_func)(const volume<float>& ))
+{
+  if (useweight) {
+    filter_image(blur_im,orig_im,weight,filter_func);
+  } else {
+    blur_im = (*filter_func)(orig_im);
+  }
+  return 0;
+}
+
+
+int filter_image(volume<float>& blur_im, const volume<float>& orig_im,
+		 const volume<float>& weight, float sampling, bool useweight,
+		 volume<float> (*filter_func)(const volume<float>& ))
+{
+  global_sampling = sampling;
+  return filter_image(blur_im, orig_im, weight, useweight, filter_func);
+}
+
+
 
 int resample_refvol(volume<float>& refvol, float sampling=1.0)
 {
@@ -1343,9 +1457,8 @@ int resample_refvol(volume<float>& refvol, float sampling=1.0)
     cout << "Resampling refvol isotropically: " << sampling << endl;
 
   // isotropically resample the volume
-  volume<float> tmpvol;
-  tmpvol = blur(refvol,sampl);
-  refvol = isotropic_resample(tmpvol,sampl);
+  filter_image(refvol,refvol,global_refweight,sampl,
+	       globaloptions::get().useweights,filter_resamp_blur);
 
   if (globaloptions::get().verbose>=2) print_volume_info(refvol,"Refvol");      
   
@@ -1354,6 +1467,7 @@ int resample_refvol(volume<float>& refvol, float sampling=1.0)
 
 
 ////////////////////////////////////////////////////////////////////////////
+
 
 // template for either volume or volume4D (and no other)
 template <class V>
@@ -1434,7 +1548,9 @@ void no_optimise()
       outputvol.addvolume(refvol);
       if ((globaloptions::get().interpmethod != NearestNeighbour) &&
 	  (globaloptions::get().interpblur)) {
-	testvol[t0] = blur(testvol[t0],min_sampling_ref);
+	//testvol[t0] = blur(testvol[t0],min_sampling_ref);
+	filter_image(testvol[t0],testvol[t0],testvol[t0],min_sampling_ref,
+		     false,filter_blur);
       }
       
       if (globaloptions::get().verbose>=2) { 
@@ -1463,6 +1579,7 @@ void no_optimise()
 
 ////////////////////////////////////////////////////////////////////////////
 
+// ROUTINES FOR DEALING WITH THE SCHEDULE FILE
 
 int firstelementless(const RowVector& r1, const RowVector& r2)
 {
@@ -1623,7 +1740,7 @@ int parsematname(const string& inname, MatVecPtr& usrdefmat, int& r1, int& r2)
 }
 
 
-//////////////////////////////////////////////////////////////////////////////
+//-----------------------------------------------------------------------//
 
 void usrcopy(MatVecPtr usrsrcmat, MatVecPtr usrdestmat, 
 	     unsigned int usrsrcrow1, unsigned int usrsrcrow2) 
@@ -2136,7 +2253,8 @@ void usrsetscale(float usrscale,
 
   if (globaloptions::get().debug) {
     cerr << "MJ DEBUG OUTPUT: scale = " << scale << endl;
-    cerr << "MJ DEBUG OUTPUT: min_sampling = " << globaloptions::get().min_sampling << endl;
+    cerr << "MJ DEBUG OUTPUT: min_sampling = " << globaloptions::get().min_sampling 
+	 << endl;
     print_volume_info(testvol,"testvol DEBUG");
   }
 
@@ -2148,9 +2266,12 @@ void usrsetscale(float usrscale,
     globaloptions::get().lastsampling = scale;
     // blur test volume to correct scale
     volume<float> testvolnew;
-    testvolnew = blur(testvol,scale);
+    // testvolnew = blur(testvol,scale);  // filter_blur
+    filter_image(testvolnew,testvol,global_testweight,scale,
+		 globaloptions::get().useweights,filter_blur);
     if (globaloptions::get().useweights) {
-      global_testweight = blur(global_testweight,scale);
+      // global_testweight = blur(global_testweight,scale);  // filter_blur
+      filter_weight(global_testweight,global_testweight,scale,filter_blur);
     }
     testvol = testvolnew;
     // select correct refvol
@@ -2194,18 +2315,10 @@ void usrsetscale(float usrscale,
     } else {
       globalpair = new Costfn(*refvolnew,testvol);
     }
-    // may need to fix this for very small scales - should really work
-    //   on number of voxels...
-    globalpair->set_no_bins(int(globaloptions::get().no_bins/scale));
-    globalpair->smoothsize = globaloptions::get().smoothsize;
-    globalpair->fuzzyfrac = globaloptions::get().fuzzyfrac;
-    if ((globalpair->get_costfn()==BBR) && (!globalpair->is_bbr_set())) {
-      if (globaloptions::get().usecoords) {
-	globalpair->set_bbr_coords(global_coords,global_norms);
-      } else {
-	globalpair->set_bbr_seg(global_seg); // this shouldn't normally be done at repeated scales - it should be done directly on the unresampled image
-      }
-    }
+
+    setup_costfn(globalpair,globaloptions::get().currentcostfn,
+		 int(globaloptions::get().no_bins/scale),
+		 globaloptions::get().smoothsize,globaloptions::get().fuzzyfrac);
     if (globaloptions::get().verbose>=3) {
       if (globaloptions::get().impair) {
 	cout << "Previous scale used " << globaloptions::get().impair->count()
@@ -2522,10 +2635,12 @@ int main(int argc,char *argv[])
     no_optimise();
   }
   // reset the basescale for images where voxels are quite different from the
-  //   usual human brain size
+  //   usual human brain size (this must be done before any volumes are read, 
+  //   since part of the reading process uses the basescale for re-scaling)
   set_basescale(globaloptions::get().reffname,globaloptions::get().inputfname);
 
-  // read in the volumes
+  // READ IN THE VOLUMES
+
   volume<float> refvol, testvol;
   get_refvol(refvol);
   get_testvol(testvol);
@@ -2551,6 +2666,9 @@ int main(int argc,char *argv[])
     cout << "Init Matrix = \n" << globaloptions::get().initmat << endl;
   }
 
+  // Calculate quantities used to work out the correct resolution/sampling
+  //  - especially important for very high-res volumes where a 1mm scale is too big
+
   float min_sampling_ref=1.0, min_sampling_test=1.0, min_sampling=1.0;
   min_sampling_ref = Min(refvol.xdim(),Min(refvol.ydim(),refvol.zdim()));
   min_sampling_test = Min(testvol.xdim(),Min(testvol.ydim(),testvol.zdim()));
@@ -2566,6 +2684,12 @@ int main(int argc,char *argv[])
     cout << "CoG for testvol is:  " << testvol.cog("scaled_mm").t();
   }
   
+  // CREATE THE VARIOUS SUB-SAMPLED REFERENCE VOLUMES FOR THE MULTI-SCALE
+
+  // REFVOL RESAMPLING
+  //    QUESTION: IS IT OK TO RECURSIVELY DEFINE WEIGHTS AND SUBSAMPLE LIKE THIS?
+  //              OR WOULD DIRECT IMPLEMENTATION OF 4 AND 8 TIMES SUBSAMPLING BE 
+  //              BETTER?  (SEP2010)
   volume<float> refvol_2, refvol_4, refvol_8;
   if (globaloptions::get().resample) {
     // set up subsampled volumes by factors of 2, 4 and 8
@@ -2573,52 +2697,49 @@ int main(int argc,char *argv[])
       cout << "Subsampling the volumes" << endl;
       
     resample_refvol(refvol,globaloptions::get().min_sampling);
+    // resample_refvol(global_refweight,globaloptions::get().min_sampling);
+    filter_weight(global_refweight,global_refweight,
+		   globaloptions::get().min_sampling,filter_resamp_blur);
     // the following tests enforce a maximum subsampling (i.e. for large voxel sizes, do not subsample as much as if the voxels are small)
+    global_refweight1 = global_refweight;
+    // SCALE 2
     if (globaloptions::get().min_sampling < 1.9) {
-      refvol_2 = subsample_by_2(refvol);
+      // refvol_2 = subsample_by_2(refvol);
+      filter_image(refvol_2,refvol,global_refweight,
+		   globaloptions::get().useweights,filter_subsample_by_2);
+      if (globaloptions::get().useweights) {
+	//global_refweight2 = subsample_by_2(global_refweight1);
+	filter_weight(global_refweight2,global_refweight1,filter_subsample_by_2);
+      }
     } else {
       refvol_2 = refvol;
+      if (globaloptions::get().useweights) { global_refweight2 = global_refweight1; }
     }
+    // SCALE 4
     if (globaloptions::get().min_sampling < 3.9) {
-      refvol_4 = subsample_by_2(refvol_2);
+      //refvol_4 = subsample_by_2(refvol_2);
+      filter_image(refvol_4,refvol_2,global_refweight2,
+		   globaloptions::get().useweights,filter_subsample_by_2);
+      if (globaloptions::get().useweights) {
+	// global_refweight4 = subsample_by_2(global_refweight2);
+	filter_weight(global_refweight4,global_refweight2,filter_subsample_by_2);
+      }
     } else {
       refvol_4 = refvol_2;
+      if (globaloptions::get().useweights) { global_refweight4 = global_refweight2; }
     }
+    // SCALE 8
     if (globaloptions::get().min_sampling < 7.9) {
-      refvol_8 = subsample_by_2(refvol_4);
+      //refvol_8 = subsample_by_2(refvol_4);
+      filter_image(refvol_8,refvol_4,global_refweight4,
+		   globaloptions::get().useweights,filter_subsample_by_2);
+      if (globaloptions::get().useweights) {
+	// global_refweight8 = subsample_by_2(global_refweight4);
+	filter_weight(global_refweight8,global_refweight4,filter_subsample_by_2);
+      }
     } else {
       refvol_8 = refvol_4;
-    }
-
-
-    {
-      volume<float> testvol_8;
-      testvol_8 = blur(testvol,8.0);
-      testvol = testvol_8;
-    }
-
-    // If weights are used then do the same for the weighting volumes...
-    if (globaloptions::get().useweights) {
-      resample_refvol(global_refweight,globaloptions::get().min_sampling);
-      global_refweight1 = global_refweight;
-      if (globaloptions::get().min_sampling < 1.9) {
-	global_refweight2 = subsample_by_2(global_refweight1);
-      } else {
-	global_refweight2 = global_refweight1;
-      }
-      if (globaloptions::get().min_sampling < 3.9) {
-	global_refweight4 = subsample_by_2(global_refweight2);
-      } else {
-	global_refweight4 = global_refweight2;
-      }
-      if (globaloptions::get().min_sampling < 7.9) {
-	global_refweight8 = subsample_by_2(global_refweight4);
-      } else {
-	global_refweight8 = global_refweight4;
-      }
-
-      global_testweight = blur(global_testweight,8.0);
-      
+      if (globaloptions::get().useweights) { global_refweight8 = global_refweight4; }
     }
 
   } else {
@@ -2634,7 +2755,34 @@ int main(int argc,char *argv[])
     }
   }
 
-  // set up image pair and global pointer
+
+    // TESTVOL RESAMPLING
+  if (globaloptions::get().resample) {
+    volume<float> testvol_8;
+    //testvol_8 = blur(testvol,8.0);
+    filter_image(testvol_8,testvol,global_testweight,8.0,
+		 globaloptions::get().useweights,filter_blur);
+    //global_testweight = blur(global_testweight,8.0);
+    filter_weight(global_testweight,global_testweight,8.0,filter_blur);
+    
+    testvol = testvol_8;
+  }
+
+  if (globaloptions::get().debug) {
+    save_volume(refvol_8,"refvol_8");
+    save_volume(refvol_4,"refvol_4");
+    save_volume(refvol_2,"refvol_2");
+    save_volume(refvol,"refvol");
+    save_volume(global_refweight1,"global_refweight1");
+    save_volume(global_refweight2,"global_refweight2");
+    save_volume(global_refweight4,"global_refweight4");
+    save_volume(global_refweight8,"global_refweight8");
+    save_volume(testvol,"testvol");
+    save_volume(global_testweight,"testweight");
+  }
+
+
+  // set up image pair and global pointer, plus setup cost function params
   if (globaloptions::get().impair)  delete globaloptions::get().impair;
   global_refweight = global_refweight8;
   globaloptions::get().lastsampling = 8;
@@ -2645,27 +2793,20 @@ int main(int argc,char *argv[])
   } else {
     globaloptions::get().impair = new Costfn(refvol_8,testvol);
   }
-  globaloptions::get().impair->set_no_bins(globaloptions::get().no_bins/8);
-  globaloptions::get().impair->smoothsize = globaloptions::get().smoothsize;
-  globaloptions::get().impair->fuzzyfrac = globaloptions::get().fuzzyfrac;
-  if ((globaloptions::get().impair->get_costfn()==BBR) && (!globaloptions::get().impair->is_bbr_set())) {
-    if (globaloptions::get().usecoords) {
-      globaloptions::get().impair->set_bbr_coords(global_coords,global_norms);
-    } else {
-      globaloptions::get().impair->set_bbr_seg(global_seg); // MJ: a bit wasteful doing this repeatedly - should find a way to copy across the points and norms
-    }
-  }
-  
+
+  globaloptions::get().currentcostfn = globaloptions::get().maincostfn;   
+  setup_costfn(globaloptions::get().impair, globaloptions::get().currentcostfn,
+	       globaloptions::get().no_bins/8,
+	       globaloptions::get().smoothsize,globaloptions::get().fuzzyfrac);  
   if (globaloptions::get().verbose>=2) print_volume_info(testvol,"TESTVOL");
   
 
   Matrix matresult(4,4);
   ColumnVector params_8(12), param_tol(12);
 
-    // perform the optimisation
 
-  globaloptions::get().currentcostfn = globaloptions::get().maincostfn;
-   
+  // PERFORM THE OPTIMISATION
+
   std::vector<string> schedulecoms(0);
   string comline;
   if (globaloptions::get().schedulefname.length()<1) {
@@ -2698,7 +2839,11 @@ int main(int argc,char *argv[])
     interpretcommand(comline,skip,testvol,refvol,refvol_2,refvol_4,refvol_8);
   }
 
+
+  // FINISHED OPTIMISATION - NOW GENERATE OUTPUTS
+
   // re-read the initial volume, and transform it by the optimised result
+
   Matrix reshaped;
   if (globaloptions::get().usrmat[0].size()>0) {
     reshaped = (globaloptions::get().usrmat[0])[0].SubMatrix(1,1,2,17);
@@ -2731,7 +2876,9 @@ int main(int argc,char *argv[])
       min_sampling_ref = Min(refvol.xdim(),Min(refvol.ydim(),refvol.zdim()));
       if ((globaloptions::get().interpmethod != NearestNeighbour) &&
 	  (globaloptions::get().interpblur)) {
-	testvol = blur(testvol,min_sampling_ref);
+	//testvol = blur(testvol,min_sampling_ref);
+	filter_image(testvol,testvol,testvol,min_sampling_ref,
+		     false,filter_blur);
       }
       final_transform(testvol,newtestvol,finalmat);      
       if (globaloptions::get().verbose>=2) {
