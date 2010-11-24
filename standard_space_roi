@@ -15,7 +15,7 @@ Usage() {
     cat <<EOF
 
 Usage: standard_space_roi <input> <output> [options] [flirt options]
-s
+
 This masks the input and/or reduces its FOV, on the basis of a
 standard space image or mask, that is transformed into the space
 of the input image.
