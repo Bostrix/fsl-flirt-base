@@ -1548,7 +1548,6 @@ void no_optimise()
       outputvol.addvolume(refvol);
       if ((globaloptions::get().interpmethod != NearestNeighbour) &&
 	  (globaloptions::get().interpblur)) {
-	//testvol[t0] = blur(testvol[t0],min_sampling_ref);
 	filter_image(testvol[t0],testvol[t0],testvol[t0],min_sampling_ref,
 		     false,filter_blur);
       }
@@ -1847,13 +1846,14 @@ int usrsetrowqsform(MatVecPtr usrsrcmat, const volume<float>& refvol,
   if (globaloptions::get().initmatsqform) {
     qsinitmat = IdentityMatrix(4);
   } else {
-    qsinitmat = qsform_init_mat(refvol,testvol);
+    // account for user-defined initmat (when it is not the sqform init)
+    qsinitmat = qsform_init_mat(refvol,testvol) * globaloptions::get().initmat.i();
   }
   RowVector currow(17);
   currow = 0.0;
   unsigned int c=2;
-  for (unsigned int row=1; row<=4; row++) {
-    for (unsigned int col=1; col<=4; col++) {
+  for (unsigned int col=1; col<=4; col++) {
+    for (unsigned int row=1; row<=4; row++) {
       currow(c++) = qsinitmat(row,col);
     }
   }
@@ -1969,6 +1969,9 @@ int usrsetoption(const std::vector<string> &words)
     return 0;
   } else if (option=="minsampling") {
     globaloptions::get().min_sampling = fvalues(1);
+    return 0;
+  } else if (option=="bbrstep") {
+    globaloptions::get().impair->set_bbr_step(fvalues(1));
     return 0;
   } else {
     cerr << "Option " << option << " is unrecognised - ignoring" << endl;
@@ -2195,6 +2198,62 @@ void usrmeasurecost(MatVecPtr stdresultmat,
 }
 
 
+void usrgridmeasurecost(MatVecPtr stdresultmat, 
+			MatVecPtr usrmatptr, 
+			unsigned int usrrow1, unsigned int usrrow2, int usrdof, 
+			ColumnVector& usrperturbation1, ColumnVector& usrpertstep,
+			ColumnVector& usrperturbation2, bool usrperturbrelative)
+{
+  Tracer tr("usrgridmeasurecost");
+  // OPTIMISE
+  Matrix delta, perturbmask, matresult;
+  set_perturbations(delta,perturbmask);
+  int dof = Min(globaloptions::get().dof,usrdof);
+  ColumnVector params0(12), params(12), usrperturbation;
+  RowVector rowresult(17);
+  for (unsigned int crow=usrrow1; crow<=Min(usrrow2,usrmatptr->size()); crow++)
+    {
+      Matrix reshaped = (*usrmatptr)[crow-1].SubMatrix(1,1,2,17);
+      reshape(matresult,reshaped,4,4);
+      affmat2vector(matresult,12,params0);
+      ColumnVector nsteps(usrperturbation1.Nrows());
+      for (int n=1; n<=nsteps.Nrows(); n++) {
+	nsteps(n) = ceil(Max((usrperturbation2(n)-usrperturbation1(n))/usrpertstep(n),1e-6)+0.000001);
+      }
+      int nit = 1;
+      for (int n=1; n<=nsteps.Nrows(); n++) { nit *= MISCMATHS::round(nsteps(n)); }
+      ColumnVector nvec;
+      nvec = nsteps * 0.0f;
+      for (int n=1; n<=nit; n++) {
+	params = params0;  // start with the unperturbed params
+	// the following increments the step pointer (to simulate n nested loops)
+	int step=1;
+	for (int m=1; m<=nsteps.Nrows(); m++) {
+	  nvec(m)+=step;
+	  if (MISCMATHS::round(nvec(m))<MISCMATHS::round(nsteps(m))) { step=0; } 
+	  else { nvec(m)=0.0f; }
+	}
+	usrperturbation = usrperturbation1 + SP(nvec,usrpertstep);
+	// use the elementwise product to produce the perturbation
+	if (usrperturbrelative) {
+	  params += SP(usrperturbation,delta); // rel
+	} else {
+	  params += usrperturbation; // abs
+	}
+	vector2affine(params,12,matresult);
+	
+	float costval=0.0;
+	costval = measure_cost(matresult,dof);
+	reshape(reshaped,matresult,1,16);
+	rowresult(1) = costval;
+	rowresult.SubMatrix(1,1,2,17) = reshaped;
+	// store result
+	stdresultmat->push_back(rowresult);
+      }
+    }
+}
+
+
 void usroptimise(MatVecPtr stdresultmat, 
 		 MatVecPtr usrmatptr, 
 		 unsigned int usrrow1, unsigned int usrrow2, int usrdof, 
@@ -2266,11 +2325,9 @@ void usrsetscale(float usrscale,
     globaloptions::get().lastsampling = scale;
     // blur test volume to correct scale
     volume<float> testvolnew;
-    // testvolnew = blur(testvol,scale);  // filter_blur
     filter_image(testvolnew,testvol,global_testweight,scale,
 		 globaloptions::get().useweights,filter_blur);
     if (globaloptions::get().useweights) {
-      // global_testweight = blur(global_testweight,scale);  // filter_blur
       filter_weight(global_testweight,global_testweight,scale,filter_blur);
     }
     testvol = testvolnew;
@@ -2523,6 +2580,45 @@ void interpretcommand(const string& comline, bool& skip,
     usrmeasurecost(&(globaloptions::get().usrmat[0]),
 		   usrdefmat,usrrow1,usrrow2,usrdof, 
 		   usrperturbation,usrperturbrelative);
+  } else if (words[0]=="gridmeasurecost") {
+    // GRIDMEASURECOST
+    if (words.size()<7) {
+      cerr << "Wrong number of args to GRIDMEASURECOST" << endl;
+      exit(-1);
+    }
+    int usrdof=12, usrrow1=1, usrrow2=999999;
+    ColumnVector usrperturbation1(12), usrperturbation2(12), usrpertstep(12);
+    usrperturbation1 = 0.0;
+    usrperturbation2 = 0.0;
+    usrpertstep = 0.0;
+    MatVecPtr usrdefmat;
+    bool usrperturbrelative = true;
+    setscalarvariable(words[1],usrdof);
+    parsematname(words[2],usrdefmat,usrrow1,usrrow2);
+    unsigned int wordno=3;
+    float tempparam=0.0;
+    int compidx=1;
+    while ((wordno+2<words.size()) 
+	   && (words[wordno]!="rel") && (words[wordno]!="abs")) {
+      setscalarvariable(words[wordno],tempparam);
+      usrperturbation1(compidx) = tempparam;
+      wordno++;
+      setscalarvariable(words[wordno],tempparam);
+      usrpertstep(compidx) = tempparam;
+      wordno++;
+      setscalarvariable(words[wordno],tempparam);
+      usrperturbation2(compidx) = tempparam;
+      wordno++;
+      compidx++;
+    }
+    while (wordno<words.size()) {
+      if (words[wordno]=="abs")  usrperturbrelative = false;
+      wordno++;
+    }
+    usrgridmeasurecost(&(globaloptions::get().usrmat[0]),
+		       usrdefmat,usrrow1,usrrow2,usrdof, 
+		       usrperturbation1,usrpertstep,
+		       usrperturbation2,usrperturbrelative);
   } else if (words[0]=="aligncog") {
     // ALIGNCOG
     if (words.size()<2) {
@@ -2697,18 +2793,15 @@ int main(int argc,char *argv[])
       cout << "Subsampling the volumes" << endl;
       
     resample_refvol(refvol,globaloptions::get().min_sampling);
-    // resample_refvol(global_refweight,globaloptions::get().min_sampling);
     filter_weight(global_refweight,global_refweight,
 		   globaloptions::get().min_sampling,filter_resamp_blur);
     // the following tests enforce a maximum subsampling (i.e. for large voxel sizes, do not subsample as much as if the voxels are small)
     global_refweight1 = global_refweight;
     // SCALE 2
     if (globaloptions::get().min_sampling < 1.9) {
-      // refvol_2 = subsample_by_2(refvol);
       filter_image(refvol_2,refvol,global_refweight,
 		   globaloptions::get().useweights,filter_subsample_by_2);
       if (globaloptions::get().useweights) {
-	//global_refweight2 = subsample_by_2(global_refweight1);
 	filter_weight(global_refweight2,global_refweight1,filter_subsample_by_2);
       }
     } else {
@@ -2717,11 +2810,9 @@ int main(int argc,char *argv[])
     }
     // SCALE 4
     if (globaloptions::get().min_sampling < 3.9) {
-      //refvol_4 = subsample_by_2(refvol_2);
       filter_image(refvol_4,refvol_2,global_refweight2,
 		   globaloptions::get().useweights,filter_subsample_by_2);
       if (globaloptions::get().useweights) {
-	// global_refweight4 = subsample_by_2(global_refweight2);
 	filter_weight(global_refweight4,global_refweight2,filter_subsample_by_2);
       }
     } else {
@@ -2730,11 +2821,9 @@ int main(int argc,char *argv[])
     }
     // SCALE 8
     if (globaloptions::get().min_sampling < 7.9) {
-      //refvol_8 = subsample_by_2(refvol_4);
       filter_image(refvol_8,refvol_4,global_refweight4,
 		   globaloptions::get().useweights,filter_subsample_by_2);
       if (globaloptions::get().useweights) {
-	// global_refweight8 = subsample_by_2(global_refweight4);
 	filter_weight(global_refweight8,global_refweight4,filter_subsample_by_2);
       }
     } else {
@@ -2759,10 +2848,8 @@ int main(int argc,char *argv[])
     // TESTVOL RESAMPLING
   if (globaloptions::get().resample) {
     volume<float> testvol_8;
-    //testvol_8 = blur(testvol,8.0);
     filter_image(testvol_8,testvol,global_testweight,8.0,
 		 globaloptions::get().useweights,filter_blur);
-    //global_testweight = blur(global_testweight,8.0);
     filter_weight(global_testweight,global_testweight,8.0,filter_blur);
     
     testvol = testvol_8;
@@ -2876,7 +2963,6 @@ int main(int argc,char *argv[])
       min_sampling_ref = Min(refvol.xdim(),Min(refvol.ydim(),refvol.zdim()));
       if ((globaloptions::get().interpmethod != NearestNeighbour) &&
 	  (globaloptions::get().interpblur)) {
-	//testvol = blur(testvol,min_sampling_ref);
 	filter_image(testvol,testvol,testvol,min_sampling_ref,
 		     false,filter_blur);
       }

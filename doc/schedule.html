@@ -47,9 +47,13 @@ input volumes - defined as Max(Min(refvol voxel dims),Min(testvol voxel dims)).
 Most data in a schedule file is manipulated in matrix form.  Each matrix
 has 17 columns, with the first column representing the cost function value
 and the remaining 16 a reshaped version of the 4 by 4 affine matrix that
-corresponds to that cost function measurement.
+corresponds to that cost function measurement.  Note that the
+reshaping of the matrix is: M11 M21 M31 M41 M12 M22 M32 M42 M13 M23
+M33 M43 M14 M24 M34 M44  (where Mab is the a'th row and b'th column of
+matrix M)
 
-(paragraph:
+
+<p>
 The matrices that can be accessed are: <I></I> <FONT COLOR=RED>S P U UA UB ... UZ</FONT>.
 <BR>
 
@@ -57,7 +61,7 @@ Note that <I></I> <FONT COLOR=RED>S P</FONT> and <I></I> <FONT COLOR=RED>U</FONT
 while <I></I> <FONT COLOR=RED>UA UB ... UZ</FONT> are provided for user manipulation.
 )
 
-(paragraph:
+<p>
 In addition, a subset of rows of a given matrix can be used in place
 of any matrix. 
 <BR>
@@ -74,14 +78,14 @@ specifies a single row (<I></I> <FONT COLOR=RED>r1</FONT>).
 NB: The first row of any matrix has an index of 1.
 )
 
-(paragraph:
+<p>
 Matrix <I></I> <FONT COLOR=RED>U</FONT> is special as it is used to store the results
 of the current optimisation.
-)
-(paragraph:
+
+<p>
 Matrices <I></I> <FONT COLOR=RED>S</FONT> and <I></I> <FONT COLOR=RED>P</FONT> are used to store the (corresponding)
 results of the 8mm search algorithm.
-)
+
 
 
 
