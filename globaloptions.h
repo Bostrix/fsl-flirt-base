@@ -51,6 +51,7 @@ class globaloptions {
   string wmsegfname;
   string wmcoordsfname;
   string wmnormsfname;
+  string fmapfname;
   bool initmatsqform;
   bool printinit;
   Matrix initmat;
@@ -107,9 +108,10 @@ class globaloptions {
   float sincwidth;
   windowtype sincwindow;
   float paddingsize;
+  int pe_dir;
+  float echo_spacing;
 
   int single_param;
-
 
   void parse_command_line(int argc, char** argv, const string &);
 
@@ -159,6 +161,10 @@ inline globaloptions::globaloptions()
   initmatfname = "";
   refweightfname = "";
   testweightfname = "";
+  wmsegfname = "";
+  wmcoordsfname = "";
+  wmnormsfname = "";
+  fmapfname = "";
   initmat = IdentityMatrix(4);
   initmatsqform = false;
   printinit = false;
@@ -223,6 +229,8 @@ inline globaloptions::globaloptions()
   sincwidth = 7.0; // voxels
   sincwindow = Hanning;
   paddingsize = 0.0;
+  pe_dir=0;   // 1=x, 2=y, 3=z, -1=-x, -2=-y, -3=-z, 0=none
+  echo_spacing = 5e-4;  // random guess (0.5ms) - units of seconds
 
   single_param = -1;
 }

@@ -150,6 +150,10 @@ void globaloptions::parse_command_line(int argc,char** argv,
       useseg = true;
       n+=2;
       continue;
+    } else if ( arg == "-fieldmap") {
+      fmapfname = argv[n+1];
+      n+=2;
+      continue;
     } else if ( arg == "-wmcoords") {
       wmcoordsfname = argv[n+1];
       useseg = true;
@@ -205,6 +209,14 @@ void globaloptions::parse_command_line(int argc,char** argv,
       continue;
     } else if ( arg == "-finesearch") {
       finedelta = atof(argv[n+1])*M_PI/180.0;
+      n+=2;
+      continue;
+    } else if ( arg == "-echospacing") {
+      echo_spacing = atof(argv[n+1]);
+      n+=2;
+      continue;
+    } else if ( arg == "-pedir") {
+      pe_dir = atoi(argv[n+1]);
       n+=2;
       continue;
     } else if ( arg == "-verbose") {
@@ -392,6 +404,9 @@ void globaloptions::print_usage(int argc, char *argv[])
        << "        -wmseg <volume>                    (white matter segmentation volume needed by BBR cost function)\n"
        << "        -wmcoords <text matrix>            (white matter boundary coordinates for BBR cost function)\n"
        << "        -wmnorms <text matrix>             (white matter boundary normals for BBR cost function)\n"
+       << "        -fieldmap <volume>                 (fieldmap image in rads/s - must be already registered to the reference image)\n"
+       << "        -pedir <index>                     (phase encode direction of EPI - 1/2/3=x/y/z & -1/-2/-3=-x/-y/-z)\n"
+       << "        -echospacing <value>               (value of EPI echo spacing - unit of sec)\n"
        << "        -noclamp                           (do not use intensity clamping)\n"
        << "        -noresampblur                      (do not use blurring on downsampling)\n"
        << "        -2D                                (use 2D rigid body mode - ignores dof)\n"

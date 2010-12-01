@@ -47,6 +47,7 @@ const string version = "6.0";
 volume<float> global_refweight, global_testweight, global_refweight1;
 volume<float> global_refweight2, global_refweight4, global_refweight8;
 volume<float> global_seg, global_init_testvol, global_init_testweight;
+volume<float> global_fmap;
 Matrix global_coords, global_norms;
 bool global_scale1OK=true, read_testvol=false;
 float global_sampling=1.0f;
@@ -124,6 +125,57 @@ int FLIRT_read_volume(volume<float>& target, const string& filename)
 
 //------------------------------------------------------------------------//
 
+ColumnVector default_nonlin_params(void)
+{
+  int pe_dir = globaloptions::get().pe_dir;
+  int N=0;
+  if (abs(pe_dir)==1) N=globaloptions::get().impair->testvol.xdim();
+  if (abs(pe_dir)==2) N=globaloptions::get().impair->testvol.ydim();
+  if (abs(pe_dir)==3) N=globaloptions::get().impair->testvol.zdim();
+  float fmapscaling = globaloptions::get().echo_spacing * N / (2.0*M_PI);
+  if (pe_dir<0) fmapscaling *= -1;
+  ColumnVector nonlin_params(1);
+  nonlin_params=fmapscaling;
+  return nonlin_params;
+}
+
+
+void affine_and_fmap_transform(const volume<float>& testvol, volume<float>& outputvol,
+			       const Matrix& finalmat, const ColumnVector& nonlin_params)
+{
+  Matrix iaffbig = finalmat.i();
+  if (testvol.left_right_order()==FSL_NEUROLOGICAL) {
+    iaffbig = testvol.swapmat(-1,2,3) * iaffbig;
+  }
+  if (outputvol.left_right_order()==FSL_NEUROLOGICAL) {
+    iaffbig = iaffbig * outputvol.swapmat(-1,2,3);
+  }
+  // convert iaffbig to go from output voxel coords to input (reference) voxel coords
+  iaffbig = testvol.sampling_mat().i() * iaffbig * outputvol.sampling_mat();
+
+  ColumnVector rvc(4), tvc(4);  
+  int pe_dir = globaloptions::get().pe_dir;
+  
+  for (int z=outputvol.minz(); z<=outputvol.maxz(); z++) {
+    for (int y=outputvol.miny(); y<=outputvol.maxy(); y++) {
+      for (int x=outputvol.minx(); x<=outputvol.maxx(); x++) {
+	rvc(1)=x; rvc(2)=y; rvc(3)=z; rvc(4)=1;
+	tvc = iaffbig * rvc;
+	// tvc is currently the undistorted coords in the EPI (test image)
+	if (pe_dir!=0) {
+	  // fmap gives the distance required to shift from undistorted to distorted coords
+	  //   and fmap will be in the reference frame
+	  // add in the fmap transformations (locked along the EPI PE direction)
+	  // multiply fmap by a free parameter - nonlin_params(1)
+	  tvc(abs(pe_dir)) += nonlin_params(1)*global_fmap.interpolate(rvc(1),rvc(2),rvc(3));
+	}
+	outputvol(x,y,z) = testvol.interpolate(tvc(1),tvc(2),tvc(3));
+      }
+    }
+  }
+}
+
+
 void final_transform(const volume<float>& testvol, volume<float>& outputvol,
 		     const Matrix& finalmat) 
 {
@@ -139,7 +191,11 @@ void final_transform(const volume<float>& testvol, volume<float>& outputvol,
   if (globaloptions::get().mode2D) {
     paddingsize = Max(1.0,paddingsize);
   }
-  affine_transform(testvol,outputvol,finalmat,paddingsize);
+  if (globaloptions::get().pe_dir==0) {  // test to see if fieldmap is being used
+    affine_transform(testvol,outputvol,finalmat,paddingsize);
+  } else {
+    affine_and_fmap_transform(testvol,outputvol,finalmat,default_nonlin_params());
+  }
 }
 
 template <class T>
@@ -324,6 +380,7 @@ int setcostfntype(Costfn* imagepair, costfns ctype) {
     } else {
       imagepair->set_bbr_seg(global_seg);  // only run BBR at one scale so not wasteful
     }
+    imagepair->set_bbr_fmap(global_fmap,globaloptions::get().pe_dir);
     if (globaloptions::get().debug) {
       cerr << "Result (post) of is_bbr_set is " << imagepair->is_bbr_set() << endl;
     }
@@ -365,12 +422,29 @@ float costfn(const Matrix& uninitaffmat)
 }
 
 
+float costfn(const Matrix& uninitaffmat, const ColumnVector& nonlin_params)
+{
+  Tracer tr("costfn");
+  Matrix affmat = uninitaffmat * globaloptions::get().initmat;  // apply initial matrix
+  setcostfntype(globaloptions::get().currentcostfn);
+  float retval = 0.0;
+  retval = globaloptions::get().impair->cost(affmat,nonlin_params);
+  return retval;
+}
+
+
 float costfn(const ColumnVector& params)
 {
   Tracer tr("costfn");
   Matrix affmat(4,4);
   vector2affine(params,globaloptions::get().no_params,affmat);
-  float retval = costfn(affmat);
+  float retval;
+  int pe_dir=globaloptions::get().pe_dir;
+  if ((globaloptions::get().impair->get_costfn()==BBR) && (pe_dir!=0)) {
+    retval = costfn(affmat,default_nonlin_params());
+  } else {
+    retval = costfn(affmat);
+  }
   if (globaloptions::get().verbose>=5) {
     cout << globaloptions::get().impair->count() << " : ";
     cout << retval << " :: ";
@@ -1314,6 +1388,10 @@ int get_refvol(volume<float>& refvol)
       global_refweight = refvol;   // Fix size and dimensions
       global_refweight = 1.0;      // Set all elements to unity weighting
     }
+  }
+
+  if (globaloptions::get().fmapfname.length()>0) {
+      FLIRT_read_volume(global_fmap,globaloptions::get().fmapfname);
   }
 
   if (globaloptions::get().useseg) {
