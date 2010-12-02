@@ -129,9 +129,9 @@ ColumnVector default_nonlin_params(void)
 {
   int pe_dir = globaloptions::get().pe_dir;
   int N=0;
-  if (abs(pe_dir)==1) N=globaloptions::get().impair->testvol.xdim();
-  if (abs(pe_dir)==2) N=globaloptions::get().impair->testvol.ydim();
-  if (abs(pe_dir)==3) N=globaloptions::get().impair->testvol.zdim();
+  if (abs(pe_dir)==1) N=globaloptions::get().impair->testvol.xsize();
+  if (abs(pe_dir)==2) N=globaloptions::get().impair->testvol.ysize();
+  if (abs(pe_dir)==3) N=globaloptions::get().impair->testvol.zsize();
   float fmapscaling = globaloptions::get().echo_spacing * N / (2.0*M_PI);
   if (pe_dir<0) fmapscaling *= -1;
   ColumnVector nonlin_params(1);
@@ -143,6 +143,7 @@ ColumnVector default_nonlin_params(void)
 void affine_and_fmap_transform(const volume<float>& testvol, volume<float>& outputvol,
 			       const Matrix& finalmat, const ColumnVector& nonlin_params)
 {
+  // should put interpolation stuff here - and maybe appropriate padding/masking!
   Matrix iaffbig = finalmat.i();
   if (testvol.left_right_order()==FSL_NEUROLOGICAL) {
     iaffbig = testvol.swapmat(-1,2,3) * iaffbig;
@@ -150,7 +151,7 @@ void affine_and_fmap_transform(const volume<float>& testvol, volume<float>& outp
   if (outputvol.left_right_order()==FSL_NEUROLOGICAL) {
     iaffbig = iaffbig * outputvol.swapmat(-1,2,3);
   }
-  // convert iaffbig to go from output voxel coords to input (reference) voxel coords
+  // convert iaffbig to go to output voxel coords from input (reference) voxel coords
   iaffbig = testvol.sampling_mat().i() * iaffbig * outputvol.sampling_mat();
 
   ColumnVector rvc(4), tvc(4);  
@@ -411,17 +412,6 @@ int setup_costfn(Costfn* imagepair, costfns curcostfn, int no_bins, float smooth
 }
 
 
-float costfn(const Matrix& uninitaffmat)
-{
-  Tracer tr("costfn");
-  Matrix affmat = uninitaffmat * globaloptions::get().initmat;  // apply initial matrix
-  setcostfntype(globaloptions::get().currentcostfn);
-  float retval = 0.0;
-  retval = globaloptions::get().impair->cost(affmat);
-  return retval;
-}
-
-
 float costfn(const Matrix& uninitaffmat, const ColumnVector& nonlin_params)
 {
   Tracer tr("costfn");
@@ -429,6 +419,21 @@ float costfn(const Matrix& uninitaffmat, const ColumnVector& nonlin_params)
   setcostfntype(globaloptions::get().currentcostfn);
   float retval = 0.0;
   retval = globaloptions::get().impair->cost(affmat,nonlin_params);
+  return retval;
+}
+
+
+float costfn(const Matrix& uninitaffmat)
+{
+  Tracer tr("costfn");
+  float retval = 0.0;
+  if ((globaloptions::get().currentcostfn) && (globaloptions::get().pe_dir!=0)) {
+    retval = costfn(uninitaffmat,default_nonlin_params());
+  } else {
+    Matrix affmat = uninitaffmat * globaloptions::get().initmat;  // apply initial matrix
+    setcostfntype(globaloptions::get().currentcostfn);
+    retval = globaloptions::get().impair->cost(affmat);
+  }
   return retval;
 }
 
@@ -2245,7 +2250,7 @@ void usrmeasurecost(MatVecPtr stdresultmat,
 		    ColumnVector& usrperturbation, bool usrperturbrelative)
 {
   Tracer tr("usrmeasurecost");
-  // OPTIMISE
+  // MEASURE COST
   Matrix delta, perturbmask, matresult;
   set_perturbations(delta,perturbmask);
   int dof = Min(globaloptions::get().dof,usrdof);

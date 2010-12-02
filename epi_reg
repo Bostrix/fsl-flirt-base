@@ -3,27 +3,83 @@
 FLIRTDIR=`dirname $0`;
 
 if [ $# -lt 3 ] ; then
-  echo "Usage: `basename $0` <EPI image> <T1 image> <output name>"
+  echo "Usage: `basename $0` <EPI image> <wholehead T1 image> <brain extracted T1 image> <output name>"
+  echo "       `basename $0` <EPI image> <wholehead T1 image> <brain extracted T1 image> <output name> <fieldmap rad/s> <wholehead fieldmap mag> <brain extracted fieldmap mag> <echo spacing> <pe dir>"
   echo " "
-  echo "Also need to have a brain extracted image for T1 with same basename and _brain"
+  echo "Second case is when using fieldmaps: echo spacing in seconds; phase encoding direction = x/y/z/-x/-y/-z" 
   exit 0;
 fi
 
-vin=`$FSLDIR/bin/remove_ext $1`;
-vref=`$FSLDIR/bin/remove_ext $2`;
-vout=$3;
+vepi=`$FSLDIR/bin/remove_ext $1`;
+vrefhead=`$FSLDIR/bin/remove_ext $2`;
+vrefbrain=`$FSLDIR/bin/remove_ext $3`;
+vout=`$FSLDIR/bin/remove_ext $4`;
+use_fmap=no;
+
+if [ $# -ge 9 ] ; then
+    use_fmap=yes;
+    fmaprads=`$FSLDIR/bin/remove_ext $5`;
+    fmapmaghead=`$FSLDIR/bin/remove_ext $6`;
+    fmapmagbrain=`$FSLDIR/bin/remove_ext $7`;
+    dwell=$8;
+    # These are consistent with the ones used in FUGUE (this has been checked)
+    if [ $9 = "x" ] ; then pe_dir=1; fdir="x"; fi
+    if [ $9 = "y" ] ; then pe_dir=2; fdir="y"; fi
+    if [ $9 = "z" ] ; then pe_dir=3; fdir="z"; fi
+    if [ $9 = "-x" ] ; then pe_dir=-1; fdir="x-"; fi
+    if [ $9 = "-y" ] ; then pe_dir=-2; fdir="y-"; fi
+    if [ $9 = "-z" ] ; then pe_dir=-3; fdir="z-"; fi
+    if [ $9 = "x-" ] ; then pe_dir=-1; fdir="x-"; fi
+    if [ $9 = "y-" ] ; then pe_dir=-2; fdir="y-"; fi
+    if [ $9 = "z-" ] ; then pe_dir=-3; fdir="z-"; fi
+    if [ X${pe_dir} = X ] ; then
+	echo "Error: invalid phase encode direction specified";
+	exit 2;
+    fi
+fi
 
 # create the WM segmentation
-$FSLDIR/bin/fast ${vref}_brain
-$FSLDIR/bin/fslmaths ${vref}_brain_pve_2 -thr 0.5 -bin ${vref}_wmseg
+if [ `$FSLDIR/bin/imtest ${vrefbrain}_wmseg` = 0 ] ; then
+    echo "Running FAST segmentation"
+    $FSLDIR/bin/fast ${vrefbrain}
+    $FSLDIR/bin/fslmaths ${vrefbrain}_pve_2 -thr 0.5 -bin ${vrefbrain}_wmseg
+fi
 
 # do a standard flirt pre-alignment
-$FSLDIR/bin/flirt -ref ${vref}_brain -in ${vin} -dof 6 -omat ${vout}_init.mat
+echo "FLIRT pre-alignment"
+$FSLDIR/bin/flirt -ref ${vrefbrain} -in ${vepi} -dof 6 -omat ${vout}_init.mat
 
-# now run the bbr
-$FLIRTDIR/flirt -ref ${vref} -in ${vin} -dof 6 -cost bbr -wmseg ${vref}_wmseg -init ${vout}_init.mat -omat ${vout}.mat -out ${vout} -schedule ${FLIRTDIR}/flirtsch/bbr.sch
+####################
 
+if [ $use_fmap = no ] ; then
 
+# NO FIELDMAP
+    # now run the bbr
+    echo "Running BBR"
+    $FLIRTDIR/flirt -ref ${vrefhead} -in ${vepi} -dof 6 -cost bbr -wmseg ${vrefbrain}_wmseg -init ${vout}_init.mat -omat ${vout}.mat -out ${vout} -schedule ${FLIRTDIR}/flirtsch/bbr.sch
+
+####################
+
+else
+
+# WITH FIELDMAP
+    echo "Registering fieldmap to structural"
+    # register fmap to structural image
+    $FLIRTDIR/flirt -in ${fmapmagbrain} -ref ${vrefbrain} -dof 6 -omat ${fmapmagbrain}2str_init.mat
+    $FLIRTDIR/flirt -in ${fmapmaghead} -ref ${vrefhead} -dof 6 -init ${fmapmagbrain}2str_init.mat -omat ${fmapmagbrain}2str.mat -out ${fmapmagbrain}2str
+    # unmask the fieldmap (necessary to avoid edge effects)
+    $FSLDIR/bin/fslmaths ${fmapmagbrain} -abs -bin ${fmaprads}_mask
+    $FSLDIR/bin/fslmaths ${fmaprads} -abs -bin -mul ${fmaprads}_mask ${fmaprads}_mask
+    $FSLDIR/bin/fugue --loadfmap=${fmaprads} --mask=${fmaprads}_mask --unmaskfmap --savefmap=${fmaprads}_unmasked --unwarpdir=${fdir}   # the direction here should take into account the initial affine (it needs to be the direction in the EPI)
+    $FLIRTDIR/flirt -in ${fmaprads}_unmasked -ref ${vrefhead} -applyxfm -init ${fmapmagbrain}2str.mat -out ${fmaprads}2str
+
+    # run bbr with fieldmap
+    echo "Running BBR with fieldmap"
+    $FLIRTDIR/flirt -ref ${vrefhead} -in ${vepi} -dof 6 -cost bbr -wmseg ${vrefbrain}_wmseg -init ${vout}_init.mat -omat ${vout}.mat -out ${vout} -schedule ${FLIRTDIR}/flirtsch/bbr.sch -echospacing ${dwell} -pedir ${pe_dir} -fieldmap ${fmaprads}2str
+
+fi
+
+####################
 
 
 
