@@ -160,8 +160,8 @@ void affine_and_fmap_transform(const volume<float>& testvol, volume<float>& outp
   for (int z=outputvol.minz(); z<=outputvol.maxz(); z++) {
     for (int y=outputvol.miny(); y<=outputvol.maxy(); y++) {
       for (int x=outputvol.minx(); x<=outputvol.maxx(); x++) {
-	rvc(1)=x; rvc(2)=y; rvc(3)=z; rvc(4)=1;
-	tvc = iaffbig * rvc;
+	rvc(1)=x; rvc(2)=y; rvc(3)=z; rvc(4)=1;  // voxel coord
+	tvc = iaffbig * rvc;  // voxel coord
 	// tvc is currently the undistorted coords in the EPI (test image)
 	if (pe_dir!=0) {
 	  // fmap gives the distance required to shift from undistorted to distorted coords

@@ -3,6 +3,7 @@ setscale 1
 setoption costfunction bbr
 setoption optimisationtype brent
 setoption tolerance 0.0005 0.0005 0.0005 0.02 0.02 0.02 0.002 0.002 0.002 0.001 0.001 0.001
+#setoption tolerance 0.005 0.005 0.005 0.2 0.2 0.2 0.02 0.02 0.02 0.01 0.01 0.01
 setoption boundguess 1
 setoption bbrstep 200
 clear UA
@@ -22,7 +23,7 @@ optimise 6 U:1  0.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 8
 setoption optimisationtype brent
 optimise 6 U:2  0.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 4
 sort U
-setoption tolerance 0.005 0.005 0.005 0.2 0.2 0.2 0.02 0.02 0.02 0.01 0.01 0.01
+setoption tolerance 0.0005 0.0005 0.0005 0.02 0.02 0.02 0.002 0.002 0.002 0.001 0.001 0.001
 setoption bbrstep 2
 clear UU
 copy U UU
@@ -39,4 +40,5 @@ optimise 12 U:1  0.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 8
 setoption optimisationtype brent
 optimise 12 U:2  0.0   0.0   0.0   0.0   0.0   0.0   0.0  rel 4
 sort U
+print U:1
 
