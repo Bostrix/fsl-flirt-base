@@ -22,7 +22,7 @@ using namespace std;
 // The two strings below specify the title and example usage that is
 //  printed out as the help or usage message
 
-string title="midtrans (Version 1.0)\nCopyright(c) 2004, University of Oxford (Mark Jenkinson)";
+string title="midtrans (Version 2.0)\nCopyright(c) 2010, University of Oxford (Mark Jenkinson)";
 string examples="midtrans [options] transform1 transform2 ... transformN";
 
 // Each (global) object below specificies as option and can be accessed
@@ -38,8 +38,14 @@ Option<bool> verbose(string("-v,--verbose"), false,
 Option<bool> help(string("-h,--help"), false,
 		  string("display this message"),
 		  false, no_argument);
-Option<float> outlier(string("-r,--reject"), 3.0,
-		  string("threshold for outlier rejection (in stddev): default=3.0"),
+Option<bool> debug(string("--debug"), false, 
+		     string("switch on debugging output"), 
+		     false, no_argument);
+Option<string> templte(string("--template"), string(""),
+		  string("input filename for template image (needed for fix origin)"),
+		  false, requires_argument);
+Option<string> separateouts(string("--separate"), string(""),
+		  string("basename for output of separate matrices (final name includes a number)"),
 		  false, requires_argument);
 Option<string> outname(string("-o,--out"), string(""),
 		  string("output filename for matrix"),
@@ -50,19 +56,244 @@ int nonoptarg;
 
 // Local functions
 
+Matrix approx_nth_root(const vector<Matrix>& matlist) 
+{
+  int NN = matlist.size();
+  // initialise using the affine decomposition (arthimetic average + geometric mean)
+  ColumnVector centre(3), params(12), totaltrans(3);
+  centre=0.0;
 
-//DUMMY TEST STUFF - MUST REMOVE!!!
-typedef Matrix complexmatrix;
-complexmatrix logm(const Matrix& mat) { return mat; }
-Matrix expm(const complexmatrix& mat) { return mat; }
-//END OF DUMMY TEST STUFF (MJ)
+  Matrix rootmat(3,3), prodmat(4,4), prodmat3(3,3);
+  prodmat = IdentityMatrix(4);
+  for (int n=0; n<NN; n++) {
+    prodmat *= matlist[n];
+  }
+  // store and then zero the translational component
+  totaltrans(1)=prodmat(1,4);  prodmat(1,4)=0.0;
+  totaltrans(2)=prodmat(2,4);  prodmat(2,4)=0.0;
+  totaltrans(3)=prodmat(3,4);  prodmat(3,4)=0.0;
+  prodmat3 = prodmat.SubMatrix(1,3,1,3);
+  if (verbose.value()) { cout << "Product matrix = " << endl << prodmat << endl; }
+
+  // calculate the affine decomposition and approximate root
+  decompose_aff(params, prodmat, centre, rotmat2euler);
+  if (verbose.value()) { cout << "Affine params = " << params.t() << endl; }
+  for (int n=1; n<=12; n++) {
+    if ((n>=7) && (n<=9)) { 
+      params(n) = exp(log(params(n))/NN);   // NN-th root
+    } else {
+      params(n) /= NN;
+    }
+  }
+  compose_aff(params, 12, centre, rootmat, construct_rotmat_euler);
+
+  // iterative solution process (no convergence guarantees though, so just hoping for the best!)
+  Matrix err, apow, amat, bmat;
+  float errval=1.0, errthresh=1e-8;
+  int nit=0, max_it=20;
+  amat = rootmat.SubMatrix(1,3,1,3);
+  while ((errval>errthresh) && (++nit<max_it)) {
+    if (verbose.value()) { cout << "Iteration number " << nit << endl; }
+    apow = IdentityMatrix(3);
+    for (int n=1; n<=NN; n++) { apow *= amat; }
+    err = apow - prodmat3;
+    errval = err.SumSquare()/9.0;
+    bmat = (err*apow.i())*(-1.0/NN);
+    amat += bmat;
+  }
+  if (errval>errthresh) {
+    // Put alternative method (e.g. direct numerical optimisation) in here
+    cerr << "Error:: failed to converge to tolerance" << endl;
+    cerr << "Approximation error = " << errval << endl;
+    exit(EXIT_FAILURE);
+  }
+
+  // calculate A^(n-1) + A^(n-2) + ... + A + I
+  Matrix matsum;
+  ColumnVector trans;
+  matsum=IdentityMatrix(3);
+  for (int n=1; n<=NN-1; n++) {
+    matsum = amat*matsum + IdentityMatrix(3);
+  }
+  trans = matsum.i() * totaltrans;
+
+  // put solution (amat) + translation back into rootmat
+  rootmat.SubMatrix(1,3,1,3) = amat;
+  rootmat(1,4)=trans(1);
+  rootmat(2,4)=trans(2);
+  rootmat(3,4)=trans(3);
+
+  Matrix midtrans(4,4);
+  midtrans=rootmat.i();  
+return midtrans;
+}
+
+
+Matrix avg_affine_with_procrustes(const vector<Matrix>& matlist, const ColumnVector& temp_orig,
+				  float rmax)
+{
+  // Based on minimisation of squared distance after factoring out average and individual poses
+  // Uses min E = -Trace[A.P] is solved for a 6 dof A (orthogonal) by A=V.U' where P=U.D.V' (SVD)
+  int NN = matlist.size();
+  Matrix M44;
+  vector<ColumnVector> xavlist;
+  ColumnVector v0001(4), x_av(3);
+
+  if (verbose.value()) { cout << "Initialising averages" << endl; }
+
+  // Initially calculate the centre voxel locations for each native image by projecting template's centre
+  v0001 << temp_orig(1) << temp_orig(2) << temp_orig(3) << 1; // Centre/Origin/COV of the template (in FLIRT coords)
+  // calculate centre of individual space (taking template "centre" as v0001)
+  for (int n=0; n<NN; n++) {
+    M44 = matlist[n];
+    x_av = M44.i() * v0001;
+    x_av = x_av.Rows(1,3);
+    xavlist.push_back(x_av);
+  }
+
+  // STAGE 1 (estimate best rigid body average correction for template pose)
+  // Equations are: min E = -Trace[A(<P.x.x'> + <t.x'> - <P.x><x'> - <t><x'>)]
+  //           and: s = <x> - A(<Px> + <t>)
+  // Solve for A (3x3) and s (3x1) given sets of P (3x3) and t (3x1)
+  // <P.x.x'> = (1/N) * \sum_i P_i <x_i.x_i'> 
+  // <x_i.x_i'> = (1/5)*(r^2)*I + <x_i>.<x_i>'
+  if (verbose.value()) { cout << "Stage 1" << endl; }
+  ColumnVector s(3), x_i(3), t_i(3), t_av(3), Px_av(3);
+  Matrix A(3,3), P_i(3,3), tx_av(3,3), Pxx_av(3,3), M2, U, V;
+  DiagonalMatrix D;
+
+  s=0; x_i=0; x_av=0; t_i=0; t_av=0; Px_av=0;
+  A=0; P_i=0; tx_av=0; Pxx_av=0;
+
+  for (int n=0; n<NN; n++) { 
+    x_i = xavlist[n];
+    P_i = matlist[n].SubMatrix(1,3,1,3);
+    t_i = matlist[n].SubMatrix(1,3,4,4);
+    x_av += x_i;
+    t_av += t_i;
+    tx_av += t_i*x_i.t();
+    Px_av += P_i * x_i;
+    Pxx_av += P_i * ((rmax*rmax/5)*IdentityMatrix(3) + x_i*x_i.t());
+    if (debug.value()) { cout << "P_"<< n+1 << " = " << endl << P_i << endl; }
+  }
+  x_av /= (float) NN;
+  t_av /= (float) NN;
+  tx_av /= (float) NN;
+  Px_av /= (float) NN;
+  Pxx_av /= (float) NN;
+  
+  if (debug.value()) { cout << "Pxx_av = " << endl << Pxx_av << endl; }
+
+  M2 = Pxx_av + tx_av - Px_av*x_av.t() - t_av*x_av.t();
+  SVD(M2,D,U,V);
+  A = V*U.t();
+  s = x_av - A*(Px_av + t_av);
+  if (verbose.value()) { cout << "A = " << endl << A << endl << "s = " << s.t() << endl; }
+
+  // STAGE 2 (estimate a separate rigid body approx to the template for each image)
+  // Equations are: min E = -Trace[R(<xx'>-<x><x'>)P'] = -Trace[R.P']   (as <xx'>-<x><x'>=0.2*r^2*I)
+  //           and: u = (P-R)<x> + t
+  // Solve for R (3x3) and u (3x1) given sets of P (3x3) and t (3x1), where P="AP" from above (4x4 sense)
+  if (verbose.value()) { cout << "Stage 2" << endl; }
+  vector<Matrix> matlist2;
+  Matrix R, P;
+  ColumnVector u, t;
+  for (int n=0; n<NN; n++) {
+    M44 = matlist[n];
+    P = A * M44.SubMatrix(1,3,1,3);
+    t = A * M44.SubMatrix(1,3,4,4) + s;
+    SVD(P.t(), D, U, V);
+    R = V*U.t();
+    u = (P-R)*xavlist[n] + t;
+    M44.SubMatrix(1,3,1,3) = R;
+    M44.SubMatrix(1,3,4,4) = u;
+    matlist2.push_back(M44);
+    if (verbose.value()) { cout << "Subject number " << n << endl; }
+    if (verbose.value()) { cout << "R = " << endl << R << endl << "u = " << u.t() << endl; }
+  }
+
+  // STAGE 3 (estimate the best affine average correction to the template using the best inidividual rigid body estimates from stage 2)
+  // Equations are: M = -<ba'><aa'>^(-1)  ;   w = -M<Px> - M<t> + <Rx> + <u>
+  //  where a_i = P_i.x_i-<Px> + t_i - <t> ; b_i = -(R_i.x_i -<Rx>) - (u_i-<u>)
+  //  and P_i|t_i stands for "A.P_i" (4x4 sense) from after stage 1, and R_i|u_i is the result of stage 2
+  // <aa'> = <Pxx'P'> - <Px><Px>' + <Pxt'> + <tx'P'> - <t><Px>' - <Px><t>' + <tt'> - <t><t>'
+  // <ba'> = <Rxx'P'> - <Rx><Px>' + <Rxt'> - <Rx><t'> - <ux'P'> + <u><Px>' - <ut'> + <u><t>'
+  // <Pxx'P'> = (1/5)*(r^2)*<PP'> + (1/N)*\sum_i P_i.<x_i>.<x_i>'.P_i'
+  // <Rxx'P'> = (1/5)*(r^2)*<RP'> + (1/N)*\sum_i R_i.<x_i>.<x_i>'.P_i'
+  
+  if (verbose.value()) { cout << "Stage 3" << endl; }
+  ColumnVector u_i(3), u_av(3), Rx_av(3);
+  Matrix tt_av(3,3), ut_av(3,3), R_i(3,3), Pxt_av(3,3), Rxt_av(3,3), uxP_av(3,3), PP_av(3,3), RP_av(3,3), PxxP(3,3), RxxP(3,3);
+
+  u_i=0; x_i=0; x_av=0; u_av=0; t_i=0; t_av=0; Px_av=0; Rx_av=0;
+  P_i=0; tt_av=0; ut_av=0; R_i=0; Pxt_av=0; Rxt_av=0; uxP_av=0; PP_av=0; RP_av=0; PxxP=0; RxxP=0;
+
+  for (int n=0; n<NN; n++) { 
+    u_i = matlist2[n].SubMatrix(1,3,4,4);
+    x_i = xavlist[n];
+    x_av += x_i;
+    u_av += u_i; 
+    P_i = A * matlist[n].SubMatrix(1,3,1,3);
+    t_i = A * matlist[n].SubMatrix(1,3,4,4) + s;
+    t_av += t_i;
+    tt_av += t_i*t_i.t();
+    ut_av += u_i*t_i.t();
+    Px_av += P_i * x_i;
+    R_i = matlist2[n].SubMatrix(1,3,1,3);
+    Rx_av += R_i * x_i;
+    Pxt_av += P_i * x_i * t_i.t();
+    Rxt_av += R_i * x_i * t_i.t();
+    uxP_av += u_i * x_i.t() * P_i.t();
+    PP_av += P_i * P_i.t();
+    RP_av += R_i * P_i.t();
+    PxxP += P_i * x_i * x_i.t() * P_i.t();
+    RxxP += R_i * x_i * x_i.t() * P_i.t();
+  }
+  x_av /= (float) NN;
+  u_av /= (float) NN;
+  t_av /= (float) NN;
+  tt_av /= (float) NN;
+  ut_av /= (float) NN;
+  Px_av /= (float) NN;
+  Rx_av /= (float) NN;
+  Pxt_av /= (float) NN;
+  Rxt_av /= (float) NN;
+  uxP_av /= (float) NN;
+  PP_av /= (float) NN;
+  RP_av /= (float) NN;
+  PxxP = (rmax*rmax/5)*PP_av + PxxP/((float) NN);
+  RxxP = (rmax*rmax/5)*RP_av + RxxP/((float) NN);
+
+  Matrix aat, ba, M;
+  aat = PxxP - Px_av*Px_av.t() + Pxt_av + Pxt_av.t() - t_av*Px_av.t() - Px_av*t_av.t() + tt_av - t_av*t_av.t();
+  ba = -1*(RxxP - Rx_av*Px_av.t() + Rxt_av - Rx_av*t_av.t() - uxP_av + u_av*Px_av.t() - ut_av + u_av*t_av.t());
+
+  ColumnVector w;
+  M = -ba*(aat).i();
+  w = -M*Px_av - M*t_av + Rx_av + u_av;
+  if (verbose.value()) { cout << "M = " << endl << M << endl << "w = " << w.t() << endl; }
+
+  if (verbose.value()) { cout << "Final calculations" << endl; }
+  Matrix midtrans;
+  // midtrans = M*A (as this is how the template is transformed)
+  midtrans=IdentityMatrix(4);
+  midtrans.SubMatrix(1,3,1,3) = M*A;
+  midtrans.SubMatrix(1,3,4,4) = w + M*s;
+
+  // Resulting matrix to get existing Image -> Old Template transform to Image -> New Template is:
+  //   mat(Old Template -> New Template) * mat(Image -> Old Template)
+  // That is, pre-multiply old matrices by current midtrans
+
+  return midtrans;
+}
+
+
 
 int do_work(int argc, char* argv[]) 
 {
-  int ntrans = argc - nonoptarg;
+  //int ntrans = argc - nonoptarg;
 
   // read in matrices
-  Matrix midtrans(4,4);
   vector<Matrix> matlist;
   for (int n=nonoptarg; n<argc; n++) {
     Matrix trans(4,4);
@@ -74,67 +305,26 @@ int do_work(int argc, char* argv[])
     matlist.push_back(trans);
   }
 
-  // find the geometric mean via logm and expm
-  complexmatrix logsum(4,4);
-  logsum=0.0;
-  for (int n=0; n<ntrans; n++) {
-    logsum += logm(matlist[n]);
-  }
-  midtrans = expm(logsum / (double) ntrans);
+  int NN = matlist.size();
+  if (verbose.value()) { cout << "Number of matrices = " << NN << endl; }
 
-  // perform outlier reject (if necessary and possible)
-  if (outlier.set() && (ntrans < 5)) {
-     cerr << "Warning: outlier reject is not done when there are less than 5 transforms"
-	  << endl;
+  ColumnVector temp_orig(4);
+  if (templte.set()) {
+    volume<float> templ;
+    read_volume(templ,templte.value());
+    temp_orig = templ.cog("scaled_mm");
+  } else {
+    cout << "Assuming MNI origin as no template image specified" << endl;
+    temp_orig(1)=90; temp_orig(2)=110; temp_orig(3)=90;  // from MNI
+    if (debug.value()) { temp_orig(1)=0; temp_orig(2)=0; temp_orig(3)=0; }  // DEBUG ONLY!
   }
-  if ((ntrans>=5) && (outlier.value()>0)) {
-    /* use rmsdiff to measure differences from midtrans with and
-	without including the 2 max values (assume no more than
-	two outliers!)  
-       should really correct for standard deviation estimation from
-	ordered statistics (excluding top 2 values) but probably 
-	doesn't make much difference - maybe later */
-    float sum=0.0, sum2=0.0, max1=0.0, max2=0.0;
-    float rmax=80;  // maximum radius in mm (for rmsdiff)
-    ColumnVector centre(3);
-    centre=0.0;
-    int n1=-1, n2=-1;
-    for (int n=0; n<ntrans; n++) {
-	float rmsd=rms_deviation(matlist[n],midtrans,centre,rmax);
-	if (rmsd>max2) {
-	  if (rmsd>max1) { max2=max1; max1=rmsd; n2=n1; n1=n; }
-	  else { max2=rmsd; n2=n; }
-        }
-	sum+=rmsd;
-	sum2+=Sqr(rmsd);
-    }
-    // adjust sums to remove the effect of max1 and max2
-    sum -= (max1 + max2);
-    sum2 -= (Sqr(max1) + Sqr(max2));
-    int n = ntrans-2;
-    float stddev = (sum2 - Sqr(sum)/n)/(n-1);
+  if (verbose.value()) { cout << "Centre of template = " << temp_orig.t() << endl; }
 
-    // remove max 1 or 2 if they are over outlier rejection threshold
-    bool rm1=false, rm2=false;
-    rm1 = (max1/stddev) > outlier.value();
-    rm2 = (max2/stddev) > outlier.value();
-    if (rm1 || rm2) {
-	// now re-estimate the mid-trans
-        logsum=0.0;
-        for (int n=0; n<ntrans; n++) {
-          if ( (rm2 && (n==n2)) || (rm1 && (n==n1)) ) {
-	    // do nothing 
-	  } else {
-	    logsum += logm(matlist[n]);
-          }
-        }
-        int nval=ntrans;
-	if (rm1) nval--;
-	if (rm2) nval--;
-        midtrans = expm(logsum / (double) nval);
-    }
-  }
-  
+  // Do the calculation
+  Matrix midtrans;
+  //midtrans = approx_nth_root(matlist);
+  float rmax=80;  // size, in mm, of ROI to integrate error term over (template dependent - e.g. rats?)
+  midtrans = avg_affine_with_procrustes(matlist,temp_orig,rmax);
 
   // show/save output matrix
   if (outname.set()) {
@@ -142,6 +332,12 @@ int do_work(int argc, char* argv[])
   }
   if (verbose.value() || outname.unset()) {
     cout << midtrans << endl;
+  }
+
+  if (separateouts.set()) {
+    for (int n=1; n<=NN; n++) {
+      write_ascii_matrix(midtrans * matlist[n-1],separateouts.value()+num2str(n,4)+".mat");
+    }
   }
 
   return 0;
@@ -159,7 +355,9 @@ int main(int argc,char *argv[])
     // must include all wanted options here (the order determines how
     //  the help message is printed)
     options.add(outname);
-    options.add(outlier);
+    options.add(templte);
+    options.add(separateouts);
+    options.add(debug);
     options.add(verbose);
     options.add(help);
     
@@ -180,16 +378,20 @@ int main(int argc,char *argv[])
       exit(EXIT_FAILURE);
     }
 
-  }  catch(X_OptionError& e) {
+    // Call the local functions
+    
+    return do_work(argc,argv);
+    
+  } catch(X_OptionError& e) {
     options.usage();
     cerr << endl << e.what() << endl;
     exit(EXIT_FAILURE);
   } catch(std::exception &e) {
     cerr << e.what() << endl;
+  } catch(Exception &e) {
+    cerr << e.what() << endl;
+  } catch (...) {
+    cerr << "Fatal error" << endl;
   } 
-
-  // Call the local functions
-
-  return do_work(argc,argv);
 }
 
