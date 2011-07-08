@@ -47,7 +47,7 @@ const string version = "6.0";
 volume<float> global_refweight, global_testweight, global_refweight1;
 volume<float> global_refweight2, global_refweight4, global_refweight8;
 volume<float> global_seg, global_init_testvol, global_init_testweight;
-volume<float> global_fmap;
+volume<float> global_fmap, global_fmap_mask;
 Matrix global_coords, global_norms;
 bool global_scale1OK=true, read_testvol=false;
 float global_sampling=1.0f;
@@ -212,7 +212,7 @@ int safe_save_volume(const volume<T>& source, const string& filename)
 void save_matrix_data(const Matrix& matresult)
 {
   Matrix outfmat = matresult;
-  write_ascii_matrix(outfmat,globaloptions::get().outputmatascii);
+  write_ascii_matrix(outfmat,globaloptions::get().outputmatascii); 
 }
 
 void save_matrix_data(const Matrix& matresult, const volume<float>& initvol, 
@@ -381,7 +381,7 @@ int setcostfntype(Costfn* imagepair, costfns ctype) {
     } else {
       imagepair->set_bbr_seg(global_seg);  // only run BBR at one scale so not wasteful
     }
-    imagepair->set_bbr_fmap(global_fmap,globaloptions::get().pe_dir);
+    imagepair->set_bbr_fmap(global_fmap,global_fmap_mask,globaloptions::get().pe_dir);
     if (globaloptions::get().debug) {
       cerr << "Result (post) of is_bbr_set is " << imagepair->is_bbr_set() << endl;
     }
@@ -1576,9 +1576,9 @@ int output_dtype(const V& outvol)
 ////////////////////////////////////////////////////////////////////////////
 
 // this does the applyxfm!
-void no_optimise()
+void do_applyxfm()
 {
-  Tracer tr("no_optimise");
+  Tracer tr("do_applyxfm");
   volume<float> refvol;
   volume4D<float> testvol;
 
@@ -1623,7 +1623,12 @@ void no_optimise()
 
   float min_sampling_ref=1.0;
   min_sampling_ref = Min(refvol.xdim(),Min(refvol.ydim(),refvol.zdim()));
-  
+
+  // need the following to set up BBR fieldmap parameters (MJ TODO - UNTESTED!!!)
+  setup_costfn(globaloptions::get().impair, globaloptions::get().maincostfn,
+	       globaloptions::get().no_bins,
+	       globaloptions::get().smoothsize,globaloptions::get().fuzzyfrac);  
+
   if (globaloptions::get().outputfname.size()>0) {
     volume4D<float> outputvol;
     for (int t0=testvol.mint(); t0<=testvol.maxt(); t0++) {
@@ -1644,6 +1649,7 @@ void no_optimise()
     }
     int outputdtype = output_dtype(outputvol);
     outputvol.setDisplayMaximumMinimum(0,0);
+    outputvol.settdim(testvol);
     save_volume4D_dtype(outputvol,globaloptions::get().outputfname.c_str(),
 			outputdtype);
     if (globaloptions::get().verbose>=2) {
@@ -2811,7 +2817,7 @@ int main(int argc,char *argv[])
   globaloptions::get().parse_command_line(argc, argv,version);
 
   if (!globaloptions::get().do_optimise) {   
-    no_optimise();
+    do_applyxfm();
   }
   // reset the basescale for images where voxels are quite different from the
   //   usual human brain size (this must be done before any volumes are read, 
