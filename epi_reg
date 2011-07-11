@@ -53,6 +53,10 @@ if [ `$FSLDIR/bin/imtest ${vrefbrain}_wmseg` = 0 ] ; then
     $FSLDIR/bin/fast ${vrefbrain}
     $FSLDIR/bin/fslmaths ${vrefbrain}_pve_2 -thr 0.5 -bin ${vrefbrain}_wmseg
 fi
+# make a WM edge map for visualisation (good to overlay in FSLView)
+if [ `$FSLDIR/bin/imtest ${vrefbrain}_wmedge` = 0 ] ; then
+  $FSLDIR/bin/fslmaths ${vrefbrain}_wmseg -edge -mas ${vrefbrain}_wmseg ${vrefbrain}_wmedge
+fi
 
 # do a standard flirt pre-alignment
 echo "FLIRT pre-alignment"
@@ -66,6 +70,7 @@ if [ $use_fmap = no ] ; then
     # now run the bbr
     echo "Running BBR"
     $FLIRTDIR/flirt -ref ${vrefhead} -in ${vepi} -dof 6 -cost bbr -wmseg ${vrefbrain}_wmseg -init ${vout}_init.mat -omat ${vout}.mat -out ${vout} -schedule ${FLIRTDIR}/flirtsch/bbr.sch
+    $FSLDIR/bin/applywarp -i ${vepi} -r ${vrefhead} -o ${vout} --premat=${vout}.mat --interp=spline
 
 ####################
 
