@@ -217,6 +217,10 @@ void globaloptions::parse_command_line(int argc,char** argv,
       continue;
     } else if ( arg == "-pedir") {
       pe_dir = atoi(argv[n+1]);
+      if (pe_dir==0) {
+	cerr << "Unrecognised argument to pedir (" << argv[n+1] << ") - it should be a number between -3 and 3 (not 0)" << endl;
+	exit(-1);
+      }
       n+=2;
       continue;
     } else if ( arg == "-verbose") {
