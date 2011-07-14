@@ -154,6 +154,10 @@ void globaloptions::parse_command_line(int argc,char** argv,
       fmapfname = argv[n+1];
       n+=2;
       continue;
+    } else if ( arg == "-fieldmapmask") {
+      fmapmaskfname = argv[n+1];
+      n+=2;
+      continue;
     } else if ( arg == "-wmcoords") {
       wmcoordsfname = argv[n+1];
       useseg = true;
@@ -221,6 +225,14 @@ void globaloptions::parse_command_line(int argc,char** argv,
 	cerr << "Unrecognised argument to pedir (" << argv[n+1] << ") - it should be a number between -3 and 3 (not 0)" << endl;
 	exit(-1);
       }
+      n+=2;
+      continue;
+    } else if ( arg == "-bbrtype") {
+      bbr_type = argv[n+1];
+      n+=2;
+      continue;
+    } else if ( arg == "-bbrslope") {
+      bbr_slope = atof(argv[n+1]);
       n+=2;
       continue;
     } else if ( arg == "-verbose") {
@@ -409,8 +421,11 @@ void globaloptions::print_usage(int argc, char *argv[])
        << "        -wmcoords <text matrix>            (white matter boundary coordinates for BBR cost function)\n"
        << "        -wmnorms <text matrix>             (white matter boundary normals for BBR cost function)\n"
        << "        -fieldmap <volume>                 (fieldmap image in rads/s - must be already registered to the reference image)\n"
+       << "        -fieldmapmask <volume>             (mask for fieldmap image)\n"
        << "        -pedir <index>                     (phase encode direction of EPI - 1/2/3=x/y/z & -1/-2/-3=-x/-y/-z)\n"
-       << "        -echospacing <value>               (value of EPI echo spacing - unit of sec)\n"
+       << "        -echospacing <value>               (value of EPI echo spacing - units of seconds)\n"
+       << "        -bbrtype <value>                   (type of bbr cost function: signed [default], global_abs, local_abs)\n"
+       << "        -bbrslope <value>                  (value of bbr slope)\n"
        << "        -noclamp                           (do not use intensity clamping)\n"
        << "        -noresampblur                      (do not use blurring on downsampling)\n"
        << "        -2D                                (use 2D rigid body mode - ignores dof)\n"

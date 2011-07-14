@@ -52,6 +52,7 @@ class globaloptions {
   string wmcoordsfname;
   string wmnormsfname;
   string fmapfname;
+  string fmapmaskfname;
   bool initmatsqform;
   bool printinit;
   Matrix initmat;
@@ -110,6 +111,8 @@ class globaloptions {
   float paddingsize;
   int pe_dir;
   float echo_spacing;
+  string bbr_type;
+  float bbr_slope;
 
   int single_param;
 
@@ -165,6 +168,7 @@ inline globaloptions::globaloptions()
   wmcoordsfname = "";
   wmnormsfname = "";
   fmapfname = "";
+  fmapmaskfname = "";
   initmat = IdentityMatrix(4);
   initmatsqform = false;
   printinit = false;
@@ -231,6 +235,8 @@ inline globaloptions::globaloptions()
   paddingsize = 0.0;
   pe_dir=0;   // 1=x, 2=y, 3=z, -1=-x, -2=-y, -3=-z, 0=none
   echo_spacing = 5e-4;  // random guess (0.5ms) - units of seconds
+  bbr_type = "signed";
+  bbr_slope = -0.5;
 
   single_param = -1;
 }
