@@ -291,6 +291,8 @@ void globaloptions::parse_command_line(int argc,char** argv,
 	  interpmethod = NearestNeighbour;
 	} else if (interparg == "sinc") {
 	  interpmethod = NEWIMAGE::Sinc;
+	} else if (interparg == "spline") {
+	  interpmethod = NEWIMAGE::Spline;
 	} else {
 	  cerr << "Unrecognised interpolation method: " << interparg << endl;
 	  exit(-1);
@@ -394,7 +396,7 @@ void globaloptions::print_usage(int argc, char *argv[])
        << "        -usesqform                         (initialise using appropriate sform or qform)\n"
        << "        -displayinit                       (display initial matrix)\n"
        << "        -anglerep {quaternion,euler}       (default is euler)\n"
-       << "        -interp {trilinear,nearestneighbour,sinc}  (final interpolation: def - trilinear)\n"
+       << "        -interp {trilinear,nearestneighbour,sinc,spline}  (final interpolation: def - trilinear)\n"
        << "        -sincwidth <full-width in voxels>  (default is 7)\n"
        << "        -sincwindow {rectangular,hanning,blackman}\n"
        << "        -bins <number of histogram bins>   (default is "

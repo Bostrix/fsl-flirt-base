@@ -185,6 +185,8 @@ void final_transform(const volume<float>& testvol, volume<float>& outputvol,
   } else if (globaloptions::get().interpmethod == NEWIMAGE::Sinc) {
     setupsinc(testvol);
     testvol.setinterpolationmethod(sinc);
+  } else if (globaloptions::get().interpmethod == NEWIMAGE::Spline) {
+    testvol.setinterpolationmethod(spline);
   } else {
     testvol.setinterpolationmethod(trilinear);
   }

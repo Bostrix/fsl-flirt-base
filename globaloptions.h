@@ -20,7 +20,7 @@
 
 namespace NEWIMAGE {
   enum anglereps { Euler, Quaternion };
-  enum interps { TriLinear, NearestNeighbour, Sinc };
+  enum interps { TriLinear, NearestNeighbour, Sinc, Spline };
   enum windowtype { Rect, Hanning, Blackman };
 }
 
