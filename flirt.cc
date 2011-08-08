@@ -123,112 +123,8 @@ int FLIRT_read_volume(volume<float>& target, const string& filename)
   return retval;
 }
 
+
 //------------------------------------------------------------------------//
-
-ColumnVector default_nonlin_params(void)
-{
-  int pe_dir = globaloptions::get().pe_dir;
-  int N=0;
-  if (abs(pe_dir)==1) N=globaloptions::get().impair->testvol.xsize();
-  if (abs(pe_dir)==2) N=globaloptions::get().impair->testvol.ysize();
-  if (abs(pe_dir)==3) N=globaloptions::get().impair->testvol.zsize();
-  float fmapscaling = globaloptions::get().echo_spacing * N / (2.0*M_PI);
-  if (pe_dir<0) fmapscaling *= -1;
-  ColumnVector nonlin_params(1);
-  nonlin_params=fmapscaling;
-  return nonlin_params;
-}
-
-
-void affine_and_fmap_transform(const volume<float>& testvol, volume<float>& outputvol,
-			       const Matrix& finalmat, const ColumnVector& nonlin_params)
-{
-  // should put interpolation stuff here - and maybe appropriate padding/masking!
-  Matrix iaffbig = finalmat.i();
-  if (testvol.left_right_order()==FSL_NEUROLOGICAL) {
-    iaffbig = testvol.swapmat(-1,2,3) * iaffbig;
-  }
-  if (outputvol.left_right_order()==FSL_NEUROLOGICAL) {
-    iaffbig = iaffbig * outputvol.swapmat(-1,2,3);
-  }
-  // convert iaffbig to go to output voxel coords from input (reference) voxel coords
-  iaffbig = testvol.sampling_mat().i() * iaffbig * outputvol.sampling_mat();
-
-  ColumnVector rvc(4), tvc(4);  
-  int pe_dir = globaloptions::get().pe_dir;
-  
-  for (int z=outputvol.minz(); z<=outputvol.maxz(); z++) {
-    for (int y=outputvol.miny(); y<=outputvol.maxy(); y++) {
-      for (int x=outputvol.minx(); x<=outputvol.maxx(); x++) {
-	rvc(1)=x; rvc(2)=y; rvc(3)=z; rvc(4)=1;  // voxel coord
-	tvc = iaffbig * rvc;  // voxel coord
-	// tvc is currently the undistorted coords in the EPI (test image)
-	if (pe_dir!=0) {
-	  // fmap gives the distance required to shift from undistorted to distorted coords
-	  //   and fmap will be in the reference frame
-	  // add in the fmap transformations (locked along the EPI PE direction)
-	  // multiply fmap by a free parameter - nonlin_params(1)
-	  tvc(abs(pe_dir)) += nonlin_params(1)*global_fmap.interpolate(rvc(1),rvc(2),rvc(3));
-	}
-	outputvol(x,y,z) = testvol.interpolate(tvc(1),tvc(2),tvc(3));
-      }
-    }
-  }
-}
-
-
-void final_transform(const volume<float>& testvol, volume<float>& outputvol,
-		     const Matrix& finalmat) 
-{
-  if (globaloptions::get().interpmethod == NearestNeighbour) {
-    testvol.setinterpolationmethod(nearestneighbour);
-  } else if (globaloptions::get().interpmethod == NEWIMAGE::Sinc) {
-    setupsinc(testvol);
-    testvol.setinterpolationmethod(sinc);
-  } else if (globaloptions::get().interpmethod == NEWIMAGE::Spline) {
-    testvol.setinterpolationmethod(spline);
-  } else {
-    testvol.setinterpolationmethod(trilinear);
-  }
-  float paddingsize = globaloptions::get().paddingsize;
-  if (globaloptions::get().mode2D) {
-    paddingsize = Max(1.0,paddingsize);
-  }
-  if (globaloptions::get().pe_dir==0) {  // test to see if fieldmap is being used
-    affine_transform(testvol,outputvol,finalmat,paddingsize);
-  } else {
-    affine_and_fmap_transform(testvol,outputvol,finalmat,default_nonlin_params());
-  }
-}
-
-template <class T>
-int safe_save_volume(const volume<T>& source, const string& filename)
-{
-  if (!globaloptions::get().nosave) {
-    const_cast< volume<T>& >(source).setDisplayMaximumMinimum(0,0);
-    save_volume_dtype(source,filename,globaloptions::get().datatype);
-  }
-  return 0;
-}
-
-void save_matrix_data(const Matrix& matresult)
-{
-  Matrix outfmat = matresult;
-  write_ascii_matrix(outfmat,globaloptions::get().outputmatascii); 
-}
-
-void save_matrix_data(const Matrix& matresult, const volume<float>& initvol, 
-		      const volume<float>& finalvol)
-{
-  save_matrix_data(matresult);
-}
-
-//----------------------------------------------------------------------------//
-
-
-//////////////////////////////////////////////////////////////////////////
-
-// OPTIMISATION SUPPORT
 
 
 int vector2affine(const ColumnVector& params, int n, const ColumnVector& centre,
@@ -303,71 +199,22 @@ void set_param_basis(Matrix &parambasis, int no_params)
 }
 
 
-float estimate_scaling(const volume<float>& vol) {
-  Tracer tr("estimate_scaling");
-  return Min(Min(vol.xdim(),vol.ydim()),vol.zdim());
-}
-
-float estimate_scaling() {
-  Tracer tr("estimate_scaling");
-  return estimate_scaling(globaloptions::get().impair->refvol);
-}
-
-void set_param_tols(ColumnVector &param_tol, int no_params)
+ColumnVector default_nonlin_params(void)
 {
-      // Tolerances are: 0.57 degrees (0.005 radians), 0.2mm translation
-      //    0.005 scale and 0.001 skew
-//    float diagonal[12]={0.005, 0.005, 0.005, 0.2, 0.2, 0.2, 0.002, 0.002, 0.002,
-//    		      0.001, 0.001, 0.001};
-  if (param_tol.Nrows()<no_params) {
-    param_tol.ReSize(no_params);
-  }
-  for (int i=1; i<=no_params; i++) {
-    //    param_tol(i)=diagonal[i-1];
-    param_tol(i)=globaloptions::get().tolerance(i);
-  }
-  param_tol *= globaloptions::get().requestedscale; 
-    // scale it up by the current scaling
+  int pe_dir = globaloptions::get().pe_dir;
+  int N=0;
+  if (abs(pe_dir)==1) N=globaloptions::get().impair->testvol.xsize();
+  if (abs(pe_dir)==2) N=globaloptions::get().impair->testvol.ysize();
+  if (abs(pe_dir)==3) N=globaloptions::get().impair->testvol.zsize();
+  float fmapscaling = globaloptions::get().echo_spacing * N / (2.0*M_PI);
+  if (pe_dir<0) fmapscaling *= -1;
+  ColumnVector nonlin_params(1);
+  nonlin_params=fmapscaling;
+  return nonlin_params;
 }
 
 
-
-void initialise_params(ColumnVector& params)
-{
-  Real paramsf[12] = {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0};
-  params << paramsf;
-}
-
-
-void optimise(ColumnVector& params, int no_params, ColumnVector& param_tol, 
-	      int &no_its, float *fans, 
-	      float (*costfunc)(const ColumnVector &), int itmax=4)
-{
-  // sets up the initial parameters and calls the optimisation routine
-  if ((params.MaximumAbsoluteValue() < 0.001) && (params.Nrows()>=12) )  
-    initialise_params(params);
-  { 
-    Matrix affmattst(4,4);
-    vector2affine(params,no_params,affmattst);
-    if (globaloptions::get().verbose>=5) {
-      cout << "Starting with : " << endl << affmattst;
-    }
-  }
-  Matrix parambasis(no_params,no_params);
-  set_param_basis(parambasis,no_params);
-  float ptol[13];
-  for (int i=1; i<=no_params; i++) { ptol[i] = param_tol(i); }
-  
-  *fans = MISCMATHS::optimise(params,no_params,param_tol,costfunc,no_its,itmax,
-			      globaloptions::get().boundguess,
-			      globaloptions::get().optimisationtype);
-}
-
-
-
-////////////////////////////////////////////////////////////////////////////
-
-// OPTIMISATION SUPPORT (cost function interfaces)
+// cost function interfaces
 
 int setcostfntype(Costfn* imagepair, costfns ctype) {
   imagepair->set_costfn(ctype);
@@ -467,6 +314,144 @@ float costfn(const ColumnVector& params)
   
 
 //----------------------------------------------------------------------//
+
+void affine_and_fmap_transform(const volume<float>& testvol, const volume<float>& refvol,
+			       volume<float>& outputvol, const Matrix& finalmat, const ColumnVector& nonlin_params)
+{
+  if (globaloptions::get().debug) { cerr << "Pre bbr_resamp" << endl; }
+  globaloptions::get().impair->bbr_resamp(finalmat,nonlin_params,outputvol);
+  if (globaloptions::get().debug) { cerr << "Post bbr_resamp" << endl; }
+}
+
+
+void final_transform(const volume<float>& testvol, const volume<float>& refvol,
+		     const Matrix& finalmat, volume<float>& outputvol) 
+{
+  if (globaloptions::get().interpmethod == NearestNeighbour) {
+    testvol.setinterpolationmethod(nearestneighbour);
+  } else if (globaloptions::get().interpmethod == NEWIMAGE::Sinc) {
+    setupsinc(testvol);
+    testvol.setinterpolationmethod(sinc);
+  } else if (globaloptions::get().interpmethod == NEWIMAGE::Spline) {
+    testvol.setinterpolationmethod(spline);
+  } else {
+    testvol.setinterpolationmethod(trilinear);
+  }
+  float paddingsize = globaloptions::get().paddingsize;
+  if (globaloptions::get().mode2D) {
+    paddingsize = Max(1.0,paddingsize);
+  }
+  if (globaloptions::get().pe_dir==0) {  // test to see if fieldmap is being used
+    affine_transform(testvol,outputvol,finalmat,paddingsize);
+  } else {
+    // Only setup costfn if it isn't already done (normally first time around in a 4D)
+    if (globaloptions::get().debug) { cerr << "Start affine_and_fmap_transform" << endl; }
+    if (globaloptions::get().impair==NULL) {
+      if (globaloptions::get().debug) { cerr << "Pre new costfn" << endl; }
+      globaloptions::get().impair = new Costfn(refvol,testvol);
+      if (globaloptions::get().debug) { cerr << "Pre setup_costfn" << endl; }
+      // the following sets up all BBR related stuff like fieldmaps, etc.  (will also recalculate wm edge points)
+      setup_costfn(globaloptions::get().impair, BBR,
+		   globaloptions::get().no_bins,
+		   globaloptions::get().smoothsize,globaloptions::get().fuzzyfrac);  
+    }
+    affine_and_fmap_transform(testvol,refvol,outputvol,finalmat,default_nonlin_params());
+  }
+}
+
+template <class T>
+int safe_save_volume(const volume<T>& source, const string& filename)
+{
+  if (!globaloptions::get().nosave) {
+    const_cast< volume<T>& >(source).setDisplayMaximumMinimum(0,0);
+    save_volume_dtype(source,filename,globaloptions::get().datatype);
+  }
+  return 0;
+}
+
+void save_matrix_data(const Matrix& matresult)
+{
+  Matrix outfmat = matresult;
+  write_ascii_matrix(outfmat,globaloptions::get().outputmatascii); 
+}
+
+void save_matrix_data(const Matrix& matresult, const volume<float>& initvol, 
+		      const volume<float>& finalvol)
+{
+  save_matrix_data(matresult);
+}
+
+//----------------------------------------------------------------------------//
+
+
+//////////////////////////////////////////////////////////////////////////
+
+// OPTIMISATION SUPPORT
+
+
+float estimate_scaling(const volume<float>& vol) {
+  Tracer tr("estimate_scaling");
+  return Min(Min(vol.xdim(),vol.ydim()),vol.zdim());
+}
+
+float estimate_scaling() {
+  Tracer tr("estimate_scaling");
+  return estimate_scaling(globaloptions::get().impair->refvol);
+}
+
+void set_param_tols(ColumnVector &param_tol, int no_params)
+{
+      // Tolerances are: 0.57 degrees (0.005 radians), 0.2mm translation
+      //    0.005 scale and 0.001 skew
+//    float diagonal[12]={0.005, 0.005, 0.005, 0.2, 0.2, 0.2, 0.002, 0.002, 0.002,
+//    		      0.001, 0.001, 0.001};
+  if (param_tol.Nrows()<no_params) {
+    param_tol.ReSize(no_params);
+  }
+  for (int i=1; i<=no_params; i++) {
+    //    param_tol(i)=diagonal[i-1];
+    param_tol(i)=globaloptions::get().tolerance(i);
+  }
+  param_tol *= globaloptions::get().requestedscale; 
+    // scale it up by the current scaling
+}
+
+
+
+void initialise_params(ColumnVector& params)
+{
+  Real paramsf[12] = {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0};
+  params << paramsf;
+}
+
+
+void optimise(ColumnVector& params, int no_params, ColumnVector& param_tol, 
+	      int &no_its, float *fans, 
+	      float (*costfunc)(const ColumnVector &), int itmax=4)
+{
+  // sets up the initial parameters and calls the optimisation routine
+  if ((params.MaximumAbsoluteValue() < 0.001) && (params.Nrows()>=12) )  
+    initialise_params(params);
+  { 
+    Matrix affmattst(4,4);
+    vector2affine(params,no_params,affmattst);
+    if (globaloptions::get().verbose>=5) {
+      cout << "Starting with : " << endl << affmattst;
+    }
+  }
+  Matrix parambasis(no_params,no_params);
+  set_param_basis(parambasis,no_params);
+  float ptol[13];
+  for (int i=1; i<=no_params; i++) { ptol[i] = param_tol(i); }
+  
+  *fans = MISCMATHS::optimise(params,no_params,param_tol,costfunc,no_its,itmax,
+			      globaloptions::get().boundguess,
+			      globaloptions::get().optimisationtype);
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////
 
 
 void params12toN(ColumnVector& params)
@@ -1634,10 +1619,10 @@ void do_applyxfm()
   float min_sampling_ref=1.0;
   min_sampling_ref = Min(refvol.xdim(),Min(refvol.ydim(),refvol.zdim()));
 
-  // need the following to set up BBR fieldmap parameters (MJ TODO - UNTESTED!!!)
-  setup_costfn(globaloptions::get().impair, globaloptions::get().maincostfn,
-	       globaloptions::get().no_bins,
-	       globaloptions::get().smoothsize,globaloptions::get().fuzzyfrac);  
+  // // need the following to set up BBR fieldmap parameters (MJ TODO - UNTESTED!!!)
+  // setup_costfn(globaloptions::get().impair, globaloptions::get().maincostfn,
+  // 	       globaloptions::get().no_bins,
+  // 	       globaloptions::get().smoothsize,globaloptions::get().fuzzyfrac);  
 
   if (globaloptions::get().outputfname.size()>0) {
     volume4D<float> outputvol;
@@ -1655,7 +1640,7 @@ void do_applyxfm()
 	print_volume_info(testvol,"inputvol"); 
       }
       
-      final_transform(testvol[t0],outputvol[tref],globaloptions::get().initmat);
+      final_transform(testvol[t0],refvol,globaloptions::get().initmat,outputvol[tref]);
     }
     int outputdtype = output_dtype(outputvol);
     outputvol.setDisplayMaximumMinimum(0,0);
@@ -3053,12 +3038,16 @@ int main(int argc,char *argv[])
       // want unity basescale for transformed output
       float oldbasescale = globaloptions::get().basescale;
       globaloptions::get().basescale = 1.0;
-
+      // make sure the old images don't get used
+      if (globaloptions::get().impair) {
+	delete globaloptions::get().impair;
+	globaloptions::get().impair = NULL;
+      }
       FLIRT_read_volume(testvol,globaloptions::get().inputfname);
       FLIRT_read_volume(refvol,globaloptions::get().reffname);
       if (globaloptions::get().verbose>=2) {
 	print_volume_info(testvol,"testvol");
-	print_volume_info(testvol,"refvol");
+	print_volume_info(refvol,"refvol");
       }
 
       Matrix finalmat = matresult * globaloptions::get().initmat;
@@ -3080,7 +3069,7 @@ int main(int argc,char *argv[])
 	  filter_image(testvol,testvol,testvol,min_sampling_ref,
 		       false,filter_blur);
 	}
-	final_transform(testvol,newtestvol,finalmat);      
+	final_transform(testvol,refvol,finalmat,newtestvol);      
 	if (globaloptions::get().verbose>=2) {
 	  print_volume_info(newtestvol,"Transformed testvol");
 	}
