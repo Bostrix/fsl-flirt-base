@@ -97,8 +97,8 @@ else
     $FSLDIR/bin/convert_xfm -omat ${fmaprads}2epi.mat -concat ${vout}_inv.mat ${fmapmagbrain}2str.mat
     $FSLDIR/bin/flirt -in ${fmaprads}_unmasked -ref ${vepi} -applyxfm -init ${fmaprads}2epi.mat -out ${fmaprads}2epi
     $FSLDIR/bin/fugue --loadfmap=${fmaprads}2epi --saveshift=${fmaprads}2epi_shift --dwell=${dwell} --unwarpdir=${fdir}
-    $FSLDIR/bin/convertwarp -r ${vrefhead} -s ${fmaprads}2epi_shift --postmat=${vout}.mat -o ${vout}_warp --shiftdir=${fdir}
-    $FSLDIR/bin/applywarp -i ${vepi} -r ${vrefhead} -o ${vout} -w ${vout}_warp --interp=spline
+    $FSLDIR/bin/convertwarp -r ${vrefhead} -s ${fmaprads}2epi_shift --postmat=${vout}.mat -o ${vout}_warp --shiftdir=${fdir} --absout
+    $FSLDIR/bin/applywarp -i ${vepi} -r ${vrefhead} -o ${vout} -w ${vout}_warp --interp=spline --abs
 
 fi
 
