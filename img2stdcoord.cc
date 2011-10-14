@@ -202,8 +202,8 @@ ColumnVector NewimageCoord2NewimageCoord(const FnirtFileReader& fnirtfile, const
   ColumnVector retvec;
   if (fnirtfile.IsValid()) {
     // in the following affmat=example_func2highres.mat, fnirtfile=highres2standard_warp.nii.gz
-    retvec = NewimageCoord2NewimageCoord(affmat,
-					 fnirtfile.FieldAsNewimageVolume4D(true),true,srcvol,destvol,srccoord);
+    static volume4D<float> fieldVolume( fnirtfile.FieldAsNewimageVolume4D(true) );
+    retvec = NewimageCoord2NewimageCoord(affmat,fieldVolume,true,srcvol,destvol,srccoord);
   } else {
     retvec = NewimageCoord2NewimageCoord(affmat,srcvol,destvol,srccoord);
   }
