@@ -38,10 +38,14 @@ x2=matrix([[dx*float(argv[7])],[dy*float(argv[8])],[dz*float(argv[9])],[1]])
 
 # Calculate the desired rotation
 v=a*(x2-x1)
+# get rid of x-component as we are not interested in this
 vn=matrix([[v[1,0]],[v[2,0]]])
 norm=sqrt(vn.T * vn)
 vn=vn/norm
-theta=-arccos(vn[0,0])
+# deal with angles greater than 90 degrees (only aligning undirected lines)
+if vn[0,0]<0:
+    vn=vn*-1.0 
+theta=arcsin(vn[1,0])
 
 r=matrix([[1,0,0,0],[0,cos(theta),sin(theta),0],[0,-sin(theta),cos(theta),0],[0,0,0,1]])
 newa=r*a
