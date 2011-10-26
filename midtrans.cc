@@ -23,7 +23,7 @@ using namespace std;
 //  printed out as the help or usage message
 
 string title="midtrans (Version 2.0)\nCopyright(c) 2010, University of Oxford (Mark Jenkinson)";
-string examples="midtrans [options] transform1 transform2 ... transformN";
+string examples="midtrans [options] transform1 transform2 ... transformN\n  e.g. midtrans -o temp2mid.mat A2temp.mat B2temp.mat C2temp.mat\n       midtrans -o C2mid.mat A2C.mat B2C.mat ident.mat";
 
 // Each (global) object below specificies as option and can be accessed
 //  anywhere in this file (since they are global).  The order of the
@@ -45,7 +45,7 @@ Option<string> templte(string("--template"), string(""),
 		  string("input filename for template image (needed for fix origin)"),
 		  false, requires_argument);
 Option<string> separateouts(string("--separate"), string(""),
-		  string("basename for output of separate matrices (final name includes a number)"),
+		  string("basename for output of separate matrices (final name includes a number; e.g. img2mid0001.mat)"),
 		  false, requires_argument);
 Option<string> outname(string("-o,--out"), string(""),
 		  string("output filename for matrix"),
