@@ -64,6 +64,8 @@ globaloptions::globaloptions()
   mm = true;
 }
 
+// HACKY GLOBAL FOR TEST - MJ
+volume4D<float> fnirt4D;
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -202,8 +204,9 @@ ColumnVector NewimageCoord2NewimageCoord(const FnirtFileReader& fnirtfile, const
   ColumnVector retvec;
   if (fnirtfile.IsValid()) {
     // in the following affmat=highres2example_func.mat, fnirtfile=highres2standard_warp.nii.gz
-    static volume4D<float> fieldVolume( fnirtfile.FieldAsNewimageVolume4D(true) );
-    retvec = NewimageCoord2NewimageCoord(fieldVolume,false,
+    // retvec = NewimageCoord2NewimageCoord(fnirtfile.FieldAsNewimageVolume4D(true),false,
+   // HACKY GLOBAL TEST - MJ
+    retvec = NewimageCoord2NewimageCoord(fnirt4D,false,
 				     affmat,srcvol,destvol,srccoord);
   } else {
     retvec = NewimageCoord2NewimageCoord(affmat,srcvol,destvol,srccoord);
@@ -274,6 +277,7 @@ int main(int argc,char *argv[])
       exit(EXIT_FAILURE);
     }
   }
+ fnirt4D = fnirtfile.FieldAsNewimageVolume4D(true);  // HACKY GLOBAL MJ
 
 
   /////////////// SET UP MATRICES ////////////////
