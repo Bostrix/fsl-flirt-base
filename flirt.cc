@@ -2381,7 +2381,7 @@ void usroptimise(MatVecPtr stdresultmat,
 
 
 
-void usrsetscale(float usrscale,
+void usrsetscale(float usrscale, bool usrforce,
 		 volume<float>& testvol, volume<float>& refvol, 
 		 volume<float>& refvol_2, volume<float>& refvol_4, 
 		 volume<float>& refvol_8) {
@@ -2391,6 +2391,8 @@ void usrsetscale(float usrscale,
   //  out of scope
   Tracer tr("usrsetscale");
   float scale = usrscale;
+  bool forcescale=usrforce;
+  if (globaloptions::get().force_scaling) forcescale=true;
   Costfn *globalpair=0;
   if (usrscale > 0.0) globaloptions::get().requestedscale = usrscale;
 
@@ -2404,8 +2406,7 @@ void usrsetscale(float usrscale,
   // refresh the testvol (get rid of previous blurred version)
   get_testvol(testvol);
 
-  if ( (globaloptions::get().force_scaling) || 
-       (globaloptions::get().min_sampling<=1.25 * scale) ) {
+  if ( (forcescale) || (globaloptions::get().min_sampling<=1.25 * scale) ) {  // MJ NOTE: SHOULD THE SCALE BE FORCED TO BE THE NEXT HIGHEST SENSIBLE ONE TO STOP IT STARTING AT 8MM (THE DEFAULT) AND THEN NOT GOING TO 1MM (BUT INSTEAD MAKING IT GO TO 2MM?)
     globaloptions::get().lastsampling = scale;
     // blur test volume to correct scale
     volume<float> testvolnew;
@@ -2415,6 +2416,7 @@ void usrsetscale(float usrscale,
       filter_weight(global_testweight,global_testweight,scale,filter_blur);
     }
     testvol = testvolnew;
+    
     // select correct refvol
     volume<float> *refvolnew=0;
     if (fabs(scale-8.0)<0.01) {
@@ -2456,7 +2458,7 @@ void usrsetscale(float usrscale,
     } else {
       globalpair = new Costfn(*refvolnew,testvol);
     }
-
+    
     setup_costfn(globalpair,globaloptions::get().currentcostfn,
 		 int(globaloptions::get().no_bins/scale),
 		 globaloptions::get().smoothsize,globaloptions::get().fuzzyfrac);
@@ -2470,7 +2472,6 @@ void usrsetscale(float usrscale,
     globaloptions::get().impair = globalpair;
   }
 }
-
 
 void interpretcommand(const string& comline, bool& skip,
 		      volume<float>& testvol, volume<float>& refvol, 
@@ -2729,9 +2730,11 @@ void interpretcommand(const string& comline, bool& skip,
       cerr << "Wrong number of args to SETSCALE" << endl;
       exit(-1);
     }
+    bool usrforce=false;
     float usrscale;
     setscalarvariable(words[1],usrscale);
-    usrsetscale(usrscale,testvol,refvol,refvol_2,refvol_4,refvol_8);
+    if ((words.size()>=3) && (words[2]=="force")) usrforce=true;
+    usrsetscale(usrscale,usrforce,testvol,refvol,refvol_2,refvol_4,refvol_8);
   } else if (words[0]=="setrow") {
     // SETROW
     if (words.size()<18) {

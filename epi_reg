@@ -2,7 +2,7 @@
 
 Usage() {
   echo "Usage: `basename $0` <EPI image> <wholehead T1 image> <brain extracted T1 image> <output name>"
-  echo "       `basename $0` <EPI image> <wholehead T1 image> <brain extracted T1 image> <output name> <fieldmap rad/s> <wholehead fieldmap mag> <brain extracted fieldmap mag> <EPI echo spacing (dwell time)> <pe dir>"
+  echo "       `basename $0` <EPI image> <wholehead T1 image> <brain extracted T1 image> <output name> <fieldmap rad/s> <wholehead fieldmap mag> <brain extracted fieldmap mag> <EPI echo spacing (dwell time)> <pe dir> [refweight]"
   echo " "
   echo "Second case is when using fieldmaps: echo spacing (dwell time) in seconds; phase encoding direction = x/y/z/-x/-y/-z" 
 }
@@ -19,6 +19,7 @@ vrefhead=`$FSLDIR/bin/remove_ext $2`;
 vrefbrain=`$FSLDIR/bin/remove_ext $3`;
 vout=`$FSLDIR/bin/remove_ext $4`;
 use_fmap=no;
+use_weighting=no;
 
 if [ $# -ge 9 ] ; then
     use_fmap=yes;
@@ -40,6 +41,7 @@ if [ $# -ge 9 ] ; then
 	echo "Error: invalid phase encode direction specified";
 	exit 2;
     fi
+    if [ $# -ge 10 ] ; then refweight="${10}"; use_weighting=yes; echo REFWEIGHT = $refweight ; fi
 else
     if [ $# -ne 4 ] ; then
 	Usage
@@ -55,7 +57,7 @@ if [ `$FSLDIR/bin/imtest ${vrefbrain}_wmseg` = 0 ] ; then
 fi
 # make a WM edge map for visualisation (good to overlay in FSLView)
 if [ `$FSLDIR/bin/imtest ${vrefbrain}_wmedge` = 0 ] ; then
-  $FSLDIR/bin/fslmaths ${vrefbrain}_wmseg -edge -mas ${vrefbrain}_wmseg ${vrefbrain}_wmedge
+  $FSLDIR/bin/fslmaths ${vrefbrain}_wmseg -edge -bin -mas ${vrefbrain}_wmseg ${vrefbrain}_wmedge
 fi
 
 # do a standard flirt pre-alignment
@@ -80,7 +82,7 @@ else
     echo "Registering fieldmap to structural"
     # register fmap to structural image
     $FLIRTDIR/flirt -in ${fmapmagbrain} -ref ${vrefbrain} -dof 6 -omat ${fmapmagbrain}2str_init.mat
-    $FLIRTDIR/flirt -in ${fmapmaghead} -ref ${vrefhead} -dof 6 -init ${fmapmagbrain}2str_init.mat -omat ${fmapmagbrain}2str.mat -out ${fmapmagbrain}2str
+    $FLIRTDIR/flirt -in ${fmapmaghead} -ref ${vrefhead} -dof 6 -init ${fmapmagbrain}2str_init.mat -omat ${fmapmagbrain}2str.mat -out ${fmapmagbrain}2str -nosearch
     # unmask the fieldmap (necessary to avoid edge effects)
     $FSLDIR/bin/fslmaths ${fmapmagbrain} -abs -bin ${fmaprads}_mask
     $FSLDIR/bin/fslmaths ${fmaprads} -abs -bin -mul ${fmaprads}_mask ${fmaprads}_mask
@@ -89,7 +91,8 @@ else
 
     # run bbr with fieldmap
     echo "Running BBR with fieldmap"
-    $FLIRTDIR/flirt -ref ${vrefhead} -in ${vepi} -dof 6 -cost bbr -wmseg ${vrefbrain}_wmseg -init ${vout}_init.mat -omat ${vout}.mat -out ${vout}_1vol -schedule ${FLIRTDIR}/flirtsch/bbr.sch -echospacing ${dwell} -pedir ${pe_dir} -fieldmap ${fmaprads}2str
+    if [ $use_weighting = yes ] ; then wopt="-refweight $refweight"; else wopt=""; fi
+    $FLIRTDIR/flirt -ref ${vrefhead} -in ${vepi} -dof 6 -cost bbr -wmseg ${vrefbrain}_wmseg -init ${vout}_init.mat -omat ${vout}.mat -out ${vout}_1vol -schedule ${FLIRTDIR}/flirtsch/bbr.sch -echospacing ${dwell} -pedir ${pe_dir} -fieldmap ${fmaprads}2str $wopt
 
     # make equivalent warp fields
     echo "Making warp fields and applying registration to EPI series"

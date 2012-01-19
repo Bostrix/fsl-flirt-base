@@ -1,5 +1,5 @@
 # 1mm scale
-setscale 1
+setscale 1 force
 setoption costfunction bbr
 setoption optimisationtype brent
 setoption tolerance 0.0005 0.0005 0.0005 0.02 0.02 0.02 0.002 0.002 0.002 0.001 0.001 0.001
