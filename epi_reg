@@ -71,7 +71,7 @@ if [ $use_fmap = no ] ; then
 # NO FIELDMAP
     # now run the bbr
     echo "Running BBR"
-    $FLIRTDIR/flirt -ref ${vrefhead} -in ${vepi} -dof 6 -cost bbr -wmseg ${vrefbrain}_wmseg -init ${vout}_init.mat -omat ${vout}.mat -out ${vout} -schedule ${FLIRTDIR}/flirtsch/bbr.sch
+    $FLIRTDIR/flirt -ref ${vrefhead} -in ${vepi} -dof 6 -cost bbr -wmseg ${vrefbrain}_wmseg -init ${vout}_init.mat -omat ${vout}.mat -out ${vout} -schedule ${FSLDIR}/etc/flirtsch/bbr.sch
     $FSLDIR/bin/applywarp -i ${vepi} -r ${vrefhead} -o ${vout} --premat=${vout}.mat --interp=spline
 
 ####################
@@ -92,7 +92,7 @@ else
     # run bbr with fieldmap
     echo "Running BBR with fieldmap"
     if [ $use_weighting = yes ] ; then wopt="-refweight $refweight"; else wopt=""; fi
-    $FLIRTDIR/flirt -ref ${vrefhead} -in ${vepi} -dof 6 -cost bbr -wmseg ${vrefbrain}_wmseg -init ${vout}_init.mat -omat ${vout}.mat -out ${vout}_1vol -schedule ${FLIRTDIR}/flirtsch/bbr.sch -echospacing ${dwell} -pedir ${pe_dir} -fieldmap ${fmaprads}2str $wopt
+    $FLIRTDIR/flirt -ref ${vrefhead} -in ${vepi} -dof 6 -cost bbr -wmseg ${vrefbrain}_wmseg -init ${vout}_init.mat -omat ${vout}.mat -out ${vout}_1vol -schedule ${FSLDIR}/etc/flirtsch/bbr.sch -echospacing ${dwell} -pedir ${pe_dir} -fieldmap ${fmaprads}2str $wopt
 
     # make equivalent warp fields
     echo "Making warp fields and applying registration to EPI series"
