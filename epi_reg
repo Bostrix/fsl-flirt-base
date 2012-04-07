@@ -87,7 +87,27 @@ else
     $FSLDIR/bin/fslmaths ${fmapmagbrain} -abs -bin ${fmaprads}_mask
     $FSLDIR/bin/fslmaths ${fmaprads} -abs -bin -mul ${fmaprads}_mask ${fmaprads}_mask
     $FSLDIR/bin/fugue --loadfmap=${fmaprads} --mask=${fmaprads}_mask --unmaskfmap --savefmap=${fmaprads}_unmasked --unwarpdir=${fdir}   # the direction here should take into account the initial affine (it needs to be the direction in the EPI)
-    $FLIRTDIR/flirt -in ${fmaprads}_unmasked -ref ${vrefhead} -applyxfm -init ${fmapmagbrain}2str.mat -out ${fmaprads}2str
+
+    # the following is a HACK to fix extrapolation when fieldmap is too small
+    $FLIRTDIR/flirt -in ${fmaprads}_unmasked -ref ${vrefhead} -applyxfm -init ${fmapmagbrain}2str.mat -out ${fmaprads}2str_pad20 -paddingsize 20
+    $FLIRTDIR/flirt -in ${fmaprads}_unmasked -ref ${vrefhead} -applyxfm -init ${fmapmagbrain}2str.mat -out ${fmaprads}2str_pad0 -paddingsize 0
+    $FSLDIR/bin/fslmaths ${fmaprads}2str_pad20 -sub ${fmaprads}2str_pad0 -abs -bin -mul -1 -add 1 -thr 0.5 -bin ${fmaprads}2str_outermask
+    $FSLDIR/bin/cluster -i ${fmaprads}2str_outermask -t 0.5 --oindex=${fmaprads}2str_omask_cluster
+    xmax=`$FSLDIR/bin/fslval ${fmaprads}2str_omask_cluster dim1`
+    ymax=`$FSLDIR/bin/fslval ${fmaprads}2str_omask_cluster dim2`
+    zmax=`$FSLDIR/bin/fslval ${fmaprads}2str_omask_cluster dim3`
+    xmax=`echo $xmax - 2 | bc`
+    ymax=`echo $ymax - 2 | bc`
+    zmax=`echo $zmax - 2 | bc`
+    $FSLDIR/bin/fslmaths ${fmaprads}2str_omask_cluster -mul 0 -add 1 -roi 1 $xmax 1 $ymax 1 $zmax 0 1 -mul -1 -add 1 -thr 0.5 -bin ${fmaprads}2str_omask2
+    clusternum=`$FSLDIR/bin/fslstats ${fmaprads}2str_omask_cluster -k ${fmaprads}2str_omask2 -P 50`
+    ucn=`echo $clusternum + 0.5 | bc -l`
+    lcn=`echo $clusternum - 0.5 | bc -l`
+    $FSLDIR/bin/fslmaths ${fmaprads}2str_omask_cluster -thr $lcn -uthr $ucn -bin -mul -1 -add 1 -thr 0.5 -bin -ero -ero -ero -ero ${fmaprads}2str_innermask
+    $FSLDIR/bin/fugue --loadfmap=${fmaprads}2str_pad0 --mask=${fmaprads}2str_innermask --unmaskfmap --unwarpdir=${fdir} --savefmap=${fmaprads}2str_dilated
+
+    $FSLDIR/bin/fslmaths ${fmaprads}2str_dilated ${fmaprads}2str
+    # end HACK    
 
     # run bbr with fieldmap
     echo "Running BBR with fieldmap"
@@ -98,14 +118,14 @@ else
     echo "Making warp fields and applying registration to EPI series"
     $FSLDIR/bin/convert_xfm -omat ${vout}_inv.mat -inverse ${vout}.mat
     $FSLDIR/bin/convert_xfm -omat ${fmaprads}2epi.mat -concat ${vout}_inv.mat ${fmapmagbrain}2str.mat
-    $FSLDIR/bin/flirt -in ${fmaprads}_unmasked -ref ${vepi} -applyxfm -init ${fmaprads}2epi.mat -out ${fmaprads}2epi
-    $FSLDIR/bin/fugue --loadfmap=${fmaprads}2epi --saveshift=${fmaprads}2epi_shift --dwell=${dwell} --unwarpdir=${fdir}
+    $FSLDIR/bin/applywarp -i ${fmaprads}_unmasked -r ${vepi} --premat=${fmaprads}2epi.mat -o ${fmaprads}2epi
+    $FSLDIR/bin/fslmaths ${fmaprads}2epi -abs -bin ${fmaprads}2epi_mask
+    $FSLDIR/bin/fugue --loadfmap=${fmaprads}2epi --mask=${fmaprads}2epi_mask --saveshift=${fmaprads}2epi_shift --unmaskshift --dwell=${dwell} --unwarpdir=${fdir}
     $FSLDIR/bin/convertwarp -r ${vrefhead} -s ${fmaprads}2epi_shift --postmat=${vout}.mat -o ${vout}_warp --shiftdir=${fdir} --absout
     $FSLDIR/bin/applywarp -i ${vepi} -r ${vrefhead} -o ${vout} -w ${vout}_warp --interp=spline --abs
 
 fi
 
 ####################
-
 
 
