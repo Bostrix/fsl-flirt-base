@@ -276,8 +276,8 @@ int main(int argc,char *argv[])
       cerr << "An error occured while reading file: " << globalopts.warpfname << endl;
       exit(EXIT_FAILURE);
     }
+    fnirt4D = fnirtfile.FieldAsNewimageVolume4D(true);  // HACKY GLOBAL MJ
   }
- fnirt4D = fnirtfile.FieldAsNewimageVolume4D(true);  // HACKY GLOBAL MJ
 
 
   /////////////// SET UP MATRICES ////////////////
