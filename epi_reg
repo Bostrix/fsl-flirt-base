@@ -7,8 +7,6 @@ Usage() {
   echo "Second case is when using fieldmaps: echo spacing (dwell time) in seconds; phase encoding direction = x/y/z/-x/-y/-z" 
 }
 
-FLIRTDIR=`dirname $0`;
-
 if [ $# -lt 4 ] ; then
     Usage
     exit 0;
@@ -52,7 +50,7 @@ fi
 # create the WM segmentation
 if [ `$FSLDIR/bin/imtest ${vrefbrain}_wmseg` = 0 ] ; then
     echo "Running FAST segmentation"
-    $FSLDIR/bin/fast ${vrefbrain}
+    $FSLDIR/bin/fast ${vrefbrain}  ## TODO - either use existing ones (and link to these with filenames as if re-run) or re-run and put outputs in local dir (vout)
     $FSLDIR/bin/fslmaths ${vrefbrain}_pve_2 -thr 0.5 -bin ${vrefbrain}_wmseg
 fi
 # make a WM edge map for visualisation (good to overlay in FSLView)
@@ -71,7 +69,7 @@ if [ $use_fmap = no ] ; then
 # NO FIELDMAP
     # now run the bbr
     echo "Running BBR"
-    $FLIRTDIR/flirt -ref ${vrefhead} -in ${vepi} -dof 6 -cost bbr -wmseg ${vrefbrain}_wmseg -init ${vout}_init.mat -omat ${vout}.mat -out ${vout} -schedule ${FSLDIR}/etc/flirtsch/bbr.sch
+    $FSLDIR/bin/flirt -ref ${vrefhead} -in ${vepi} -dof 6 -cost bbr -wmseg ${vrefbrain}_wmseg -init ${vout}_init.mat -omat ${vout}.mat -out ${vout} -schedule ${FSLDIR}/etc/flirtsch/bbr.sch
     $FSLDIR/bin/applywarp -i ${vepi} -r ${vrefhead} -o ${vout} --premat=${vout}.mat --interp=spline
 
 ####################
@@ -81,8 +79,8 @@ else
 # WITH FIELDMAP
     echo "Registering fieldmap to structural"
     # register fmap to structural image
-    $FLIRTDIR/flirt -in ${fmapmagbrain} -ref ${vrefbrain} -dof 6 -omat ${fmapmagbrain}2str_init.mat
-    $FLIRTDIR/flirt -in ${fmapmaghead} -ref ${vrefhead} -dof 6 -init ${fmapmagbrain}2str_init.mat -omat ${fmapmagbrain}2str.mat -out ${fmapmagbrain}2str -nosearch
+    $FSLDIR/bin/flirt -in ${fmapmagbrain} -ref ${vrefbrain} -dof 6 -omat ${fmapmagbrain}2str_init.mat
+    $FSLDIR/bin/flirt -in ${fmapmaghead} -ref ${vrefhead} -dof 6 -init ${fmapmagbrain}2str_init.mat -omat ${fmapmagbrain}2str.mat -out ${fmapmagbrain}2str -nosearch
     # unmask the fieldmap (necessary to avoid edge effects)
     $FSLDIR/bin/fslmaths ${fmapmagbrain} -abs -bin ${fmaprads}_mask
     $FSLDIR/bin/fslmaths ${fmaprads} -abs -bin -mul ${fmaprads}_mask ${fmaprads}_mask
@@ -97,7 +95,7 @@ else
     # run bbr with fieldmap
     echo "Running BBR with fieldmap"
     if [ $use_weighting = yes ] ; then wopt="-refweight $refweight"; else wopt=""; fi
-    $FLIRTDIR/flirt -ref ${vrefhead} -in ${vepi} -dof 6 -cost bbr -wmseg ${vrefbrain}_wmseg -init ${vout}_init.mat -omat ${vout}.mat -out ${vout}_1vol -schedule ${FSLDIR}/etc/flirtsch/bbr.sch -echospacing ${dwell} -pedir ${pe_dir} -fieldmap ${fmaprads}2str $wopt
+    $FSLDIR/bin/flirt -ref ${vrefhead} -in ${vepi} -dof 6 -cost bbr -wmseg ${vrefbrain}_wmseg -init ${vout}_init.mat -omat ${vout}.mat -out ${vout}_1vol -schedule ${FSLDIR}/etc/flirtsch/bbr.sch -echospacing ${dwell} -pedir ${pe_dir} -fieldmap ${fmaprads}2str $wopt
 
     # make equivalent warp fields
     echo "Making warp fields and applying registration to EPI series"
@@ -112,5 +110,7 @@ else
 fi
 
 ####################
+
+# TODO - CLEAN UP UNNECESSARY FILES
 
 
