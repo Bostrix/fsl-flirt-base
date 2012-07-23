@@ -50,12 +50,20 @@ fi
 # create the WM segmentation
 if [ `$FSLDIR/bin/imtest ${vrefbrain}_wmseg` = 0 ] ; then
     echo "Running FAST segmentation"
-    $FSLDIR/bin/fast ${vrefbrain}  ## TODO - either use existing ones (and link to these with filenames as if re-run) or re-run and put outputs in local dir (vout)
-    $FSLDIR/bin/fslmaths ${vrefbrain}_pve_2 -thr 0.5 -bin ${vrefbrain}_wmseg
+    $FSLDIR/bin/fast ${vrefbrain}  -o ${vout}_fast
+    $FSLDIR/bin/fslmaths ${vout}_fast_pve_2 -thr 0.5 -bin ${vout}_fast_wmseg
+else
+    for file in ${vrefbrain}_wmseg*; do
+	ln -s ${vout}_fast_wmseg${file/${vrefbrain}_wmseg/} #To link the correct files with extensions
+    done
 fi
 # make a WM edge map for visualisation (good to overlay in FSLView)
 if [ `$FSLDIR/bin/imtest ${vrefbrain}_wmedge` = 0 ] ; then
-  $FSLDIR/bin/fslmaths ${vrefbrain}_wmseg -edge -bin -mas ${vrefbrain}_wmseg ${vrefbrain}_wmedge
+  $FSLDIR/bin/fslmaths ${vout}_fast_wmseg -edge -bin -mas ${vout}_fast_wmseg ${vout}_fast_wmedge
+else
+    for file in ${vrefbrain}_wmedge*; do
+	ln -s ${vout}_fast_wmedge${file/${vrefbrain}_wmedge/} #To link the correct files with extensions
+    done
 fi
 
 # do a standard flirt pre-alignment
@@ -69,7 +77,7 @@ if [ $use_fmap = no ] ; then
 # NO FIELDMAP
     # now run the bbr
     echo "Running BBR"
-    $FSLDIR/bin/flirt -ref ${vrefhead} -in ${vepi} -dof 6 -cost bbr -wmseg ${vrefbrain}_wmseg -init ${vout}_init.mat -omat ${vout}.mat -out ${vout} -schedule ${FSLDIR}/etc/flirtsch/bbr.sch
+    $FSLDIR/bin/flirt -ref ${vrefhead} -in ${vepi} -dof 6 -cost bbr -wmseg ${vout}_fast_wmseg -init ${vout}_init.mat -omat ${vout}.mat -out ${vout} -schedule ${FSLDIR}/etc/flirtsch/bbr.sch
     $FSLDIR/bin/applywarp -i ${vepi} -r ${vrefhead} -o ${vout} --premat=${vout}.mat --interp=spline
 
 ####################
@@ -79,32 +87,32 @@ else
 # WITH FIELDMAP
     echo "Registering fieldmap to structural"
     # register fmap to structural image
-    $FSLDIR/bin/flirt -in ${fmapmagbrain} -ref ${vrefbrain} -dof 6 -omat ${fmapmagbrain}2str_init.mat
-    $FSLDIR/bin/flirt -in ${fmapmaghead} -ref ${vrefhead} -dof 6 -init ${fmapmagbrain}2str_init.mat -omat ${fmapmagbrain}2str.mat -out ${fmapmagbrain}2str -nosearch
+    $FSLDIR/bin/flirt -in ${fmapmagbrain} -ref ${vrefbrain} -dof 6 -omat ${vout}_fieldmap2str_init.mat
+    $FSLDIR/bin/flirt -in ${fmapmaghead} -ref ${vrefhead} -dof 6 -init ${vout}_fieldmap2str_init.mat -omat ${vout}_fieldmap2str.mat -out ${vout}_fieldmap2str -nosearch
     # unmask the fieldmap (necessary to avoid edge effects)
-    $FSLDIR/bin/fslmaths ${fmapmagbrain} -abs -bin ${fmaprads}_mask
-    $FSLDIR/bin/fslmaths ${fmaprads} -abs -bin -mul ${fmaprads}_mask ${fmaprads}_mask
-    $FSLDIR/bin/fugue --loadfmap=${fmaprads} --mask=${fmaprads}_mask --unmaskfmap --savefmap=${fmaprads}_unmasked --unwarpdir=${fdir}   # the direction here should take into account the initial affine (it needs to be the direction in the EPI)
+    $FSLDIR/bin/fslmaths ${fmapmagbrain} -abs -bin ${vout}_fieldmaprads_mask
+    $FSLDIR/bin/fslmaths ${fmaprads} -abs -bin -mul ${vout}_fieldmaprads_mask ${vout}_fieldmaprads_mask
+    $FSLDIR/bin/fugue --loadfmap=${fmaprads} --mask=${vout}_fieldmaprads_mask --unmaskfmap --savefmap=${vout}_fieldmaprads_unmasked --unwarpdir=${fdir}   # the direction here should take into account the initial affine (it needs to be the direction in the EPI)
 
     # the following is a NEW HACK to fix extrapolation when fieldmap is too small
-    $FSLDIR/bin/applywarp -i ${fmaprads}_unmasked -r ${vrefhead} --premat=${fmapmagbrain}2str.mat -o ${fmaprads}2str_pad0
-    $FSLDIR/bin/fslmaths ${fmaprads}2str_pad0 -abs -bin ${fmaprads}2str_innermask
-    $FSLDIR/bin/fugue --loadfmap=${fmaprads}2str_pad0 --mask=${fmaprads}2str_innermask --unmaskfmap --unwarpdir=${fdir} --savefmap=${fmaprads}2str_dilated
-    $FSLDIR/bin/fslmaths ${fmaprads}2str_dilated ${fmaprads}2str
+    $FSLDIR/bin/applywarp -i ${vout}_fieldmaprads_unmasked -r ${vrefhead} --premat=${vout}_fieldmap2str.mat -o ${vout}_fieldmap2str_pad0
+    $FSLDIR/bin/fslmaths ${vout}_fieldmap2str_pad0 -abs -bin ${vout}_fieldmap2str_innermask
+    $FSLDIR/bin/fugue --loadfmap=${vout}_fieldmap2str_pad0 --mask=${vout}_fieldmap2str_innermask --unmaskfmap --unwarpdir=${fdir} --savefmap=${vout}_fieldmap2str_dilated
+    $FSLDIR/bin/fslmaths ${vout}_fieldmap2str_dilated ${vout}_fieldmap2str
 
     # run bbr with fieldmap
     echo "Running BBR with fieldmap"
     if [ $use_weighting = yes ] ; then wopt="-refweight $refweight"; else wopt=""; fi
-    $FSLDIR/bin/flirt -ref ${vrefhead} -in ${vepi} -dof 6 -cost bbr -wmseg ${vrefbrain}_wmseg -init ${vout}_init.mat -omat ${vout}.mat -out ${vout}_1vol -schedule ${FSLDIR}/etc/flirtsch/bbr.sch -echospacing ${dwell} -pedir ${pe_dir} -fieldmap ${fmaprads}2str $wopt
+    $FSLDIR/bin/flirt -ref ${vrefhead} -in ${vepi} -dof 6 -cost bbr -wmseg ${vout}_fast_wmseg -init ${vout}_init.mat -omat ${vout}.mat -out ${vout}_1vol -schedule ${FSLDIR}/etc/flirtsch/bbr.sch -echospacing ${dwell} -pedir ${pe_dir} -fieldmap ${vout}_fieldmap2str $wopt
 
     # make equivalent warp fields
     echo "Making warp fields and applying registration to EPI series"
     $FSLDIR/bin/convert_xfm -omat ${vout}_inv.mat -inverse ${vout}.mat
-    $FSLDIR/bin/convert_xfm -omat ${fmaprads}2epi.mat -concat ${vout}_inv.mat ${fmapmagbrain}2str.mat
-    $FSLDIR/bin/applywarp -i ${fmaprads}_unmasked -r ${vepi} --premat=${fmaprads}2epi.mat -o ${fmaprads}2epi
-    $FSLDIR/bin/fslmaths ${fmaprads}2epi -abs -bin ${fmaprads}2epi_mask
-    $FSLDIR/bin/fugue --loadfmap=${fmaprads}2epi --mask=${fmaprads}2epi_mask --saveshift=${fmaprads}2epi_shift --unmaskshift --dwell=${dwell} --unwarpdir=${fdir}
-    $FSLDIR/bin/convertwarp -r ${vrefhead} -s ${fmaprads}2epi_shift --postmat=${vout}.mat -o ${vout}_warp --shiftdir=${fdir} --absout
+    $FSLDIR/bin/convert_xfm -omat ${vout}_fieldmap2epi.mat -concat ${vout}_inv.mat ${vout}_fieldmap2str.mat
+    $FSLDIR/bin/applywarp -i ${vout}_fieldmaprads_unmasked -r ${vepi} --premat=${vout}_fieldmap2epi.mat -o ${vout}_fieldmap2epi
+    $FSLDIR/bin/fslmaths ${vout}_fieldmap2epi -abs -bin ${vout}_fieldmap2epi_mask
+    $FSLDIR/bin/fugue --loadfmap=${vout}_fieldmap2epi --mask=${vout}_fieldmap2epi_mask --saveshift=${vout}_fieldmap2epi_shift --unmaskshift --dwell=${dwell} --unwarpdir=${fdir}
+    $FSLDIR/bin/convertwarp -r ${vrefhead} -s ${vout}_fieldmap2epi_shift --postmat=${vout}.mat -o ${vout}_warp --shiftdir=${fdir} --absout
     $FSLDIR/bin/applywarp -i ${vepi} -r ${vrefhead} -o ${vout} -w ${vout}_warp --interp=spline --abs
 
 fi
