@@ -50,7 +50,7 @@ fi
 # create the WM segmentation
 if [ `$FSLDIR/bin/imtest ${vrefbrain}_wmseg` = 0 ] ; then
     echo "Running FAST segmentation"
-    $FSLDIR/bin/fast ${vrefbrain}  -o ${vout}_fast
+    $FSLDIR/bin/fast -o ${vout}_fast ${vrefbrain}
     $FSLDIR/bin/fslmaths ${vout}_fast_pve_2 -thr 0.5 -bin ${vout}_fast_wmseg
 else
     for file in ${vrefbrain}_wmseg*; do
@@ -120,5 +120,7 @@ fi
 ####################
 
 # TODO - CLEAN UP UNNECESSARY FILES
+$FSLDIR/bin/imrm ${vout}_fast_mixeltype ${vout}_fast_pve* ${vout}_fast_seg ${vout}_fast_wmseg 
+$FSLDIR/bin/imrm ${vout}_fieldmap*mask* ${vout}_fieldmap2str_pad0
 
 
