@@ -337,12 +337,21 @@ void final_transform(const volume<float>& testvol, const volume<float>& refvol,
   } else {
     testvol.setinterpolationmethod(trilinear);
   }
+
+  if (globaloptions::get().forcebackgnd) {
+    testvol.setpadvalue(globaloptions::get().backgndval);
+  } else {
+    testvol.setpadvalue(testvol.backgroundval());
+  }
+  testvol.setextrapolationmethod(extraslice);
+
+
   float paddingsize = globaloptions::get().paddingsize;
   if (globaloptions::get().mode2D) {
     paddingsize = Max(1.0,paddingsize);
   }
   if (globaloptions::get().pe_dir==0) {  // test to see if fieldmap is being used
-    affine_transform(testvol,outputvol,finalmat,paddingsize);
+    affine_transform(testvol,outputvol,finalmat,paddingsize,false);
   } else {
     // Only setup costfn if it isn't already done (normally first time around in a 4D)
     if (globaloptions::get().debug) { cerr << "Start affine_and_fmap_transform" << endl; }

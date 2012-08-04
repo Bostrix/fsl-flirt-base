@@ -104,6 +104,8 @@ class globaloptions {
   bool usecoords;
   bool mode2D;
   bool clamping;
+  bool forcebackgnd;
+  float backgndval;
   bool interpblur;
   interps interpmethod;
   float sincwidth;
@@ -228,6 +230,8 @@ inline globaloptions::globaloptions()
   usecoords = false;
   mode2D = false;
   clamping = true;
+  forcebackgnd = false;
+  backgndval = 0.0;
   interpblur = true;
   interpmethod = TriLinear;
   sincwidth = 7.0; // voxels

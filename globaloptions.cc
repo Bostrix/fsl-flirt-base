@@ -207,6 +207,11 @@ void globaloptions::parse_command_line(int argc,char** argv,
       min_sampling = atof(argv[n+1]);
       n+=2;
       continue;
+    } else if ( arg == "-setbackground") {
+      backgndval = atof(argv[n+1]);
+      forcebackgnd = true;
+      n+=2;
+      continue;
     } else if ( arg == "-coarsesearch") {
       coarsedelta = atof(argv[n+1])*M_PI/180.0;
       n+=2;
@@ -428,6 +433,7 @@ void globaloptions::print_usage(int argc, char *argv[])
        << "        -echospacing <value>               (value of EPI echo spacing - units of seconds)\n"
        << "        -bbrtype <value>                   (type of bbr cost function: signed [default], global_abs, local_abs)\n"
        << "        -bbrslope <value>                  (value of bbr slope)\n"
+       << "        -setbackground <value>             (use specified background value for points outside FOV)\n"
        << "        -noclamp                           (do not use intensity clamping)\n"
        << "        -noresampblur                      (do not use blurring on downsampling)\n"
        << "        -2D                                (use 2D rigid body mode - ignores dof)\n"
