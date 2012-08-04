@@ -267,6 +267,7 @@ else
     $FSLDIR/bin/fugue --loadfmap=${fmaprads} --mask=${vout}_fieldmaprads_mask --unmaskfmap --savefmap=${vout}_fieldmaprads_unmasked --unwarpdir=${fdir}   # the direction here should take into account the initial affine (it needs to be the direction in the EPI)
 
     # the following is a NEW HACK to fix extrapolation when fieldmap is too small
+    # TODO: replace the next two lines with a flirt call with allows explicit background value setting (may need to generate an all 1 input too)
     $FSLDIR/bin/applywarp -i ${vout}_fieldmaprads_unmasked -r ${vrefhead} --premat=${vout}_fieldmap2str.mat -o ${vout}_fieldmap2str_pad0
     $FSLDIR/bin/fslmaths ${vout}_fieldmap2str_pad0 -abs -bin ${vout}_fieldmap2str_innermask
     $FSLDIR/bin/fugue --loadfmap=${vout}_fieldmap2str_pad0 --mask=${vout}_fieldmap2str_innermask --unmaskfmap --unwarpdir=${fdir} --savefmap=${vout}_fieldmap2str_dilated
@@ -291,7 +292,7 @@ fi
 
 ####################
 
-# TODO - CLEAN UP UNNECESSARY FILES
+# CLEAN UP UNNECESSARY FILES
 if [ $cleanup = yes ] ; then
     $FSLDIR/bin/imrm ${vout}_fast_mixeltype ${vout}_fast_pve* ${vout}_fast_seg ${vout}_fast_wmseg 
     $FSLDIR/bin/imrm ${vout}_fieldmap*mask* ${vout}_fieldmap2str_pad0
