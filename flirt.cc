@@ -340,10 +340,11 @@ void final_transform(const volume<float>& testvol, const volume<float>& refvol,
 
   if (globaloptions::get().forcebackgnd) {
     testvol.setpadvalue(globaloptions::get().backgndval);
+    testvol.setextrapolationmethod(constpad);
   } else {
     testvol.setpadvalue(testvol.backgroundval());
+    testvol.setextrapolationmethod(extraslice);
   }
-  testvol.setextrapolationmethod(extraslice);
 
 
   float paddingsize = globaloptions::get().paddingsize;
