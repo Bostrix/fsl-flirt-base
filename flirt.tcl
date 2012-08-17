@@ -265,7 +265,7 @@ pack $w.wgt $w.iwgt -in $weightlf -side top -anchor w -padx 3 -pady $PADY
 	[winfo toplevel %W].cancel invoke
     }
 
-    button $w.help -command "FmribWebHelp file: ${FSLDIR}/doc/flirt/index.html" \
+    button $w.help -command "FmribWebHelp file: ${FSLDIR}/doc/redirects/flirt.html" \
 	    -text "Help" -width 5
 
     #{{{ Utils

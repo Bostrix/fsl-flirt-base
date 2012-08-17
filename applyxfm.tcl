@@ -200,7 +200,7 @@ proc applyxfm { w } {
     button $w.cancel    -command "destroy $w" \
 	    -text "Exit" -width 5
 
-    button $w.help -command "FmribWebHelp file: ${FSLDIR}/doc/flirt/overview.html" \
+    button $w.help -command "FmribWebHelp file: ${FSLDIR}/doc/redirects/flirt.html" \
 	    -text "Help" -width 5
 
     pack $w.btns.b -side bottom -fill x
