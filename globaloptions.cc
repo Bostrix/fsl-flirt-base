@@ -401,7 +401,7 @@ void globaloptions::print_usage(int argc, char *argv[])
        << "        -usesqform                         (initialise using appropriate sform or qform)\n"
        << "        -displayinit                       (display initial matrix)\n"
        << "        -anglerep {quaternion,euler}       (default is euler)\n"
-       << "        -interp {trilinear,nearestneighbour,sinc,spline}  (final interpolation: def - trilinear)\n"
+       << "        -interp {trilinear,nearestneighbour,sinc,spline}  (final interpolation: def - spline)\n"
        << "        -sincwidth <full-width in voxels>  (default is 7)\n"
        << "        -sincwindow {rectangular,hanning,blackman}\n"
        << "        -bins <number of histogram bins>   (default is "
