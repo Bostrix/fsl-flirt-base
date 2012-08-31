@@ -226,7 +226,7 @@ if [ `$FSLDIR/bin/imtest ${vrefbrain}_wmseg` = 0 ] ; then
     $FSLDIR/bin/fslmaths ${vout}_fast_pve_2 -thr 0.5 -bin ${vout}_fast_wmseg
 else
     for file in ${vrefbrain}_wmseg*; do
-	absfile=`readlink -f $file`;
+	absfile=`$FSLDIR/bin/fsl_abspath $file`;
 	ln -s $file ${vout}_fast_wmseg${absfile/${vrefbrain}_wmseg/} #To link the correct files with extensions
     done
 fi
@@ -235,7 +235,7 @@ if [ `$FSLDIR/bin/imtest ${vrefbrain}_wmedge` == 0 ] ; then
   $FSLDIR/bin/fslmaths ${vout}_fast_wmseg -edge -bin -mas ${vout}_fast_wmseg ${vout}_fast_wmedge
 else
     for file in ${vrefbrain}_wmedge*; do
-	absfile=`readlink -f $file`;
+	absfile=`$FSLDIR/bin/fsl_abspath $file`;
 	ln -s ${vout}_fast_wmedge${absfile/${vrefbrain}_wmedge/} #To link the correct files with extensions
     done
 fi
