@@ -233,7 +233,7 @@ inline globaloptions::globaloptions()
   forcebackgnd = false;
   backgndval = 0.0;
   interpblur = true;
-  interpmethod = Spline;
+  interpmethod = TriLinear;
   sincwidth = 7.0; // voxels
   sincwindow = Hanning;
   paddingsize = 0.0;
