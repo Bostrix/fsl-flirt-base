@@ -23,7 +23,7 @@ using namespace Utilities;
 // The two strings below specify the title and example usage that is
 //  printed out as the help or usage message
 
-string title="imapper (Version 1.0)\nCopyright(c) 2008, University of Oxford (Mark Jenkinson and Matt D'Netto)";
+string title="imapper \nCopyright(c) 2008, University of Oxford (Mark Jenkinson and Matt D'Netto)";
 string examples="imapper [options] -i <input image> -r <reference image> -o <output image> -a <affine matrix> --inweight=<input image weighting>";
 
 // Each (global) object below specificies as option and can be accessed

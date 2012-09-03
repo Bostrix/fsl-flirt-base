@@ -22,7 +22,7 @@ using namespace std;
 // The two strings below specify the title and example usage that is
 //  printed out as the help or usage message
 
-string title="midtrans (Version 2.0)\nCopyright(c) 2010, University of Oxford (Mark Jenkinson)";
+string title="midtrans \nCopyright(c) 2010, University of Oxford (Mark Jenkinson)";
 string examples="midtrans [options] transform1 transform2 ... transformN\n  e.g. midtrans -o temp2mid.mat A2temp.mat B2temp.mat C2temp.mat\n       midtrans -o C2mid.mat A2C.mat B2C.mat ident.mat";
 
 // Each (global) object below specificies as option and can be accessed

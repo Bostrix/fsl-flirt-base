@@ -24,7 +24,7 @@ using namespace std;
 // The two strings below specify the title and example usage that is
 //  printed out as the help or usage message
 
-string title="makerot (Version 1.0)\nCopyright(c) 2003, University of Oxford (Mark Jenkinson)";
+string title="makerot \nCopyright(c) 2003, University of Oxford (Mark Jenkinson)";
 string examples="makerot [options] --theta=angle";
 
 // Each (global) object below specificies as option and can be accessed
