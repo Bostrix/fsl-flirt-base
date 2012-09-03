@@ -136,6 +136,8 @@ proc applyxfm { w } {
 	    -variable entries($w,interp) -value trilinear -anchor w -command "applyxfm:updateinterp $w $interplf"
     radiobutton $w.nearestneighbour -text "Nearest Neighbour" \
 	    -variable entries($w,interp) -value nearestneighbour -anchor w -command "applyxfm:updateinterp $w $interplf"
+    radiobutton $w.spline -text "Spline" \
+	    -variable entries($w,interp) -value spline -anchor w -command "applyxfm:updateinterp $w $interplf"
     radiobutton $w.sinc -text "Sinc" \
 	    -variable entries($w,interp) -value sinc -anchor w -command "applyxfm:updateinterp $w $interplf"
 
@@ -155,7 +157,7 @@ proc applyxfm { w } {
     set entries($w,sincwindow) hanning
     
     # ---- pack ----
-    pack $w.trilinear $w.nearestneighbour $w.sinc -in $interplf -side top -anchor w -padx 3
+    pack $w.trilinear $w.nearestneighbour $w.spline $w.sinc -in $interplf -side top -anchor w -padx 3
     set entries($w,interp) trilinear
 
     pack $w.swinbanner -in $w.swinopt -side top -anchor w -padx 3

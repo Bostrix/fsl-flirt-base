@@ -197,6 +197,8 @@ $w.nb raise search
 	    -variable reg($w,interp) -value trilinear -anchor w -command "flirt:updateinterp $w $interplf"
     radiobutton $w.nearestneighbour -text "Nearest Neighbour" \
 	    -variable reg($w,interp) -value nearestneighbour -anchor w -command "flirt:updateinterp $w $interplf"
+    radiobutton $w.spline -text "Spline" \
+	    -variable reg($w,interp) -value spline -anchor w -command "flirt:updateinterp $w $interplf"
     radiobutton $w.sinc -text "Sinc" \
 	    -variable reg($w,interp) -value sinc -anchor w -command "flirt:updateinterp $w $interplf"
     set reg($w,sincwidth) 7
@@ -213,7 +215,7 @@ $w.nb raise search
     
     # ---- pack ----
     pack $w.interpbanner $w.trilinear -in $interplf -side top -anchor w -padx 3
-    pack $w.nearestneighbour $w.sinc -in $interplf -side top -anchor w -padx 3
+    pack $w.nearestneighbour $w.spline $w.sinc -in $interplf -side top -anchor w -padx 3
     set reg($w,interp) trilinear
 
     pack $w.swinbanner -in $w.swinopt -side top -anchor w -padx 3
