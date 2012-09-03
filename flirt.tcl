@@ -434,6 +434,7 @@ proc flirt:updateinterp { w interplf } {
 	pack forget $w.swinopt
 	pack forget $w.sincwidth
     }
+    $w.nb compute_size
 }
 
 #}}}
