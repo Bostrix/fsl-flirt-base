@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 #   Script for getting a 6 DOF approx to a 12 DOF standard transformation
 #

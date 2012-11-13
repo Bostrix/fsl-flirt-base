@@ -1,5 +1,6 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
+#   SHCOPYRIGHT
 import sys
 from sys import argv
 from commands import getoutput
