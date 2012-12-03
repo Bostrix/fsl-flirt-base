@@ -13,6 +13,7 @@ Usage() {
     echo "  --echospacing=<val>    : Effective EPI echo spacing (sometimes called dwell time) - in seconds"
     echo "  --pedir=<dir>          : phase encoding direction, dir = x/y/z/-x/-y/-z"
     echo "  --weight=<image>       : weighting image (in T1 space)"
+    echo "  --nofmapreg            : do not perform registration of fmap to T1 (use if fmap already registered) "
     echo "  --noclean              : do not clean up intermediate files"
     echo "  -v                     : verbose output"
     echo "  -h                     : display this help message"
@@ -76,6 +77,7 @@ fmapmagbrain="";
 dwell="";
 pe_dir="";
 fdir="y";
+fmapreg=yes;
 
 
 # Parse them baby
@@ -136,6 +138,9 @@ while [ $# -ge 1 ] ; do
 	    refweight=`get_imarg1 $1`;
 	    use_weighting=yes; 
 	    echo REFWEIGHT = $refweight;
+	    shift;;
+	--nofmapreg)
+	    fmapreg=no; 
 	    shift;;
 	--noclean)
 	    cleanup=no; 
@@ -261,14 +266,19 @@ else
 
 # WITH FIELDMAP
     echo "Registering fieldmap to structural"
-    # register fmap to structural image
-    $FSLDIR/bin/flirt -in ${fmapmagbrain} -ref ${vrefbrain} -dof 6 -omat ${vout}_fieldmap2str_init.mat
-    $FSLDIR/bin/flirt -in ${fmapmaghead} -ref ${vrefhead} -dof 6 -init ${vout}_fieldmap2str_init.mat -omat ${vout}_fieldmap2str.mat -out ${vout}_fieldmap2str -nosearch
+    if [ $fmapreg = yes ] ; then
+        # register fmap to structural image
+	$FSLDIR/bin/flirt -in ${fmapmagbrain} -ref ${vrefbrain} -dof 6 -omat ${vout}_fieldmap2str_init.mat
+	$FSLDIR/bin/flirt -in ${fmapmaghead} -ref ${vrefhead} -dof 6 -init ${vout}_fieldmap2str_init.mat -omat ${vout}_fieldmap2str.mat -out ${vout}_fieldmap2str -nosearch
+    else
+	$FSLDIR/bin/imcp ${fmapmaghead} ${vout}_fieldmap2str
+	cp $FSLDIR/etc/flirtsch/ident.mat ${vout}_fieldmap2str.mat
+    fi
     # unmask the fieldmap (necessary to avoid edge effects)
     $FSLDIR/bin/fslmaths ${fmapmagbrain} -abs -bin ${vout}_fieldmaprads_mask
     $FSLDIR/bin/fslmaths ${fmaprads} -abs -bin -mul ${vout}_fieldmaprads_mask ${vout}_fieldmaprads_mask
     $FSLDIR/bin/fugue --loadfmap=${fmaprads} --mask=${vout}_fieldmaprads_mask --unmaskfmap --savefmap=${vout}_fieldmaprads_unmasked --unwarpdir=${fdir}   # the direction here should take into account the initial affine (it needs to be the direction in the EPI)
-
+	
     # the following is a NEW HACK to fix extrapolation when fieldmap is too small
     $FSLDIR/bin/applywarp -i ${vout}_fieldmaprads_unmasked -r ${vrefhead} --premat=${vout}_fieldmap2str.mat -o ${vout}_fieldmaprads2str_pad0
     $FSLDIR/bin/fslmaths ${vout}_fieldmaprads2str_pad0 -abs -bin ${vout}_fieldmaprads2str_innermask
