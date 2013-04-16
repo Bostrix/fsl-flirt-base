@@ -10,6 +10,7 @@ Usage() {
     echo "  --fmap=<image>         : fieldmap image (in rad/s)"
     echo "  --fmapmag=<image>      : fieldmap magnitude image - wholehead extracted"
     echo "  --fmapmagbrain=<image> : fieldmap magnitude image - brain extracted"
+    echo "  --wmseg=<image>        : white matter segmentation of T1 image"
     echo "  --echospacing=<val>    : Effective EPI echo spacing (sometimes called dwell time) - in seconds"
     echo "  --pedir=<dir>          : phase encoding direction, dir = x/y/z/-x/-y/-z"
     echo "  --weight=<image>       : weighting image (in T1 space)"
@@ -74,6 +75,7 @@ cleanup=yes;
 fmaprads="";
 fmapmaghead="";
 fmapmagbrain="";
+wmseg="";
 dwell="";
 pe_dir="";
 fdir="y";
@@ -105,6 +107,9 @@ while [ $# -ge 1 ] ; do
 	    shift;;
 	--fmapmagbrain)
 	    fmapmagbrain=`get_imarg1 $1`;
+	    shift;;
+	--wmseg)
+	    wmseg=`get_imarg1 $1`;
 	    shift;;
 	--out)
 	    vout=`get_imarg1 $1`;
@@ -214,6 +219,7 @@ if [ $verbose = yes ] ; then
     echo "  fmaprads = $fmaprads"
     echo "  fmapmaghead = $fmapmaghead"
     echo "  fmapmagbrain = $fmapmagbrain"
+    echo "  wmseg = $wmseg"
     echo "  dwell = $dwell"
     echo "  pe_dir = $pe_dir"
     echo "  fdir = $fdir"
@@ -225,14 +231,22 @@ fi
 
 
 # create the WM segmentation
-if [ `$FSLDIR/bin/imtest ${vrefbrain}_wmseg` = 0 ] ; then
-    echo "Running FAST segmentation"
-    $FSLDIR/bin/fast -o ${vout}_fast ${vrefbrain}
-    $FSLDIR/bin/fslmaths ${vout}_fast_pve_2 -thr 0.5 -bin ${vout}_fast_wmseg
+if [ X$wmseg = X ] ; then
+    if [ `$FSLDIR/bin/imtest ${vrefbrain}_wmseg` = 0 ] ; then
+	echo "Running FAST segmentation"
+	$FSLDIR/bin/fast -o ${vout}_fast ${vrefbrain}
+	$FSLDIR/bin/fslmaths ${vout}_fast_pve_2 -thr 0.5 -bin ${vout}_fast_wmseg
+    else
+	for file in ${vrefbrain}_wmseg*; do
+	    absfile=`$FSLDIR/bin/fsl_abspath $file`;
+	    ln -s ${absfile} ${file/${vrefbrain}_wmseg/${vout}_fast_wmseg} #To link the correct files with extensions
+	done
+    fi
 else
-    for file in ${vrefbrain}_wmseg*; do
+    # copy specified wmseg file(s)
+    for file in `$FSLDIR/bin/imglob ${wmseg}`; do
 	absfile=`$FSLDIR/bin/fsl_abspath $file`;
-	ln -s ${absfile} ${file/${vrefbrain}_wmseg/${vout}_fast_wmseg} #To link the correct files with extensions
+	ln -s ${absfile} ${file/${wmseg}/${vout}_fast_wmseg} #To link the correct files with extensions
     done
 fi
 # make a WM edge map for visualisation (good to overlay in FSLView)
