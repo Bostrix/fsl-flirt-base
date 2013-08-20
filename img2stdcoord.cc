@@ -316,17 +316,14 @@ int main(int argc,char *argv[])
   
   // loop around reading coordinates and displaying output
   
-  while ( (use_stdin && (!cin.eof())) || ((!use_stdin) && (!matfile.eof())) ) {
-    for (int j=1; j<=3; j++) {
-      if (use_stdin) { cin >> imgcoord(j); }
-      else { matfile >> imgcoord(j); }
-    } 
+  while ( (use_stdin && (!cin.eof())) || ((!use_stdin) && (matfile >> imgcoord(1) >> imgcoord(2) >> imgcoord(3))) ) {
     if  (use_stdin) {
+      cin >> imgcoord(1) >> imgcoord(2) >> imgcoord(3);
       // this is in case the pipe continues to input a stream of zeros
       if (oldimg == imgcoord)  return 0;
       oldimg = imgcoord;
     }
-    
+     
     if (globalopts.mm) {  // in mm
       stdcoord = stdvol.newimagevox2mm_mat() * 
 	NewimageCoord2NewimageCoord(fnirtfile,affmat,imgvol,stdvol,imgvol.newimagevox2mm_mat().i() * imgcoord);

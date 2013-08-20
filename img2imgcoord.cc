@@ -80,7 +80,9 @@ void print_usage(int argc, char *argv[])
        << "        -mm                                    (all coordinates in mm)\n"
        << "        -v                                     (verbose)\n"
        << "        -help\n\n"
-       << " Note that the first three options are compulsory\n";
+       << " Notes:\n"
+       << "  (1) if '-' is used as coordinate filename then coordinates are read from standard input\n"
+       << "  (2) the first three options are compulsory\n";
 }
 
 
@@ -262,48 +264,48 @@ int main(int argc,char *argv[])
     cout << " (in voxels)" << endl; 
   }
   
-  if (globalopts.coordfname.size()>1) {
-    ifstream matfile(globalopts.coordfname.c_str());
+  ///
+  bool use_stdin = false;
+  if ( (globalopts.coordfname=="-") || (globalopts.coordfname.size()<1)) {
+    use_stdin = true;
+  }
+
+  // set up coordinate reading (from file or stdin) //
+  ifstream matfile(globalopts.coordfname.c_str());
+
+  if (use_stdin) {
+    if (globalopts.verbose>0) {
+      cout << "Please type in input image coordinates";
+      if (globalopts.mm) { 
+	cout << " (in mm) :" << endl;
+      } else { 
+	cout << " (in voxels) :" << endl; 
+      }
+    } 
+  } else {
     if (!matfile) { 
       cerr << "Could not open matrix file " << globalopts.coordfname << endl;
       return -1;
     }
-    
-    while (!matfile.eof()) {
-      for (int j=1; j<=3; j++) {
-	matfile >> srccoord(j);
-      }
-      if (globalopts.mm) {  // in mm
-	destcoord = destvol.newimagevox2mm_mat() * NewimageCoord2NewimageCoord(fnirtfile,affmat,srcvol,destvol,srcvol.newimagevox2mm_mat().i() * srccoord); 
-      } else { // in voxels
-	destcoord = destvol.niftivox2newimagevox_mat().i() * NewimageCoord2NewimageCoord(fnirtfile,affmat,srcvol,destvol,srcvol.niftivox2newimagevox_mat() * srccoord); 
-      }
-      cout << destcoord(1) << "  " << destcoord(2) << "  " << destcoord(3) << endl;
-    }
-    
-    matfile.close();
-  } else {
-    cout << "Please type in Source coordinates";
-    if (globalopts.mm) { 
-      cout << " (in mm) :" << endl;
-    } else { 
-      cout << " (in voxels) :" << endl; 
-    }
-    while (!cin.eof()) {
-      for (int j=1; j<=3; j++) {
-	cin >> srccoord(j);
-      }
+  }
+  
+  while ( (use_stdin && (!cin.eof())) || ((!use_stdin) && (matfile >> srccoord(1) >> srccoord(2) >> srccoord(3))) ) {
+    if  (use_stdin) {
+      cin >> srccoord(1) >> srccoord(2) >> srccoord(3);
+      // this is in case the pipe continues to input a stream of zeros
       if (oldsrc == srccoord)  return 0;
       oldsrc = srccoord;
-      if (globalopts.mm) {  // in mm
-	destcoord = destvol.newimagevox2mm_mat() * NewimageCoord2NewimageCoord(fnirtfile,affmat,srcvol,destvol,srcvol.newimagevox2mm_mat().i() * srccoord); 
-      } else { // in voxels
-	destcoord = destvol.niftivox2newimagevox_mat().i() * NewimageCoord2NewimageCoord(fnirtfile,affmat,srcvol,destvol,srcvol.niftivox2newimagevox_mat() * srccoord);
-      }
-      cout << destcoord(1) << "  " << destcoord(2) << "  " << destcoord(3) << endl;
     }
+       
+    if (globalopts.mm) {  // in mm
+      destcoord = destvol.newimagevox2mm_mat() * NewimageCoord2NewimageCoord(fnirtfile,affmat,srcvol,destvol,srcvol.newimagevox2mm_mat().i() * srccoord); 
+    } else { // in voxels
+      destcoord = destvol.niftivox2newimagevox_mat().i() * NewimageCoord2NewimageCoord(fnirtfile,affmat,srcvol,destvol,srcvol.niftivox2newimagevox_mat() * srccoord);
+    }
+    cout << destcoord(1) << "  " << destcoord(2) << "  " << destcoord(3) << endl;
   }
-
+  
+  if (!use_stdin) { matfile.close(); }
 
   return 0;
 }
