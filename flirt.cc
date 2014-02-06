@@ -65,7 +65,7 @@ void print_vector(float x, float y, float z)
 void setupsinc(const volume<float>& invol)
 {
   // the following full-width is in voxels
-  int w = round(globaloptions::get().sincwidth);
+  int w = MISCMATHS::round(globaloptions::get().sincwidth);
   if (globaloptions::get().sincwindow==Hanning) {
     invol.definesincinterpolation("hanning",w);
   } else if (globaloptions::get().sincwindow==Blackman) {
@@ -1789,7 +1789,7 @@ int setscalarvariable(const string& name, int& namedscalar)
   Tracer tr("setscalarvariable");
   float temp=0.0;
   int retval = setscalarvariable(name,temp);
-  namedscalar = round(temp);
+  namedscalar = MISCMATHS::round(temp);
   return retval;
 }
 
