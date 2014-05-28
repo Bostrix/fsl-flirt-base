@@ -244,7 +244,7 @@ if [ X$wmseg = X ] ; then
     fi
 else
     # copy specified wmseg file(s)
-    for file in `$FSLDIR/bin/imglob ${wmseg}`; do
+    for file in `$FSLDIR/bin/imglob -extensions ${wmseg}`; do
 	absfile=`$FSLDIR/bin/fsl_abspath $file`;
 	ln -s ${absfile} ${file/${wmseg}/${vout}_fast_wmseg} #To link the correct files with extensions
     done
