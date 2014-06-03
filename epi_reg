@@ -320,7 +320,7 @@ fi
 
 # CLEAN UP UNNECESSARY FILES
 if [ $cleanup = yes ] ; then
-    $FSLDIR/bin/imrm ${vout}_fast_mixeltype ${vout}_fast_pve* ${vout}_fast_seg ${vout}_fast_wmseg 
+    $FSLDIR/bin/imrm ${vout}_fast_mixeltype ${vout}_fast_pve* ${vout}_fast_seg
     $FSLDIR/bin/imrm ${vout}_fieldmap*mask* ${vout}_fieldmap2str_pad0
 fi
 
