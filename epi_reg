@@ -239,14 +239,14 @@ if [ X$wmseg = X ] ; then
     else
 	for file in ${vrefbrain}_wmseg*; do
 	    absfile=`$FSLDIR/bin/fsl_abspath $file`;
-	    ln -s ${absfile} ${file/${vrefbrain}_wmseg/${vout}_fast_wmseg} #To link the correct files with extensions
+	    cp ${absfile} ${file/${vrefbrain}_wmseg/${vout}_fast_wmseg} #To link the correct files with extensions
 	done
     fi
 else
     # copy specified wmseg file(s)
     for file in `$FSLDIR/bin/imglob -extensions ${wmseg}`; do
 	absfile=`$FSLDIR/bin/fsl_abspath $file`;
-	ln -s ${absfile} ${file/${wmseg}/${vout}_fast_wmseg} #To link the correct files with extensions
+	cp  ${absfile} ${file/${wmseg}/${vout}_fast_wmseg} #To link the correct files with extensions
     done
 fi
 # make a WM edge map for visualisation (good to overlay in FSLView)
@@ -255,7 +255,7 @@ if [ `$FSLDIR/bin/imtest ${vrefbrain}_wmedge` = 0 ] ; then
 else
     for file in ${vrefbrain}_wmedge*; do
 	absfile=`$FSLDIR/bin/fsl_abspath $file`;
-	ln -s ${absfile} ${file/${vrefbrain}_wmedge/${vout}_fast_wmedge} #To link the correct files with extensions
+	cp ${absfile} ${file/${vrefbrain}_wmedge/${vout}_fast_wmedge} #To link the correct files with extensions
     done
 fi
 
