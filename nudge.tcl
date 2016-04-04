@@ -111,7 +111,7 @@ label $w.fslview.label -text "FSLView options for reference and input"
 
 entry $w.fslview.reference -textvariable nvars(fslview_reference) -width 50
 
-set nvars(fslview_input) "-l Red-Yellow -b 3,10"
+    set nvars(fslview_input) "-cm Red-Yellow -dr 1 15"
 entry $w.fslview.input -textvariable nvars(fslview_input) -width 50
 
 pack $w.fslview.label $w.fslview.reference $w.fslview.input -in $w.fslview -padx 5 -pady 5 -side top -anchor w -expand yes
@@ -157,7 +157,7 @@ proc nudge_inputrange { { dummy "" } } {
     global FSLDIR nvars
 
     set minmax [ fsl:exec "${FSLDIR}/bin/fslstats $nvars(input) -l 0.1 -r" ]
-    set nvars(fslview_input) "-l Red-Yellow -b [ lindex $minmax 0 ],[ lindex $minmax 1 ]"
+    set nvars(fslview_input) "-cm Red-Yellow -dr [ lindex $minmax 0 ] [ lindex $minmax 1 ]"
 }
 
 #}}}
@@ -195,12 +195,9 @@ proc nudge_run { w dummy } {
 	catch { exec sh -c "kill -9 $fslviewpid" } errmsg
     }
 
-    set FSLVIEW /usr/local/bin/fslview
-    if { [ file exists ${FSLDIR}/bin/fslview ] } {
-	set FSLVIEW ${FSLDIR}/bin/fslview
-    }
+    set FSLEYES ${FSLDIR}/bin/fsleyes
 
-    set fslviewpid [ exec sh -c "$FSLVIEW $nvars(reference) $nvars(fslview_reference) $TMP $nvars(fslview_input)" & ]
+    set fslviewpid [ exec sh -c "$FSLEYES $nvars(reference) $nvars(fslview_reference) $TMP $nvars(fslview_input)" & ]
 
     puts "final transform is in ${TMP}.xfm"
 }
