@@ -10,6 +10,7 @@ Usage() {
     echo "  --fmap=<image>         : fieldmap image (in rad/s)"
     echo "  --fmapmag=<image>      : fieldmap magnitude image - wholehead extracted"
     echo "  --fmapmagbrain=<image> : fieldmap magnitude image - brain extracted"
+    echo "  --gdc=<image>          : Gradient-distortion corection warpfield"
     echo "  --wmseg=<image>        : white matter segmentation of T1 image"
     echo "  --echospacing=<val>    : Effective EPI echo spacing (sometimes called dwell time) - in seconds"
     echo "  --pedir=<dir>          : phase encoding direction, dir = x/y/z/-x/-y/-z"
@@ -75,6 +76,7 @@ cleanup=yes;
 fmaprads="";
 fmapmaghead="";
 fmapmagbrain="";
+gdcwarp="";
 wmseg="";
 dwell="";
 pe_dir="";
@@ -108,6 +110,9 @@ while [ $# -ge 1 ] ; do
 	--fmapmagbrain)
 	    fmapmagbrain=`get_imarg1 $1`;
 	    shift;;
+	--gdc)
+	    gdcwarp=`get_imarg1 $1`;
+	    shift;;	
 	--wmseg)
 	    wmseg=`get_imarg1 $1`;
 	    shift;;
@@ -313,6 +318,15 @@ else
     $FSLDIR/bin/fugue --loadfmap=${vout}_fieldmaprads2epi --mask=${vout}_fieldmaprads2epi_mask --saveshift=${vout}_fieldmaprads2epi_shift --unmaskshift --dwell=${dwell} --unwarpdir=${fdir}
     $FSLDIR/bin/convertwarp -r ${vrefhead} -s ${vout}_fieldmaprads2epi_shift --postmat=${vout}.mat -o ${vout}_warp --shiftdir=${fdir} --relout
     $FSLDIR/bin/applywarp -i ${vepi} -r ${vrefhead} -o ${vout} -w ${vout}_warp --interp=spline --rel
+
+    if [ X$gdcwarp != X ]; then
+	${FSLDIR}/bin/convertwarp --ref=${vepi} --warp1=${vout}_warp --midmat=${vout}_inv.mat --warp2=${gdcwarp}  --out=${vepi}2${vepi}_undistorted_warp --relout
+	${FSLDIR}/bin/applywarp -i ${vepi} -r ${vepi} -o ${vepi}_fully_undistorted -w ${vepi}2${vepi}_undistorted_warp --interp=spline --rel
+	${FSLDIR}/bin/flirt -ref ${vrefhead} -in ${vepi}_fully_undistorted -dof 6 -cost bbr -wmseg ${vout}_fast_wmseg -init ${vout}.mat -omat ${vout}.mat -out ${vout} -schedule ${FSLDIR}/etc/flirtsch/bbr.sch
+	${FSLDIR}/bin/convertwarp --ref=${vrefhead} --warp1=${vout}_warp --midmat=${vout}_inv.mat --warp2=${gdcwarp} --postmat=${vout}.mat --out=${vout}_warp --relout
+	${FSLDIR}/bin/applywarp -i ${vepi} -r ${vrefhead} -o ${vout} -w ${vout}_warp --interp=spline --rel
+	
+    fi
 
 fi
 
