@@ -155,6 +155,9 @@ while [ $# -ge 1 ] ; do
 	--noclean)
 	    cleanup=no; 
 	    shift;;
+	--init)
+	    initmat=`get_arg1 $1`;
+	    shift;;
 	-v)
 	    verbose=yes; 
 	    shift;;
@@ -264,10 +267,14 @@ else
     done
 fi
 
-
-# do a standard flirt pre-alignment
-echo "FLIRT pre-alignment"
-$FSLDIR/bin/flirt -ref ${vrefbrain} -in ${vepi} -dof 6 -omat ${vout}_init.mat
+if [ X$initmat = X ]; then
+    # do a standard flirt pre-alignment
+    echo "FLIRT pre-alignment"
+    $FSLDIR/bin/flirt -ref ${vrefbrain} -in ${vepi} -dof 6 -omat ${vout}_init.mat
+else
+    # user has supplied an intial alignment
+    cp $initmat ${vout}_init.mat
+fi
 
 ####################
 
@@ -284,9 +291,9 @@ if [ $use_fmap = no ] ; then
 else
 
 # WITH FIELDMAP
-    echo "Registering fieldmap to structural"
     if [ $fmapreg = yes ] ; then
         # register fmap to structural image
+	echo "Registering fieldmap to structural"
 	$FSLDIR/bin/flirt -in ${fmapmagbrain} -ref ${vrefbrain} -dof 6 -omat ${vout}_fieldmap2str_init.mat
 	$FSLDIR/bin/flirt -in ${fmapmaghead} -ref ${vrefhead} -dof 6 -init ${vout}_fieldmap2str_init.mat -omat ${vout}_fieldmap2str.mat -out ${vout}_fieldmap2str -nosearch
     else
