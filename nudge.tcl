@@ -19,7 +19,7 @@ proc nudge { w } {
     global FSLDIR VARS PWD nvars TMP
 
     toplevel $w
-    wm title      $w "Nudge"
+    wm title      $w "Nudge ( Deprecated - replaced by nudge tool in FSLeyes )"
     wm iconname   $w "Nudge"
     wm iconbitmap $w @${FSLDIR}/tcl/fmrib.xbm
 
@@ -107,7 +107,7 @@ pack $w.nudge.rot $w.nudge.trans $w.nudge.scale -in $w.nudge -padx 5 -pady 5 -si
 
 frame $w.fslview -relief raised -borderwidth 1
 
-label $w.fslview.label -text "FSLView options for reference and input"
+label $w.fslview.label -text "FSLeyes options for reference and input"
 
 entry $w.fslview.reference -textvariable nvars(fslview_reference) -width 50
 
