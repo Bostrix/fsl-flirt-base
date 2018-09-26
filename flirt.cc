@@ -152,9 +152,8 @@ int vector2affine(const ColumnVector& params, int n, const ColumnVector& centre,
 
 int vector2affine(const ColumnVector& params, int n, Matrix& aff)
 {
-  return vector2affine(params,n,globaloptions::get().impair->testvol.cog("scaled_mm"),aff);
+  return vector2affine(params,n,globaloptions::get().impair->testCog,aff);
 }
-
 
 int vector2affine(const float params[], int n, Matrix& aff)
 {
@@ -186,7 +185,7 @@ int affmat2vector(const Matrix& aff, int n, const ColumnVector& centre,
 
 int affmat2vector(const Matrix& aff, int n, ColumnVector& params)
 {
-  return affmat2vector(aff,n,globaloptions::get().impair->testvol.cog("scaled_mm"),params);
+  return affmat2vector(aff,n,globaloptions::get().impair->testCog,params);
 }
 
 
@@ -1547,7 +1546,6 @@ int resample_refvol(volume<float>& refvol, float sampling=1.0)
   // isotropically resample the volume
   filter_image(refvol,refvol,global_refweight,sampl,
 	       globaloptions::get().useweights,filter_resamp_blur);
-
   if (globaloptions::get().verbose>=2) print_volume_info(refvol,"Refvol");      
   
   return 0;
@@ -1641,7 +1639,8 @@ void do_applyxfm()
       outputvol.addvolume(refvol);
       if ((globaloptions::get().interpmethod != NearestNeighbour) &&
 	  (globaloptions::get().interpblur)) {
-	filter_image(testvol[t0],testvol[t0],testvol[t0],min_sampling_ref,
+	ShadowVolume<float> tempvol(testvol[t0]);
+	filter_image(tempvol,tempvol,tempvol,min_sampling_ref,
 		     false,filter_blur);
       }
       
@@ -1649,13 +1648,13 @@ void do_applyxfm()
 	print_volume_info(refvol,"refvol"); 
 	print_volume_info(testvol,"inputvol"); 
       }
-      
-      final_transform(testvol[t0],refvol,globaloptions::get().initmat,outputvol[tref]);
+      ShadowVolume<float> tempvol(outputvol[tref]);
+      final_transform(testvol[t0],refvol,globaloptions::get().initmat,tempvol);
     }
     int outputdtype = output_dtype(outputvol);
     outputvol.setDisplayMaximumMinimum(0,0);
     outputvol.settdim(testvol.tdim());
-    save_volume4D_dtype(outputvol,globaloptions::get().outputfname.c_str(),
+    save_volume_dtype(outputvol,globaloptions::get().outputfname.c_str(),
 			outputdtype);
     if (globaloptions::get().verbose>=2) {
       print_volume_info(outputvol,"Resampled volume");
@@ -2873,7 +2872,6 @@ int main(int argc,char *argv[])
       if (globaloptions::get().min_sampling < min_sampling) 
 	globaloptions::get().min_sampling = min_sampling;
     }
-    
     if (globaloptions::get().verbose>=3) {
       cout << "CoG for refvol is:  " << refvol.cog("scaled_mm").t();
       cout << "CoG for testvol is:  " << testvol.cog("scaled_mm").t();
@@ -2890,7 +2888,6 @@ int main(int argc,char *argv[])
       // set up subsampled volumes by factors of 2, 4 and 8
       if (globaloptions::get().verbose >= 2) 
 	cout << "Subsampling the volumes" << endl;
-      
       resample_refvol(refvol,globaloptions::get().min_sampling);
       filter_weight(global_refweight,global_refweight,
 		    globaloptions::get().min_sampling,filter_resamp_blur);
