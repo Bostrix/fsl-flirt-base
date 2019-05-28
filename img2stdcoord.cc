@@ -314,14 +314,15 @@ int main(int argc,char *argv[])
     }
   }
 
+  if (use_stdin) {
+    	if (isatty(STDIN_FILENO)){
+    		cerr << "Interactive mode has been removed. Please pipe input such as: cat coordinate_file.txt | img2stdcoord, OR supply a coordinate file" << endl;
+    		exit(1);
+    	}
+    }
   // loop around reading coordinates and displaying output
   while ( (use_stdin && (cin >> imgcoord(1) >> imgcoord(2) >> imgcoord(3))) || ((!use_stdin) && (matfile >> imgcoord(1) >> imgcoord(2) >> imgcoord(3))) ) {
-    if  (use_stdin) {
-      // this is in case the pipe continues to input a stream of zeros
-      if (oldimg == imgcoord)  return 0;
-      oldimg = imgcoord;
-    }
-
+        
     if (globalopts.mm) {  // in mm
       stdcoord = stdvol.newimagevox2mm_mat() *
 	NewimageCoord2NewimageCoord(fnirtfile,affmat,imgvol,stdvol,imgvol.newimagevox2mm_mat().i() * imgcoord);
@@ -333,6 +334,5 @@ int main(int argc,char *argv[])
   }
 
   if (!use_stdin) { matfile.close(); }
-
   return 0;
 }
