@@ -69,7 +69,7 @@ int main(int argc,char *argv[])
   if (argc<5) {
     // do the RMS
     // compute the centre of gravity
-    centre = refvol.cog("scaledmm");
+    centre = refvol.cog("scaled_mm");
     float rms = rms_deviation(affmat1,affmat2,centre,rmax);
     cout << rms << endl;
   } else {  
