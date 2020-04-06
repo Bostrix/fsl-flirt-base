@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env fslpython
 
 #   Script for getting a 6 DOF approx to a 12 DOF standard transformation
 #
