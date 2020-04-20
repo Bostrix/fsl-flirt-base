@@ -36,10 +36,10 @@ get_opt1() {
 
 
 get_arg1() {
-    if [ X`echo $1 | grep '='` = X ] ; then 
+    if [ X`echo $1 | grep '='` = X ] ; then
 	echo "Option $1 requires an argument" 1>&2
 	exit 1
-    else 
+    else
 	arg=`echo $1 | sed 's/.*=//'`
 	if [ X$arg = X ] ; then
 	    echo "Option $1 requires an argument" 1>&2
@@ -102,7 +102,7 @@ while [ $# -ge 1 ] ; do
 	    shift;;
 	--fmap)
 	    fmaprads=`get_imarg1 $1`;
-	    use_fmap=yes; 
+	    use_fmap=yes;
 	    shift;;
 	--fmapmag)
 	    fmapmaghead=`get_imarg1 $1`;
@@ -112,7 +112,7 @@ while [ $# -ge 1 ] ; do
 	    shift;;
 	--gdc)
 	    gdcwarp=`get_imarg1 $1`;
-	    shift;;	
+	    shift;;
 	--wmseg)
 	    wmseg=`get_imarg1 $1`;
 	    shift;;
@@ -121,10 +121,10 @@ while [ $# -ge 1 ] ; do
 	    shift;;
 	--echospacing)
 	    dwell=`get_arg1 $1`;
-	    if [ `echo "if ( $dwell > 0.2 ) {1}; if ( $dwell <= 0.2 ) {0}" | bc -l` = 1 ] ; then 
+	    if [ `echo "if ( $dwell > 0.2 ) {1}; if ( $dwell <= 0.2 ) {0}" | bc -l` = 1 ] ; then
 		msdwell=`echo "scale=6; $dwell / 1000.0" | bc -l`;
-		echo "Echo spacing should be specified in seconds, not milliseconds.  Value of $dwell appears to be incorrectly specified in milliseconds.  Try using the value $msdwell instead."; 
-		exit 1; 
+		echo "Echo spacing should be specified in seconds, not milliseconds.  Value of $dwell appears to be incorrectly specified in milliseconds.  Try using the value $msdwell instead.";
+		exit 1;
 	    fi
 	    shift;;
 	--pedir)
@@ -146,26 +146,26 @@ while [ $# -ge 1 ] ; do
 	    shift;;
 	--weight)
 	    refweight=`get_imarg1 $1`;
-	    use_weighting=yes; 
+	    use_weighting=yes;
 	    echo REFWEIGHT = $refweight;
 	    shift;;
 	--nofmapreg)
-	    fmapreg=no; 
+	    fmapreg=no;
 	    shift;;
 	--noclean)
-	    cleanup=no; 
+	    cleanup=no;
 	    shift;;
 	--init)
 	    initmat=`get_arg1 $1`;
 	    shift;;
 	-v)
-	    verbose=yes; 
+	    verbose=yes;
 	    shift;;
 	-h)
 	    Usage;
 	    exit 0;;
 	*)
-	    #if [ `echo $1 | sed 's/^\(.\).*/\1/'` = "-" ] ; then 
+	    #if [ `echo $1 | sed 's/^\(.\).*/\1/'` = "-" ] ; then
 	    echo "Unrecognised option $1" 1>&2
 	    exit 1
 	    #fi
@@ -241,30 +241,21 @@ fi
 # create the WM segmentation
 if [ X$wmseg = X ] ; then
     if [ `$FSLDIR/bin/imtest ${vrefbrain}_wmseg` = 0 ] ; then
-	echo "Running FAST segmentation"
-	$FSLDIR/bin/fast -o ${vout}_fast ${vrefbrain}
-	$FSLDIR/bin/fslmaths ${vout}_fast_pve_2 -thr 0.5 -bin ${vout}_fast_wmseg
+		echo "Running FAST segmentation"
+		$FSLDIR/bin/fast -o ${vout}_fast ${vrefbrain}
+		$FSLDIR/bin/fslmaths ${vout}_fast_pve_2 -thr 0.5 -bin ${vout}_fast_wmseg
     else
-	for file in ${vrefbrain}_wmseg*; do
-	    absfile=`$FSLDIR/bin/fsl_abspath $file`;
-	    cp ${absfile} ${file/${vrefbrain}_wmseg/${vout}_fast_wmseg} #To link the correct files with extensions
-	done
+		$FSLDIR/bin/imcp ${vrefbrain}_wmseg ${vout}_fast_wmseg
     fi
 else
     # copy specified wmseg file(s)
-    for file in `$FSLDIR/bin/imglob -extensions ${wmseg}`; do
-	absfile=`$FSLDIR/bin/fsl_abspath $file`;
-	cp  ${absfile} ${file/${wmseg}/${vout}_fast_wmseg} #To link the correct files with extensions
-    done
+	$FSLDIR/bin/imcp ${wmseg} ${vout}_fast_wmseg
 fi
 # make a WM edge map for visualisation (good to overlay in FSLView)
 if [ `$FSLDIR/bin/imtest ${vrefbrain}_wmedge` = 0 ] ; then
-  $FSLDIR/bin/fslmaths ${vout}_fast_wmseg -edge -bin -mas ${vout}_fast_wmseg ${vout}_fast_wmedge
+	$FSLDIR/bin/fslmaths ${vout}_fast_wmseg -edge -bin -mas ${vout}_fast_wmseg ${vout}_fast_wmedge
 else
-    for file in ${vrefbrain}_wmedge*; do
-	absfile=`$FSLDIR/bin/fsl_abspath $file`;
-	cp ${absfile} ${file/${vrefbrain}_wmedge/${vout}_fast_wmedge} #To link the correct files with extensions
-    done
+	$FSLDIR/bin/imcp ${vrefbrain}_wmedge ${vout}_fast_wmedge
 fi
 
 if [ X$initmat = X ]; then
@@ -304,7 +295,7 @@ else
     $FSLDIR/bin/fslmaths ${fmapmagbrain} -abs -bin ${vout}_fieldmaprads_mask
     $FSLDIR/bin/fslmaths ${fmaprads} -abs -bin -mul ${vout}_fieldmaprads_mask ${vout}_fieldmaprads_mask
     $FSLDIR/bin/fugue --loadfmap=${fmaprads} --mask=${vout}_fieldmaprads_mask --unmaskfmap --savefmap=${vout}_fieldmaprads_unmasked --unwarpdir=${fdir}   # the direction here should take into account the initial affine (it needs to be the direction in the EPI)
-	
+
     # the following is a NEW HACK to fix extrapolation when fieldmap is too small
     $FSLDIR/bin/applywarp -i ${vout}_fieldmaprads_unmasked -r ${vrefhead} --premat=${vout}_fieldmap2str.mat -o ${vout}_fieldmaprads2str_pad0
     $FSLDIR/bin/fslmaths ${vout}_fieldmaprads2str_pad0 -abs -bin ${vout}_fieldmaprads2str_innermask
@@ -332,7 +323,7 @@ else
 	${FSLDIR}/bin/flirt -ref ${vrefhead} -in ${vepi}_fully_undistorted -dof 6 -cost bbr -wmseg ${vout}_fast_wmseg -init ${vout}.mat -omat ${vout}.mat -out ${vout} -schedule ${FSLDIR}/etc/flirtsch/bbr.sch
 	${FSLDIR}/bin/convertwarp --ref=${vrefhead} --warp1=${vout}_warp --midmat=${vout}_inv.mat --warp2=${gdcwarp} --postmat=${vout}.mat --out=${vout}_warp --relout
 	${FSLDIR}/bin/applywarp -i ${vepi} -r ${vrefhead} -o ${vout} -w ${vout}_warp --interp=spline --rel
-	
+
     fi
 
 fi
@@ -344,5 +335,3 @@ if [ $cleanup = yes ] ; then
     $FSLDIR/bin/imrm ${vout}_fast_mixeltype ${vout}_fast_pve* ${vout}_fast_seg
     $FSLDIR/bin/imrm ${vout}_fieldmap*mask* ${vout}_fieldmap2str_pad0
 fi
-
-
