@@ -13,8 +13,7 @@
 #define WANT_STREAM
 #define WANT_MATH
 
-#include "newmatap.h"
-#include "newmatio.h"
+#include "armawrap/newmat.h"
 #include "newimage/newimageall.h"
 #include "miscmaths/miscmaths.h"
 

@@ -17,8 +17,7 @@
 #define EXPOSE_TREACHEROUS
 #endif
 
-#include "newmatap.h"
-#include "newmatio.h"
+#include "armawrap/newmat.h"
 #include "miscmaths/miscmaths.h"
 #include "newimage/newimageall.h"
 #include "warpfns/warpfns.h"

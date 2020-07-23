@@ -6,8 +6,7 @@
 
 /*  CCOPYRIGHT  */
 
-#include "newmatio.h"
-#include "newmatap.h"
+#include "armawrap/newmat.h"
 #include "miscmaths/miscmaths.h"
 #include "utils/options.h"
 #include "newimage/newimageall.h"

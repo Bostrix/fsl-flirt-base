@@ -16,8 +16,7 @@
 #define WANT_STREAM
 #define WANT_MATH
 
-#include "newmatap.h"
-#include "newmatio.h"
+#include "armawrap/newmatio.h"
 //#include "miscimfns.h"
 #include "miscmaths/miscmaths.h"
 //#include "interpolation.h"
