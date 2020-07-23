@@ -2,7 +2,8 @@ include ${FSLCONFDIR}/default.mk
 
 PROJNAME = flirt
 
-LIBS = -lfsl-warpfns -lfsl-basisfield -lfsl-newimage -lfsl-miscmaths -lfsl-NewNifti -lfsl-cprob -lfsl-znz -lfsl-utils
+LIBS = -lfsl-warpfns -lfsl-basisfield -lfsl-meshclass -lfsl-newimage \
+       -lfsl-miscmaths -lfsl-NewNifti -lfsl-cprob -lfsl-znz -lfsl-utils
 
 RUNTCLS = Flirt InvertXFM ApplyXFM ConcatXFM Nudge
 XFILES = flirt convert_xfm avscale rmsdiff std2imgcoord img2stdcoord \
