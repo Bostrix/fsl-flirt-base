@@ -32,12 +32,12 @@ int main(int argc,char *argv[])
 
   float rmax=80.0;
 
-  if (argc<4) { 
-    cerr << "Usage: " << argv[0] << " matrixfile1 matrixfile2 refvol [mask]" << endl; 
+  if (argc<4) {
+    cerr << "Usage: " << argv[0] << " matrixfile1 matrixfile2 refvol [mask]" << endl;
     cerr << "        Outputs rms deviation between matrices (in mm)" << endl;
-    return -1; 
+    return -1;
   }
-  
+
   Matrix affmat1(4,4), affmat2(4,4);
   affmat1 = read_ascii_matrix(argv[1]);
   if (affmat1.Nrows()<4) {
@@ -72,7 +72,7 @@ int main(int argc,char *argv[])
     centre = refvol.cog("scaled_mm");
     float rms = rms_deviation(affmat1,affmat2,centre,rmax);
     cout << rms << endl;
-  } else {  
+  } else {
     // do the extreme distance
     double maxdist=0, dist=0, sumdistsq=0;
     ColumnVector cvec(4);
@@ -101,8 +101,3 @@ int main(int argc,char *argv[])
   return 0;
 
 }
-
-
-
-
-

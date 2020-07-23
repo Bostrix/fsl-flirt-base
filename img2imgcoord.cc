@@ -295,7 +295,7 @@ int main(int argc,char *argv[])
     		exit(1);
     	}
     }
-    
+
   while ( (use_stdin && (cin >> srccoord(1) >> srccoord(2) >> srccoord(3))) || ((!use_stdin) && (matfile >> srccoord(1) >> srccoord(2) >> srccoord(3))) ) {
 
     if (globalopts.mm) {  // in mm

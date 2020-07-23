@@ -46,8 +46,8 @@ int testfn_yy(int argc, char *argv[]) {
     read_volume(gfimage,"gfimage.hdr");
   }
 	cout << "Read File Successfully!" << endl;
-	cout << "Width: " << gfimage.rows() << "\tHeight: " 
-	     << gfimage.columns() << "\tDepth: " << gfimage.slices() << endl; 
+	cout << "Width: " << gfimage.rows() << "\tHeight: "
+	     << gfimage.columns() << "\tDepth: " << gfimage.slices() << endl;
 
 	//ZEnumPixelOf<float>	pixel(&gfimage);
 
@@ -122,7 +122,7 @@ int main(void)
       tr2(1,4) = (test.xsize())/2.0;
       tr2(2,4) = (test.ysize())/2.0;
       tr2(3,4) = (test.zsize())/2.0;
-      
+
       xfm = tr2 * rot * tr1;
 
       thecr = corr_ratio(globaloptions::get().impair, xfm);

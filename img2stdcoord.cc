@@ -322,7 +322,7 @@ int main(int argc,char *argv[])
     }
   // loop around reading coordinates and displaying output
   while ( (use_stdin && (cin >> imgcoord(1) >> imgcoord(2) >> imgcoord(3))) || ((!use_stdin) && (matfile >> imgcoord(1) >> imgcoord(2) >> imgcoord(3))) ) {
-        
+
     if (globalopts.mm) {  // in mm
       stdcoord = stdvol.newimagevox2mm_mat() *
 	NewimageCoord2NewimageCoord(fnirtfile,affmat,imgvol,stdvol,imgvol.newimagevox2mm_mat().i() * imgcoord);

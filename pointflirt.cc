@@ -27,8 +27,8 @@ using namespace NEWIMAGE;
 string title="pointflirt \nCopyright(c) 2001, University of Oxford (Mark Jenkinson)";
 string examples="pointflirt -i <invol coords>  -r <refvol coords> -o <output matrix>\npointflirt -i <invol coords>  -r <refvol coords> -o <output matrix> --vox --invol=<input vol> --refvol=<ref vol>";
 
-Option<bool> verbose(string("-v,--verbose"), false, 
-		     string("switch on diagnostic messages"), 
+Option<bool> verbose(string("-v,--verbose"), false,
+		     string("switch on diagnostic messages"),
 		     false, no_argument);
 Option<bool> help(string("-h,--help"), false,
 		  string("display this message"),
@@ -112,7 +112,7 @@ int procrustes()
   w.SubMatrix(1,3,1,1) = xbar;
   w.SubMatrix(4,6,2,2) = xbar;
   w.SubMatrix(7,9,3,3) = xbar;
-  
+
   b=zeros(12,12);
   b.SubMatrix(1,3,1,3) = s;
   b.SubMatrix(4,6,4,6) = s;
@@ -177,7 +177,7 @@ int main(int argc, char* argv[])
     options.add(refvol);
     options.add(verbose);
     options.add(help);
-    
+
     options.parse_command_line(argc, argv);
 
     if ( (help.value()) || (!options.check_compulsory_arguments(true)) )
@@ -191,11 +191,7 @@ int main(int argc, char* argv[])
     exit(EXIT_FAILURE);
   } catch(std::exception &e) {
     cerr << e.what() << endl;
-  } 
+  }
 
   return procrustes();
 }
-
-
-
-

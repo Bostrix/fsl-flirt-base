@@ -32,9 +32,9 @@ int main(int argc,char *argv[])
 
   try {
 
-    if (argc<2) { 
-      cerr << "Usage: " << argv[0] << " [--allparams/--inverteddies] matrixfile [non-reference-volume]\n"; 
-      return -1; 
+    if (argc<2) {
+      cerr << "Usage: " << argv[0] << " [--allparams/--inverteddies] matrixfile [non-reference-volume]\n";
+      return -1;
     }
 
     int offset=1;
@@ -70,7 +70,7 @@ int main(int argc,char *argv[])
 
     Matrix rotmat(4,4);
     construct_rotmat_euler(params,6,rotmat);
-    
+
     cout << "Rotation & Translation Matrix:\n" << rotmat << endl;
     if (optionarg=="--allparams") {
       cout << "Rotation Angles (x,y,z) [rads] = " << params.SubMatrix(1,3,1,1).t() << endl;
@@ -123,7 +123,7 @@ int main(int argc,char *argv[])
       newxfm = rotmat * skew * scale;
       cout << "Inverted eddy matrix:" << endl << newxfm << endl;
     }
-    
+
 
     return 0;
   }
@@ -134,14 +134,6 @@ int main(int argc,char *argv[])
   catch(...) {
     cerr << "Image error" << endl;
     throw;
-  } 
+  }
   return(0);
 }
-
-
-
-
-
-
-
-

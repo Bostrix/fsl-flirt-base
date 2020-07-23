@@ -74,7 +74,7 @@ void print_usage(int argc, char *argv[])
   cout << "convert_xfm (Version " << version << ")" << endl
        << "Tool for manipulating FSL transformation matrices" << endl
        << "Copyright(c) 1999-2007, University of Oxford (Mark Jenkinson)" << endl
-       << endl 
+       << endl
        << "Usage: " << argv[0] << " [options] <input-matrix-filename>" << endl
        << "  e.g. " << argv[0] << " -omat <outmat> -inverse <inmat>" << endl
        << "       " << argv[0] << " -omat <outmat_AtoC> -concat <mat_BtoC> <mat_AtoB>" << endl << endl
@@ -115,7 +115,7 @@ void parse_command_line(int argc, char* argv[])
       n++;
       continue;
     }
-    
+
     // put options without arguments here
     if ( arg == "-help" ) {
       print_usage(argc,argv);
@@ -130,10 +130,10 @@ void parse_command_line(int argc, char* argv[])
       continue;
     }
 
-    if (n+1>=argc) 
-      { 
+    if (n+1>=argc)
+      {
 	cerr << "Lacking argument to option " << arg << endl << endl;
-	exit(2); 
+	exit(2);
       }
 
     // put options with 1 argument here
@@ -153,10 +153,10 @@ void parse_command_line(int argc, char* argv[])
       globalopts.verbose = atoi(argv[n+1]);
       n+=2;
       continue;
-    } else { 
+    } else {
       cerr << "Unrecognised option " << arg << endl << endl;
       exit(-1);
-    } 
+    }
 
   }  // while (n<argc)
 
@@ -178,7 +178,7 @@ int vector2affine(const ColumnVector& params, Matrix& aff)
   centre = 0;
   compose_aff(params,12,centre,aff,construct_rotmat_euler);
   return 0;
-}  
+}
 
 
 int affmat2vector(const Matrix& aff, ColumnVector& params)
@@ -206,12 +206,12 @@ int main(int argc,char *argv[])
     cerr << "Cannot read input-matrix" << endl;
     return -2;
   }
-    
+
 
   if (globalopts.fixfname.size() >= 1) {
     Matrix fixmat(4,4);
     fixmat = read_ascii_matrix(globalopts.fixfname);
-    
+
     if (fixmat.Nrows()<4) {
       cerr << "Cannot read fixscaleskew-matrix" << endl;
       return -3;
@@ -230,11 +230,11 @@ int main(int argc,char *argv[])
     }
   }
 
-  
+
   if (globalopts.concatfname.size() >= 1) {
     Matrix concatmat(4,4);
     concatmat = read_ascii_matrix(globalopts.concatfname);
-    
+
     if (concatmat.Nrows()<4) {
       cerr << "Cannot read concat-matrix" << endl;
       return -3;
@@ -246,18 +246,18 @@ int main(int argc,char *argv[])
       affmat = concatmat * affmat;
     }
   }
-  
+
   // apply inverse (if requested)
   if (globalopts.inverse) {
     affmat = affmat.i();
   }
-  
-  
+
+
   // Write outputs
   if (globalopts.outputmatascii.size() >= 1) {
     write_ascii_matrix(affmat,globalopts.outputmatascii);
   }
-  
+
   if (globalopts.verbose>0) {
     cout << affmat << endl;
   }
