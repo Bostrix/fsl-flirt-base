@@ -72,6 +72,7 @@ int fmrib_main(int argc, char* argv[])
       affine_transform(invol[m],dummy,affmat);
       outvol.addvolume(dummy);
     }
+    copybasicproperties(invol, outvol);
     outvol.setDisplayMaximumMinimum(0,0);
     save_volume4D(outvol,oname);
 
@@ -91,6 +92,7 @@ int fmrib_main(int argc, char* argv[])
     affmat = read_ascii_matrix(transname);
 
     affine_transform(invol,outvol,affmat);
+    copybasicproperties(invol, outvol);
     outvol.setDisplayMaximumMinimum(0,0);
     save_volume(outvol,oname);
   }
