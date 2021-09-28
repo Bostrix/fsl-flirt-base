@@ -10,18 +10,15 @@
 #include <iostream>
 #include <fstream>
 #include <unistd.h>
-#define WANT_STREAM
-#define WANT_MATH
 
 #include "armawrap/newmat.h"
 #include "newimage/newimageall.h"
 #include "miscmaths/miscmaths.h"
 
-#ifndef NO_NAMESPACE
- using namespace MISCMATHS;
- using namespace NEWMAT;
- using namespace NEWIMAGE;
-#endif
+using namespace std;
+using namespace MISCMATHS;
+using namespace NEWMAT;
+using namespace NEWIMAGE;
 
 
 ////////////////////////////////////////////////////////////////////////////

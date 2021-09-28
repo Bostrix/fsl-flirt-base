@@ -6,18 +6,22 @@
 
 /*  CCOPYRIGHT  */
 
-#define _GNU_SOURCE 1
-#define POSIX_SOURCE 1
+#include <vector>
+#include <string>
+#include <iostream>
 
+#include "utils/options.h"
+#include "armawrap/newmat.h"
 #include "newimage/newimageall.h"
 #include "miscmaths/miscmaths.h"
-#include "utils/options.h"
-#include <vector>
 
+
+using namespace std;
+using namespace Utilities;
+using namespace NEWMAT;
 using namespace MISCMATHS;
 using namespace NEWIMAGE;
-using namespace Utilities;
-using namespace std;
+
 
 // The two strings below specify the title and example usage that is
 //  printed out as the help or usage message
@@ -32,14 +36,14 @@ string examples="midtrans [options] transform1 transform2 ... transformN\n  e.g.
 // Note that they must also be included in the main() function or they
 //  will not be active.
 
-Option<bool> verbose(string("-v,--verbose"), false, 
-		     string("switch on diagnostic messages"), 
+Option<bool> verbose(string("-v,--verbose"), false,
+		     string("switch on diagnostic messages"),
 		     false, no_argument);
 Option<bool> help(string("-h,--help"), false,
 		  string("display this message"),
 		  false, no_argument);
-Option<bool> debug(string("--debug"), false, 
-		     string("switch on debugging output"), 
+Option<bool> debug(string("--debug"), false,
+		     string("switch on debugging output"),
 		     false, no_argument);
 Option<string> templte(string("--template"), string(""),
 		  string("input filename for template image (needed for fix origin)"),
@@ -56,7 +60,7 @@ int nonoptarg;
 
 // Local functions
 
-Matrix approx_nth_root(const vector<Matrix>& matlist) 
+Matrix approx_nth_root(const vector<Matrix>& matlist)
 {
   int NN = matlist.size();
   // initialise using the affine decomposition (arthimetic average + geometric mean)
@@ -79,7 +83,7 @@ Matrix approx_nth_root(const vector<Matrix>& matlist)
   decompose_aff(params, prodmat, centre, rotmat2euler);
   if (verbose.value()) { cout << "Affine params = " << params.t() << endl; }
   for (int n=1; n<=12; n++) {
-    if ((n>=7) && (n<=9)) { 
+    if ((n>=7) && (n<=9)) {
       params(n) = exp(log(params(n))/NN);   // NN-th root
     } else {
       params(n) /= NN;
@@ -124,7 +128,7 @@ Matrix approx_nth_root(const vector<Matrix>& matlist)
   rootmat(3,4)=trans(3);
 
   Matrix midtrans(4,4);
-  midtrans=rootmat.i();  
+  midtrans=rootmat.i();
 return midtrans;
 }
 
@@ -155,7 +159,7 @@ Matrix avg_affine_with_procrustes(const vector<Matrix>& matlist, const ColumnVec
   // Equations are: min E = -Trace[A(<P.x.x'> + <t.x'> - <P.x><x'> - <t><x'>)]
   //           and: s = <x> - A(<Px> + <t>)
   // Solve for A (3x3) and s (3x1) given sets of P (3x3) and t (3x1)
-  // <P.x.x'> = (1/N) * \sum_i P_i <x_i.x_i'> 
+  // <P.x.x'> = (1/N) * \sum_i P_i <x_i.x_i'>
   // <x_i.x_i'> = (1/5)*(r^2)*I + <x_i>.<x_i>'
   if (verbose.value()) { cout << "Stage 1" << endl; }
   ColumnVector s(3), x_i(3), t_i(3), t_av(3), Px_av(3);
@@ -165,7 +169,7 @@ Matrix avg_affine_with_procrustes(const vector<Matrix>& matlist, const ColumnVec
   s=0; x_i=0; x_av=0; t_i=0; t_av=0; Px_av=0;
   A=0; P_i=0; tx_av=0; Pxx_av=0;
 
-  for (int n=0; n<NN; n++) { 
+  for (int n=0; n<NN; n++) {
     x_i = xavlist[n];
     P_i = matlist[n].SubMatrix(1,3,1,3);
     t_i = matlist[n].SubMatrix(1,3,4,4);
@@ -181,7 +185,7 @@ Matrix avg_affine_with_procrustes(const vector<Matrix>& matlist, const ColumnVec
   tx_av /= (float) NN;
   Px_av /= (float) NN;
   Pxx_av /= (float) NN;
-  
+
   if (debug.value()) { cout << "Pxx_av = " << endl << Pxx_av << endl; }
 
   M2 = Pxx_av + tx_av - Px_av*x_av.t() - t_av*x_av.t();
@@ -220,7 +224,7 @@ Matrix avg_affine_with_procrustes(const vector<Matrix>& matlist, const ColumnVec
   // <ba'> = <Rxx'P'> - <Rx><Px>' + <Rxt'> - <Rx><t'> - <ux'P'> + <u><Px>' - <ut'> + <u><t>'
   // <Pxx'P'> = (1/5)*(r^2)*<PP'> + (1/N)*\sum_i P_i.<x_i>.<x_i>'.P_i'
   // <Rxx'P'> = (1/5)*(r^2)*<RP'> + (1/N)*\sum_i R_i.<x_i>.<x_i>'.P_i'
-  
+
   if (verbose.value()) { cout << "Stage 3" << endl; }
   ColumnVector u_i(3), u_av(3), Rx_av(3);
   Matrix tt_av(3,3), ut_av(3,3), R_i(3,3), Pxt_av(3,3), Rxt_av(3,3), uxP_av(3,3), PP_av(3,3), RP_av(3,3), PxxP(3,3), RxxP(3,3);
@@ -228,11 +232,11 @@ Matrix avg_affine_with_procrustes(const vector<Matrix>& matlist, const ColumnVec
   u_i=0; x_i=0; x_av=0; u_av=0; t_i=0; t_av=0; Px_av=0; Rx_av=0;
   P_i=0; tt_av=0; ut_av=0; R_i=0; Pxt_av=0; Rxt_av=0; uxP_av=0; PP_av=0; RP_av=0; PxxP=0; RxxP=0;
 
-  for (int n=0; n<NN; n++) { 
+  for (int n=0; n<NN; n++) {
     u_i = matlist2[n].SubMatrix(1,3,4,4);
     x_i = xavlist[n];
     x_av += x_i;
-    u_av += u_i; 
+    u_av += u_i;
     P_i = A * matlist[n].SubMatrix(1,3,1,3);
     t_i = A * matlist[n].SubMatrix(1,3,4,4) + s;
     t_av += t_i;
@@ -289,7 +293,7 @@ Matrix avg_affine_with_procrustes(const vector<Matrix>& matlist, const ColumnVec
 
 
 
-int do_work(int argc, char* argv[]) 
+int do_work(int argc, char* argv[])
 {
   //int ntrans = argc - nonoptarg;
 
@@ -301,7 +305,7 @@ int do_work(int argc, char* argv[])
     if (fabs(trans.Determinant()) < 1e-6) {
       cerr << "Could not read matrix " << argv[n] << endl;
       exit(EXIT_FAILURE);
-    } 
+    }
     matlist.push_back(trans);
   }
 
@@ -360,17 +364,17 @@ int main(int argc,char *argv[])
     options.add(debug);
     options.add(verbose);
     options.add(help);
-    
+
     nonoptarg = options.parse_command_line(argc, argv, 0, true);
 
-    // line below stops the program if the help was requested or 
+    // line below stops the program if the help was requested or
     //  a compulsory option was not set
     if ( (help.value()) || (!options.check_compulsory_arguments(true)) )
       {
 	options.usage();
 	exit(EXIT_FAILURE);
       }
-    
+
     if ((argc - nonoptarg)<2) {
       cerr << "Must specify at least 2 transforms to find the mid-transform"
   	<< endl;
@@ -379,9 +383,9 @@ int main(int argc,char *argv[])
     }
 
     // Call the local functions
-    
+
     return do_work(argc,argv);
-    
+
   } catch(X_OptionError& e) {
     options.usage();
     cerr << endl << e.what() << endl;
@@ -392,6 +396,5 @@ int main(int argc,char *argv[])
     cerr << e.what() << endl;
   } catch (...) {
     cerr << "Fatal error" << endl;
-  } 
+  }
 }
-

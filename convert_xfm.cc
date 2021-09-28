@@ -10,16 +10,15 @@
 #include <iostream>
 #include <fstream>
 #include <unistd.h>
-#define WANT_STREAM
-#define WANT_MATH
 
 #include "armawrap/newmat.h"
 #include "newimage/newimageall.h"
 #include "miscmaths/miscmaths.h"
 
- using namespace MISCMATHS;
- using namespace NEWMAT;
- using namespace NEWIMAGE;
+using namespace std;
+using namespace MISCMATHS;
+using namespace NEWMAT;
+using namespace NEWIMAGE;
 
 ////////////////////////////////////////////////////////////////////////////
 // the real defaults are provided in the function parse_command_line

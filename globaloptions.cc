@@ -6,7 +6,16 @@
 
 /*  CCOPYRIGHT  */
 
+#include "NewNifti/NewNifti.h"
+#include "miscmaths/miscmaths.h"
+#include "newimage/newimage.h"
+
 #include "globaloptions.h"
+
+using namespace std;
+using namespace NiftiIO;
+using namespace MISCMATHS;
+using namespace NEWIMAGE;
 
 globaloptions* globaloptions::gopt = NULL;
 
@@ -34,7 +43,7 @@ void globaloptions::parse_command_line(int argc,char** argv,
       cerr << "Unrecognised option " << first << endl;
       exit(-1);
     }
-    
+
     // put options without arguments here
     if ( arg == "-help" ) {
       print_usage(argc,argv);
@@ -88,11 +97,11 @@ void globaloptions::parse_command_line(int argc,char** argv,
     } else if ( arg == "-usesqform") {
       initmatsqform = true;
       n++;
-      continue;    
+      continue;
     } else if ( arg == "-printinit") {
       printinit = true;
       n++;
-      continue;    
+      continue;
     } else if ( arg == "-debugsave") {
       nosave = false;
       n++;
@@ -107,8 +116,8 @@ void globaloptions::parse_command_line(int argc,char** argv,
       continue;
     }
 
-    if (n+1>=argc) 
-      { 
+    if (n+1>=argc)
+      {
 	cerr << "Lacking argument to option " << arg << endl;
 	exit(-1);
       }
@@ -337,13 +346,13 @@ void globaloptions::parse_command_line(int argc,char** argv,
       continue;
     }
 
-    if (n+2>=argc) 
-      { 
+    if (n+2>=argc)
+      {
 	cerr << "Lacking argument to option " << arg << endl;
 	exit(-1);
       }
-    
-    
+
+
     // put options with 2 arguments here
     if ( arg == "-searchrx" ) {
       searchrx(1) = Min(atof(argv[n+1]),atof(argv[n+2]))*M_PI/180.0;
@@ -360,12 +369,12 @@ void globaloptions::parse_command_line(int argc,char** argv,
       searchrz(2) = Max(atof(argv[n+1]),atof(argv[n+2]))*M_PI/180.0;
       n+=3;
       continue;
-    } else { 
+    } else {
       cerr << "Unrecognised option " << arg << endl;
       exit(-1);
-    } 
+    }
 
-    
+
 
   }  // while (n<argc)
 
@@ -415,12 +424,12 @@ void globaloptions::print_usage(int argc, char *argv[])
        << "        -applyxfm                          (applies transform (no optimisation) - requires -init)\n"
        << "        -applyisoxfm <scale>               (as applyxfm but forces isotropic resampling)\n"
        << "        -paddingsize <number of voxels>    (for applyxfm: interpolates outside image by size)\n"
-       << "        -searchrx <min_angle> <max_angle>  (angles in degrees: default is -90 90)\n" 
-       << "        -searchry <min_angle> <max_angle>  (angles in degrees: default is -90 90)\n" 
-       << "        -searchrz <min_angle> <max_angle>  (angles in degrees: default is -90 90)\n" 
-       << "        -nosearch                          (sets all angular search ranges to 0 0)\n" 
-       << "        -coarsesearch <delta_angle>        (angle in degrees: default is 60)\n" 
-       << "        -finesearch <delta_angle>          (angle in degrees: default is 18)\n" 
+       << "        -searchrx <min_angle> <max_angle>  (angles in degrees: default is -90 90)\n"
+       << "        -searchry <min_angle> <max_angle>  (angles in degrees: default is -90 90)\n"
+       << "        -searchrz <min_angle> <max_angle>  (angles in degrees: default is -90 90)\n"
+       << "        -nosearch                          (sets all angular search ranges to 0 0)\n"
+       << "        -coarsesearch <delta_angle>        (angle in degrees: default is 60)\n"
+       << "        -finesearch <delta_angle>          (angle in degrees: default is 18)\n"
        << "        -schedule <schedule-file>          (replaces default schedule)\n"
        << "        -refweight <volume>                (use weights for reference volume)\n"
        << "        -inweight <volume>                 (use weights for input volume)\n"
@@ -449,5 +458,3 @@ void globaloptions::print_version()
 {
   cout << "FLIRT version " << version << endl;
 }
-
-

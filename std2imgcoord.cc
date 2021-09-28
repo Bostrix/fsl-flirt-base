@@ -10,24 +10,23 @@
 #include <iostream>
 #include <fstream>
 #include <unistd.h>
-#define WANT_STREAM
-#define WANT_MATH
 
 #ifndef EXPOSE_TREACHEROUS
 #define EXPOSE_TREACHEROUS
 #endif
 
+#include "NewNifti/NewNifti.h"
 #include "armawrap/newmat.h"
 #include "miscmaths/miscmaths.h"
 #include "newimage/newimageall.h"
 #include "warpfns/warpfns.h"
 #include "warpfns/fnirt_file_reader.h"
 
-#ifndef NO_NAMESPACE
- using namespace MISCMATHS;
- using namespace NEWMAT;
- using namespace NEWIMAGE;
-#endif
+using namespace std;
+using namespace NiftiIO;
+using namespace MISCMATHS;
+using namespace NEWMAT;
+using namespace NEWIMAGE;
 
 ////////////////////////////////////////////////////////////////////////////
 // the real defaults are provided in the function parse_command_line

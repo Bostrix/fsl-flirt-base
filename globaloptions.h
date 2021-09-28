@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 
+#include "armawrap/newmat.h"
 #include "newimage/costfns.h"
 
 
@@ -24,54 +25,52 @@ namespace NEWIMAGE {
   enum windowtype { Rect, Hanning, Blackman };
 }
 
-using namespace NEWIMAGE;
-
-  typedef std::vector<RowVector> MatVec;
-  typedef MatVec* MatVecPtr;
+typedef std::vector<NEWMAT::RowVector> MatVec;
+typedef MatVec* MatVecPtr;
 
 
 class globaloptions {
  public:
   static globaloptions& get();
   ~globaloptions() { delete gopt; }
-  
-  string version;
-  
+
+  std::string version;
+
   std::vector<MatVec> usrmat;
   MatVec searchoptmat;
   MatVec preoptsearchmat;
 
-  string inputfname;
-  string outputfname;
-  string reffname;
-  string outputmatascii;
-  string initmatfname;
-  string refweightfname;
-  string testweightfname;
-  string wmsegfname;
-  string wmcoordsfname;
-  string wmnormsfname;
-  string fmapfname;
-  string fmapmaskfname;
+  std::string inputfname;
+  std::string outputfname;
+  std::string reffname;
+  std::string outputmatascii;
+  std::string initmatfname;
+  std::string refweightfname;
+  std::string testweightfname;
+  std::string wmsegfname;
+  std::string wmcoordsfname;
+  std::string wmnormsfname;
+  std::string fmapfname;
+  std::string fmapmaskfname;
   bool initmatsqform;
   bool printinit;
-  Matrix initmat;
+  NEWMAT::Matrix initmat;
 
-  string schedulefname;
+  std::string schedulefname;
 
-  Costfn *impair;
-  ColumnVector refparams;
-  Matrix parammask;
+  NEWIMAGE::Costfn *impair;
+  NEWMAT::ColumnVector refparams;
+  NEWMAT::Matrix parammask;
   int no_params;
   int dof;
   bool usrsubset;
   int searchdof;
   int no_bins;
-  costfns maincostfn;
-  costfns searchcostfn;
-  costfns currentcostfn;
-  string optimisationtype;
-  anglereps anglerep;
+  NEWIMAGE::costfns maincostfn;
+  NEWIMAGE::costfns searchcostfn;
+  NEWIMAGE::costfns currentcostfn;
+  std::string optimisationtype;
+  NEWIMAGE::anglereps anglerep;
   float isoscale;
   float min_sampling;
   float lastsampling;
@@ -81,12 +80,12 @@ class globaloptions {
   bool force_scaling;
   float smoothsize;
   float fuzzyfrac;
-  ColumnVector tolerance;
-  ColumnVector boundguess;
+  NEWMAT::ColumnVector tolerance;
+  NEWMAT::ColumnVector boundguess;
 
-  ColumnVector searchrx;
-  ColumnVector searchry;
-  ColumnVector searchrz;
+  NEWMAT::ColumnVector searchrx;
+  NEWMAT::ColumnVector searchry;
+  NEWMAT::ColumnVector searchrz;
   float coarsedelta;
   float finedelta;
 
@@ -107,30 +106,30 @@ class globaloptions {
   bool forcebackgnd;
   float backgndval;
   bool interpblur;
-  interps interpmethod;
+  NEWIMAGE::interps interpmethod;
   float sincwidth;
-  windowtype sincwindow;
+  NEWIMAGE::windowtype sincwindow;
   float paddingsize;
   int pe_dir;
   float echo_spacing;
-  string bbr_type;
+  std::string bbr_type;
   float bbr_slope;
 
   int single_param;
 
-  void parse_command_line(int argc, char** argv, const string &);
+  void parse_command_line(int argc, char** argv, const std::string &);
 
  private:
   globaloptions();
-  
+
   const globaloptions& operator=(globaloptions&);
   globaloptions(globaloptions&);
-      
+
   static globaloptions* gopt;
 
-  void print_usage(int argc, char *argv[]);  
+  void print_usage(int argc, char *argv[]);
   void print_version();
-  
+
 };
 
 
@@ -141,7 +140,7 @@ class globaloptions {
 inline globaloptions& globaloptions::get(){
   if(gopt == NULL)
     gopt = new globaloptions();
-  
+
   return *gopt;
 }
 
@@ -171,27 +170,27 @@ inline globaloptions::globaloptions()
   wmnormsfname = "";
   fmapfname = "";
   fmapmaskfname = "";
-  initmat = IdentityMatrix(4);
+  initmat = NEWMAT::IdentityMatrix(4);
   initmatsqform = false;
   printinit = false;
 
   schedulefname = "";
-  
+
   impair = 0;
   refparams.ReSize(12);
   refparams << 0.0 << 0.0 << 0.0 << 0.0 << 0.0 << 0.0 << 1.0 << 1.0 << 1.0
 	    << 0.0 << 0.0 << 0.0;
-  parammask=IdentityMatrix(12);
+  parammask=NEWMAT::IdentityMatrix(12);
   no_params = 12;
   dof = 12;
   usrsubset = false;
   searchdof = 12;
   no_bins = 256;
-  maincostfn = CorrRatio;
-  searchcostfn = CorrRatio;
-  currentcostfn = CorrRatio;
+  maincostfn = NEWIMAGE::CorrRatio;
+  searchcostfn = NEWIMAGE::CorrRatio;
+  currentcostfn = NEWIMAGE::CorrRatio;
   optimisationtype = "brent";
-  anglerep = Euler;
+  anglerep = NEWIMAGE::Euler;
   isoscale = 1.0;
   min_sampling = 1.0;
   lastsampling = 8;
@@ -202,8 +201,8 @@ inline globaloptions::globaloptions()
   smoothsize = 1.0;
   fuzzyfrac = 0.5;
   tolerance.ReSize(12);
-  tolerance << 0.005 << 0.005 << 0.005 << 0.2 << 0.2 << 0.2 << 0.002 
-	    << 0.002 << 0.002 << 0.001 << 0.001 << 0.001; 
+  tolerance << 0.005 << 0.005 << 0.005 << 0.2 << 0.2 << 0.2 << 0.002
+	    << 0.002 << 0.002 << 0.001 << 0.001 << 0.001;
   boundguess.ReSize(2);
   boundguess << 10.0 << 1.0;
 
@@ -233,9 +232,9 @@ inline globaloptions::globaloptions()
   forcebackgnd = false;
   backgndval = 0.0;
   interpblur = true;
-  interpmethod = TriLinear;
+  interpmethod = NEWIMAGE::TriLinear;
   sincwidth = 7.0; // voxels
-  sincwindow = Hanning;
+  sincwindow = NEWIMAGE::Hanning;
   paddingsize = 0.0;
   pe_dir=0;   // 1=x, 2=y, 3=z, -1=-x, -2=-y, -3=-z, 0=none
   echo_spacing = 5e-4;  // random guess (0.5ms) - units of seconds
@@ -246,4 +245,3 @@ inline globaloptions::globaloptions()
 }
 
 #endif
-

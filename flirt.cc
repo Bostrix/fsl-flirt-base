@@ -15,13 +15,12 @@
 #include <time.h>
 #include <vector>
 #include <algorithm>
-#define WANT_STREAM
-#define WANT_MATH
 
 #ifndef EXPOSE_TREACHEROUS
 #define EXPOSE_TREACHEROUS
 #endif
 
+#include "NewNifti/NewNifti.h"
 #include "armawrap/newmat.h"
 #include "miscmaths/miscmaths.h"
 #include "miscmaths/optimise.h"
@@ -30,11 +29,11 @@
 #include "defaultschedule.h"
 #include "globaloptions.h"
 
-#ifndef NO_NAMESPACE
- using namespace MISCMATHS;
- using namespace NEWMAT;
- using namespace NEWIMAGE;
-#endif
+using namespace std;
+using namespace NiftiIO;
+using namespace NEWMAT;
+using namespace MISCMATHS;
+using namespace NEWIMAGE;
 
 // Put current version number here:
 const string version = "6.0";

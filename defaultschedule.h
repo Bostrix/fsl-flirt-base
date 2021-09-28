@@ -16,7 +16,7 @@
 #include <vector>
 #include <string>
 
-void setdefaultschedule(std::vector<string>& comms)
+void setdefaultschedule(std::vector<std::string>& comms)
 {
   comms.clear();
   comms.push_back("# 8mm scale");
@@ -116,7 +116,7 @@ void setdefaultschedule(std::vector<string>& comms)
 }
 
 
-void set2Ddefaultschedule(std::vector<string>& comms)
+void set2Ddefaultschedule(std::vector<std::string>& comms)
 {
   comms.clear();
   comms.push_back("# 8mm scale");

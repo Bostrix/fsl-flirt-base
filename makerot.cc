@@ -8,18 +8,22 @@
 
 // Skeleton application framework for using newimage
 
-#define _GNU_SOURCE 1
-#define POSIX_SOURCE 1
+#include <vector>
+#include <string>
+#include <iostream>
 
+#include "utils/options.h"
+#include "armawrap/newmat.h"
 #include "newimage/newimageall.h"
 #include "miscmaths/miscmaths.h"
-#include "utils/options.h"
-#include <vector>
 
+
+using namespace std;
+using namespace Utilities;
+using namespace NEWMAT;
 using namespace MISCMATHS;
 using namespace NEWIMAGE;
-using namespace Utilities;
-using namespace std;
+
 
 // The two strings below specify the title and example usage that is
 //  printed out as the help or usage message
@@ -34,8 +38,8 @@ string examples="makerot [options] --theta=angle";
 // Note that they must also be included in the main() function or they
 //  will not be active.
 
-Option<bool> verbose(string("-v,--verbose"), false, 
-		     string("switch on diagnostic messages"), 
+Option<bool> verbose(string("-v,--verbose"), false,
+		     string("switch on diagnostic messages"),
 		     false, no_argument);
 Option<bool> help(string("-h,--help"), false,
 		  string("display this message"),
@@ -62,7 +66,7 @@ int nonoptarg;
 // Local functions
 
 
-int do_work(int argc, char* argv[]) 
+int do_work(int argc, char* argv[])
 {
   ColumnVector ctr(3), ax(3);
   if (axis.unset()) {
@@ -80,7 +84,7 @@ int do_work(int argc, char* argv[])
   if (centre.unset()) {
     ctr(1)=0; ctr(2)=0; ctr(3)=0;
   } else {
-    ctr(1) = centre.value()[0]; ctr(2) = centre.value()[1]; ctr(3) = centre.value()[2]; 
+    ctr(1) = centre.value()[0]; ctr(2) = centre.value()[1]; ctr(3) = centre.value()[2];
   }
 
   if (covopt.set()) {
@@ -121,27 +125,26 @@ int main(int argc,char *argv[])
     options.add(outname);
     options.add(verbose);
     options.add(help);
-    
+
     nonoptarg = options.parse_command_line(argc, argv);
 
-    // line below stops the program if the help was requested or 
+    // line below stops the program if the help was requested or
     //  a compulsory option was not set
     if ( (help.value()) || (!options.check_compulsory_arguments(true)) )
       {
 	options.usage();
 	exit(EXIT_FAILURE);
       }
-    
+
   }  catch(X_OptionError& e) {
     options.usage();
     cerr << endl << e.what() << endl;
     exit(EXIT_FAILURE);
   } catch(std::exception &e) {
     cerr << e.what() << endl;
-  } 
+  }
 
   // Call the local functions
 
   return do_work(argc,argv);
 }
-

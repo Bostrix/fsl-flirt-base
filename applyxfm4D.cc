@@ -6,9 +6,17 @@
 
 /*  CCOPYRIGHT  */
 
+#include <string>
+#include <iostream>
+
+#include "armawrap/newmat.h"
+#include "miscmaths/miscmaths.h"
 #include "newimage/newimageall.h"
 #include "newimage/fmribmain.h"
 
+using namespace std;
+using namespace NEWMAT;
+using namespace MISCMATHS;
 using namespace NEWIMAGE;
 
 // Globals - needed by fmrib_main

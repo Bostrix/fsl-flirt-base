@@ -11,9 +11,7 @@
 #include "utils/options.h"
 #include "newimage/newimageall.h"
 
-#define _GNU_SOURCE 1
-#define POSIX_SOURCE 1
-
+using namespace std;
 using namespace Utilities;
 using namespace NEWMAT;
 using namespace MISCMATHS;
