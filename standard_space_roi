@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 #   standard_space_roi - align input image to standard space and
 #   output ROI version of input that matches the standard space FOV
@@ -150,9 +150,9 @@ done
 ${FSLDIR}/bin/flirt -in $in -ref $standard -o ${out}_tmp_to_std -omat ${out}_tmp_to_std.mat $@
 ${FSLDIR}/bin/convert_xfm -inverse -omat ${out}_tmp_to_std_inv.mat ${out}_tmp_to_std.mat
 
-X=`${FSLDIR}/bin/fslval $standard dim1` ; X=`echo "$X 2 - p" | dc -`
-Y=`${FSLDIR}/bin/fslval $standard dim2` ; Y=`echo "$Y 2 - p" | dc -`
-Z=`${FSLDIR}/bin/fslval $standard dim3` ; Z=`echo "$Z 2 - p" | dc -`
+X=`${FSLDIR}/bin/fslval $standard dim1` ; X=`echo "$X 2 - p" | dc`
+Y=`${FSLDIR}/bin/fslval $standard dim2` ; Y=`echo "$Y 2 - p" | dc`
+Z=`${FSLDIR}/bin/fslval $standard dim3` ; Z=`echo "$Z 2 - p" | dc`
 
 # first do masking, if requested
 if [ $mask -lt 3 ] ; then
@@ -188,4 +188,3 @@ if [ $debug = 0 ] ; then
 fi
 
 # }}}
-

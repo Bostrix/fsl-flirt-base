@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 #   flirt_average - align more than one raw images to each other and average to improve SNR etc.
 #
@@ -32,7 +32,7 @@ i=1
 while [ $i -le $N ] ; do
     imagelist="$imagelist `${FSLDIR}/bin/remove_ext $1`"
     shift
-    i=`echo "$i 1 + p" | dc -`
+    i=`echo "$i 1 + p" | dc`
 done
 
 output=$1
@@ -63,4 +63,3 @@ fslmerge -t $output $outlist
 fslmaths $output -Tmean $output
 
 /bin/rm *_2ref*
-
