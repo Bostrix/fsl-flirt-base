@@ -10,9 +10,9 @@ XFILES = flirt convert_xfm avscale rmsdiff std2imgcoord img2stdcoord \
 	img2imgcoord applyxfm4D pointflirt makerot midtrans
 SCRIPTS = extracttxt pairreg standard_space_roi flirt_average epi_reg aff2rigid
 
-all: ${XFILES} schedule
+all: ${XFILES}
 
-schedule:
+custominstall:
 	@if [ ! -d ${DESTDIR}/etc ] ; then ${MKDIR} ${DESTDIR}/etc ; ${CHMOD} g+w ${DESTDIR}/etc ; fi
 	@if [ ! -d ${DESTDIR}/etc/flirtsch ] ; then ${MKDIR} ${DESTDIR}/etc/flirtsch ; ${CHMOD} g+w ${DESTDIR}/etc/flirtsch ; fi
 	${CP} -rf flirtsch/* ${DESTDIR}/etc/flirtsch/.
